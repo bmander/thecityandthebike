@@ -14,7 +14,7 @@ services:
       - postgres_data:/var/lib/postgresql/data
 
   api:
-    build: .
+    build: ./api
     container_name: tcatb_api
     restart: unless-stopped
     depends_on:

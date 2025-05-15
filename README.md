@@ -4,7 +4,7 @@ TCATB is a mobile application for discovering, photographing, and cataloguing gr
 
 ## Phase 1: Backend Setup & Core API
 
-This repository contains the database schema and Docker Compose configuration for Phase 1 of the project: setting up PostgreSQL and initializing the schema.
+This repository contains the database schema, Flask API code, and Docker Compose configuration for Phase 1 of the project: setting up PostgreSQL, initializing the schema, and serving the backend API.
 
 ### Prerequisites
 - Docker (>= 20.10)
@@ -15,8 +15,15 @@ This repository contains the database schema and Docker Compose configuration fo
 ```
 .
 ├── DESIGN.md            # Application design document
-├── docker-compose.yml   # Docker Compose config for PostgreSQL
-└── db/
+├── README.md            # Project README
+├── docker-compose.yml   # Docker Compose config for DB and API
+├── api/                 # Flask API service
+│   ├── app.py
+│   ├── config.py
+│   ├── models.py
+│   ├── requirements.txt
+│   └── Dockerfile
+└── db/                  # Database initialization
     └── init/
         └── schema.sql   # SQL schema initialization
 ```
@@ -69,13 +76,19 @@ PGDATABASE=tcatb_dev
  
 ## API (Local Development)
 
-1. Install dependencies:
+1. Change into the API directory:
+
+   ```bash
+   cd api
+   ```
+
+2. Install dependencies:
 
    ```bash
    pip install -r requirements.txt
    ```
 
-2. Set environment variables:
+3. Set environment variables:
 
    ```bash
    export PGHOST=localhost
@@ -86,7 +99,7 @@ PGDATABASE=tcatb_dev
    export JWT_SECRET_KEY=your-secret-key
    ```
 
-3. Run the API server:
+4. Run the API server:
 
    ```bash
    python app.py
