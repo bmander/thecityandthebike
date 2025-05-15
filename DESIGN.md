@@ -68,7 +68,7 @@ TCATB is a mobile application designed for users to discover, photograph, and ca
     *   **Database:** PostgreSQL.
         *   GIS extensions (PostGIS) can be considered for future location-based queries (e.g., neighborhood definitions using shapefiles).
     *   **Image Storage:** Cloud-based object storage (e.g., AWS S3, Google Cloud Storage, Azure Blob Storage). Store both original and processed images.
-    *   **Deployment:** Dockerized containers on a cloud platform (e.g., AWS ECS, Google Kubernetes Engine, Heroku).
+    *   **Deployment & Local Development:** Use Docker Compose to orchestrate individual services locally (e.g., Flask API service, PostgreSQL database with PostGIS, S3-compatible object storage). For production, deploy Dockerized containers to cloud platforms (e.g., AWS ECS, Google Kubernetes Engine, Heroku).
 
 *   **5.3. Web Frontend (Future - Phase 2):**
     *   Technology: React, Vue.js, or Angular.
