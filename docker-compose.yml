@@ -13,5 +13,21 @@ services:
       - ./db/init:/docker-entrypoint-initdb.d
       - postgres_data:/var/lib/postgresql/data
 
+  api:
+    build: .
+    container_name: tcatb_api
+    restart: unless-stopped
+    depends_on:
+      - db
+    environment:
+      PGHOST: db
+      PGPORT: 5432
+      PGUSER: tcatb
+      PGPASSWORD: tcatbpass
+      PGDATABASE: tcatb_dev
+      JWT_SECRET_KEY: super-secret
+    ports:
+      - "5000:5000"
+
 volumes:
   postgres_data:

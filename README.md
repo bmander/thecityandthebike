@@ -29,12 +29,12 @@ This repository contains the database schema and Docker Compose configuration fo
    cd thecityandthebike
    ```
 
-2. Start the PostgreSQL database:
+2. Start services (PostgreSQL database and API):
    ```bash
-   docker-compose up -d
+   docker-compose up -d --build
    ```
 
-3. Verify the database container is running:
+3. Verify the services are running:
    ```bash
    docker-compose ps
    ```
@@ -66,6 +66,50 @@ PGDATABASE=tcatb_dev
 - Build the Flask API for user authentication, bike registration, and fender submissions.
 - Integrate object storage (e.g., AWS S3) for handling image uploads.
 - Develop the Android application frontend (Phase 2).
+ 
+## API (Local Development)
+
+1. Install dependencies:
+
+   ```bash
+   pip install -r requirements.txt
+   ```
+
+2. Set environment variables:
+
+   ```bash
+   export PGHOST=localhost
+   export PGPORT=5432
+   export PGUSER=tcatb
+   export PGPASSWORD=tcatbpass
+   export PGDATABASE=tcatb_dev
+   export JWT_SECRET_KEY=your-secret-key
+   ```
+
+3. Run the API server:
+
+   ```bash
+   python app.py
+   ```
+
+The API will be available at http://localhost:5000
+
+### Available Endpoints
+
+Auth:
+- POST /auth/register
+- POST /auth/login
+
+Users:
+- GET /users/me
+- GET /users/me/submissions
+
+Submissions:
+- GET /submissions
+- POST /submissions
+
+Bikes:
+- GET /bikes/<bike_qr_id>/submissions
 
 ---
 _Phase 1: Database setup and schema initialization for The City And The Bike._
