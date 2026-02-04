@@ -4,7 +4,7 @@ from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 
 from .database import engine, Base
-from .routers import auth_router, users_router, submissions_router, bikes_router
+from .routers import auth_router, users_router, submissions_router, bikes_router, uploads_router
 
 
 @asynccontextmanager
@@ -28,3 +28,4 @@ app.include_router(auth_router)
 app.include_router(users_router)
 app.include_router(submissions_router)
 app.include_router(bikes_router)
+app.include_router(uploads_router)

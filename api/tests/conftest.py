@@ -18,7 +18,7 @@ from sqlalchemy.pool import StaticPool
 from app.database import Base, get_db
 from app.dependencies import get_password_hash, create_access_token
 from app.models import User, Bike, FenderSubmission
-from app.routers import auth_router, users_router, submissions_router, bikes_router
+from app.routers import auth_router, users_router, submissions_router, bikes_router, uploads_router
 
 
 # Create test engine with StaticPool for in-memory SQLite
@@ -45,6 +45,7 @@ test_app.include_router(auth_router)
 test_app.include_router(users_router)
 test_app.include_router(submissions_router)
 test_app.include_router(bikes_router)
+test_app.include_router(uploads_router)
 
 
 @pytest.fixture(scope="function", autouse=True)
