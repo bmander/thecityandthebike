@@ -23,6 +23,9 @@ This repository contains the database schema, Flask API code, and Docker Compose
 │   ├── models.py
 │   ├── requirements.txt
 │   └── Dockerfile
+├── android/             # Android app (Jetpack Compose)
+│   ├── app/
+│   └── gradlew
 └── db/                  # Database initialization
     └── init/
         └── schema.sql   # SQL schema initialization
@@ -123,6 +126,58 @@ Submissions:
 
 Bikes:
 - GET /bikes/<bike_qr_id>/submissions
+
+## Android App
+
+The Android app is built with Jetpack Compose and targets SDK 34 (minSdk 26).
+
+### Prerequisites
+- Android SDK (typically installed via Android Studio)
+- Java 17+ (Android Studio's bundled JDK works)
+- A connected Android device with USB debugging enabled
+
+### Project Structure
+```
+android/
+├── app/
+│   ├── build.gradle
+│   └── src/main/
+│       ├── AndroidManifest.xml
+│       ├── kotlin/com/thecityandthebike/
+│       │   └── MainActivity.kt
+│       └── res/values/
+│           └── strings.xml
+├── build.gradle
+├── settings.gradle
+├── gradle.properties
+├── local.properties
+└── gradlew
+```
+
+### Building and Running
+
+1. Set up environment variables:
+   ```bash
+   export JAVA_HOME="/Applications/Android Studio.app/Contents/jbr/Contents/Home"
+   export ANDROID_HOME=~/Library/Android/sdk
+   export PATH="$ANDROID_HOME/platform-tools:$PATH"
+   ```
+
+2. Build the debug APK:
+   ```bash
+   cd android
+   ./gradlew assembleDebug
+   ```
+
+3. Install on a connected device:
+   ```bash
+   adb install app/build/outputs/apk/debug/app-debug.apk
+   ```
+
+4. Launch the app:
+   ```bash
+   adb shell am start -n com.thecityandthebike/.MainActivity
+   ```
 
 ---
 _Phase 1: Database setup and schema initialization for The City And The Bike._
