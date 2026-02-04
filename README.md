@@ -4,7 +4,7 @@ TCATB is a mobile application for discovering, photographing, and cataloguing gr
 
 ## Phase 1: Backend Setup & Core API
 
-This repository contains the database schema, Flask API code, and Docker Compose configuration for Phase 1 of the project: setting up PostgreSQL, initializing the schema, and serving the backend API.
+This repository contains the database schema, FastAPI API code, and Docker Compose configuration for Phase 1 of the project: setting up PostgreSQL, initializing the schema, and serving the backend API.
 
 ### Prerequisites
 - Docker (>= 20.10)
@@ -17,10 +17,25 @@ This repository contains the database schema, Flask API code, and Docker Compose
 ├── DESIGN.md            # Application design document
 ├── README.md            # Project README
 ├── docker-compose.yml   # Docker Compose config for DB and API
-├── api/                 # Flask API service
-│   ├── app.py
-│   ├── config.py
-│   ├── models.py
+├── api/                 # FastAPI service
+│   ├── app/
+│   │   ├── __init__.py
+│   │   ├── main.py           # FastAPI app entry point
+│   │   ├── config.py         # Pydantic BaseSettings
+│   │   ├── database.py       # SQLAlchemy engine/session
+│   │   ├── dependencies.py   # Auth & DB dependencies
+│   │   ├── models/
+│   │   │   └── orm.py        # SQLAlchemy models
+│   │   ├── schemas/          # Pydantic schemas
+│   │   │   ├── auth.py
+│   │   │   ├── user.py
+│   │   │   ├── submission.py
+│   │   │   └── bike.py
+│   │   └── routers/          # API route handlers
+│   │       ├── auth.py
+│   │       ├── users.py
+│   │       ├── submissions.py
+│   │       └── bikes.py
 │   ├── requirements.txt
 │   └── Dockerfile
 ├── android/             # Android app (Jetpack Compose)
@@ -73,10 +88,9 @@ PGDATABASE=tcatb_dev
 ```
 
 ### Next Steps
-- Build the Flask API for user authentication, bike registration, and fender submissions.
 - Integrate object storage (e.g., AWS S3) for handling image uploads.
 - Develop the Android application frontend (Phase 2).
- 
+
 ## API (Local Development)
 
 1. Change into the API directory:
@@ -85,13 +99,20 @@ PGDATABASE=tcatb_dev
    cd api
    ```
 
-2. Install dependencies:
+2. Create and activate a virtual environment:
+
+   ```bash
+   python -m venv venv
+   source venv/bin/activate  # On Windows: venv\Scripts\activate
+   ```
+
+3. Install dependencies:
 
    ```bash
    pip install -r requirements.txt
    ```
 
-3. Set environment variables:
+4. Set environment variables:
 
    ```bash
    export PGHOST=localhost
@@ -102,13 +123,15 @@ PGDATABASE=tcatb_dev
    export JWT_SECRET_KEY=your-secret-key
    ```
 
-4. Run the API server:
+5. Run the API server:
 
    ```bash
-   python app.py
+   uvicorn app.main:app --reload --port 5000
    ```
 
 The API will be available at http://localhost:5000
+
+Interactive API documentation (Swagger UI) is available at http://localhost:5000/docs
 
 ### Available Endpoints
 
@@ -125,7 +148,7 @@ Submissions:
 - POST /submissions
 
 Bikes:
-- GET /bikes/<bike_qr_id>/submissions
+- GET /bikes/{bike_qr_id}/submissions
 
 ## Android App
 

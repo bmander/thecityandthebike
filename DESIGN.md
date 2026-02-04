@@ -62,13 +62,13 @@ TCATB is a mobile application designed for users to discover, photograph, and ca
     *   **Networking:** Retrofit2 and OkHttp for API communication.
     *   **Local Storage:** SQLite (Room Persistence Library) for caching user data, drafts (if implemented).
 
-*   **5.2. Backend (Python with Flask):**
+*   **5.2. Backend (Python with FastAPI):**
     *   **API:** RESTful API for communication with the mobile app and future web frontend.
     *   **Authentication:** JWT (JSON Web Tokens) for stateless session management.
     *   **Database:** PostgreSQL.
         *   GIS extensions (PostGIS) can be considered for future location-based queries (e.g., neighborhood definitions using shapefiles).
     *   **Image Storage:** Cloud-based object storage (e.g., AWS S3, Google Cloud Storage, Azure Blob Storage). Store both original and processed images.
-    *   **Deployment & Local Development:** Use Docker Compose to orchestrate individual services locally (e.g., Flask API service, PostgreSQL database with PostGIS, S3-compatible object storage). For production, deploy Dockerized containers to cloud platforms (e.g., AWS ECS, Google Kubernetes Engine, Heroku).
+    *   **Deployment & Local Development:** Use Docker Compose to orchestrate individual services locally (e.g., FastAPI service, PostgreSQL database with PostGIS, S3-compatible object storage). For production, deploy Dockerized containers to cloud platforms (e.g., AWS ECS, Google Kubernetes Engine, Heroku).
 
 *   **5.3. Web Frontend (Future - Phase 2):**
     *   Technology: React, Vue.js, or Angular.
@@ -125,7 +125,7 @@ TCATB is a mobile application designed for users to discover, photograph, and ca
 *   **Scalability:** Backend designed to handle growth in users and submissions. Use of cloud services aids this.
 *   **Reliability:** Aim for >99.9% uptime for backend services.
 *   **Security:** Secure storage of user credentials (hashing passwords). HTTPS for all communications. Input validation to prevent common web vulnerabilities.
-*   **Maintainability:** Well-structured, documented code. Adherence to Android and Python/Flask best practices.
+*   **Maintainability:** Well-structured, documented code. Adherence to Android and Python/FastAPI best practices.
 
 **9. Future Enhancements (Post-MVP)**
 
