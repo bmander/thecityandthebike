@@ -1,8 +1,13 @@
 package com.thecityandthebike
 
+import android.Manifest
+import android.content.pm.PackageManager
+import android.net.Uri
 import android.os.Bundle
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -22,11 +27,20 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
+import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import androidx.core.content.ContextCompat
+import androidx.core.content.FileProvider
+import coil.compose.AsyncImage
+import java.io.File
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -37,8 +51,58 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    // Placeholder data - will be replaced with real images
-                    val placeholderItems = (1..20).toList()
+                    val context = LocalContext.current
+                    val imageUris = remember { mutableStateListOf<Uri>() }
+                    val currentPhotoUri = remember { mutableStateOf<Uri?>(null) }
+
+                    // Create a temp file and get URI for camera
+                    fun createImageUri(): Uri {
+                        val imageDir = File(context.cacheDir, "images").apply { mkdirs() }
+                        val imageFile = File(imageDir, "photo_${System.currentTimeMillis()}.jpg")
+                        return FileProvider.getUriForFile(
+                            context,
+                            "${context.packageName}.fileprovider",
+                            imageFile
+                        )
+                    }
+
+                    // Camera launcher
+                    val cameraLauncher = rememberLauncherForActivityResult(
+                        contract = ActivityResultContracts.TakePicture()
+                    ) { success ->
+                        if (success) {
+                            currentPhotoUri.value?.let { uri ->
+                                imageUris.add(0, uri)
+                            }
+                        }
+                    }
+
+                    // Permission launcher
+                    val permissionLauncher = rememberLauncherForActivityResult(
+                        contract = ActivityResultContracts.RequestPermission()
+                    ) { granted ->
+                        if (granted) {
+                            val uri = createImageUri()
+                            currentPhotoUri.value = uri
+                            cameraLauncher.launch(uri)
+                        }
+                    }
+
+                    fun launchCamera() {
+                        when {
+                            ContextCompat.checkSelfPermission(
+                                context,
+                                Manifest.permission.CAMERA
+                            ) == PackageManager.PERMISSION_GRANTED -> {
+                                val uri = createImageUri()
+                                currentPhotoUri.value = uri
+                                cameraLauncher.launch(uri)
+                            }
+                            else -> {
+                                permissionLauncher.launch(Manifest.permission.CAMERA)
+                            }
+                        }
+                    }
 
                     Box(modifier = Modifier.fillMaxSize()) {
                         // Image grid
@@ -48,16 +112,15 @@ class MainActivity : ComponentActivity() {
                             horizontalArrangement = Arrangement.spacedBy(2.dp),
                             verticalArrangement = Arrangement.spacedBy(2.dp)
                         ) {
-                            items(placeholderItems) { item ->
-                                // Placeholder image cell
-                                Box(
+                            items(imageUris) { uri ->
+                                AsyncImage(
+                                    model = uri,
+                                    contentDescription = "Captured image",
                                     modifier = Modifier
                                         .aspectRatio(1f)
                                         .background(Color.LightGray),
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    // Placeholder - will show actual images later
-                                }
+                                    contentScale = ContentScale.Crop
+                                )
                             }
                         }
 
@@ -80,7 +143,7 @@ class MainActivity : ComponentActivity() {
 
                         // Add button (top-right)
                         FloatingActionButton(
-                            onClick = { /* TODO: Add new image */ },
+                            onClick = { launchCamera() },
                             modifier = Modifier
                                 .align(Alignment.TopEnd)
                                 .padding(16.dp),
