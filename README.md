@@ -67,7 +67,7 @@ This repository contains the database schema, FastAPI API code, and Docker Compo
 4. Connect to the database using `psql`:
    ```bash
    psql -h localhost -U tcatb -d tcatb_dev
-   # Password: tcatbpass
+   # Enter your database password when prompted
    ```
    You should see the tables: `users`, `bikes`, and `fender_submissions`.
 
@@ -83,9 +83,12 @@ When implementing backend services, use the following environment variables for 
 PGHOST=localhost
 PGPORT=5432
 PGUSER=tcatb
-PGPASSWORD=tcatbpass
+PGPASSWORD=<your-password>
 PGDATABASE=tcatb_dev
+JWT_SECRET_KEY=<your-secret-key>
 ```
+
+See `api/.env.example` for a template you can copy to `api/.env`.
 
 ### Next Steps
 - Integrate object storage (e.g., AWS S3) for handling image uploads.
@@ -112,15 +115,11 @@ PGDATABASE=tcatb_dev
    pip install -r requirements.txt
    ```
 
-4. Set environment variables:
+4. Set up environment variables:
 
    ```bash
-   export PGHOST=localhost
-   export PGPORT=5432
-   export PGUSER=tcatb
-   export PGPASSWORD=tcatbpass
-   export PGDATABASE=tcatb_dev
-   export JWT_SECRET_KEY=your-secret-key
+   cp .env.example .env
+   # Edit .env and fill in your database password and JWT secret key
    ```
 
 5. Run the API server:

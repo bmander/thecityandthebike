@@ -5,11 +5,11 @@ from pydantic_settings import BaseSettings
 
 class Settings(BaseSettings):
     PGUSER: str = "tcatb"
-    PGPASSWORD: str = "tcatbpass"
+    PGPASSWORD: str
     PGHOST: str = "localhost"
     PGPORT: str = "5432"
     PGDATABASE: str = "tcatb_dev"
-    JWT_SECRET_KEY: str = "super-secret"
+    JWT_SECRET_KEY: str
     DATABASE_URL: Optional[str] = None
 
     @property

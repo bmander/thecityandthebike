@@ -1,3 +1,9 @@
+import os
+
+# Set test environment variables before importing app modules
+os.environ.setdefault("PGPASSWORD", "testpassword")
+os.environ.setdefault("JWT_SECRET_KEY", "test-secret-key")
+
 from contextlib import asynccontextmanager
 from datetime import datetime
 import uuid
