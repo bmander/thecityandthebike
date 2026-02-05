@@ -5,7 +5,7 @@ from pydantic_settings import BaseSettings
 
 class Settings(BaseSettings):
     PGUSER: str = "tcatb"
-    PGPASSWORD: str
+    PGPASSWORD: str = ""
     PGHOST: str = "localhost"
     PGPORT: str = "5432"
     PGDATABASE: str = "tcatb_dev"
