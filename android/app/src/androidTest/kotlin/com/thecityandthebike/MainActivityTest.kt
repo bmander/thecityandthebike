@@ -26,16 +26,22 @@ class MainActivityTest {
     }
 
     @Test
-    fun mainActivity_loginScreenVisibleAfterLaunch() {
+    fun mainActivity_mainFeedVisibleAfterLaunch() {
         composeTestRule.waitForIdle()
 
-        // App should show login screen when not authenticated
+        // App should show main feed with login button when not authenticated
         composeTestRule
-            .onNodeWithText("The City and the Bike")
+            .onNodeWithContentDescription("Login")
             .assertIsDisplayed()
+    }
 
+    @Test
+    fun mainActivity_logoutButtonNotVisibleWhenNotLoggedIn() {
+        composeTestRule.waitForIdle()
+
+        // Logout button should not be visible when not authenticated
         composeTestRule
-            .onNodeWithText("Sign In")
-            .assertIsDisplayed()
+            .onNodeWithContentDescription("Logout")
+            .assertDoesNotExist()
     }
 }

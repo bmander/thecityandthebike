@@ -25,26 +25,33 @@ import androidx.compose.ui.unit.dp
 import com.thecityandthebike.camera.rememberCameraState
 import com.thecityandthebike.ui.components.CameraFAB
 import com.thecityandthebike.ui.components.ImageGrid
+import com.thecityandthebike.ui.components.LoginFAB
 import com.thecityandthebike.ui.viewmodel.MainViewModel
 
 @Composable
 fun MainScreen(
     viewModel: MainViewModel,
-    onLogout: () -> Unit
+    isLoggedIn: Boolean,
+    onLogout: () -> Unit,
+    onLoginClick: () -> Unit
 ) {
     val context = LocalContext.current
     val state by viewModel.state.collectAsState()
     val currentPhotoUri = remember { mutableStateOf<Uri?>(null) }
 
-    val cameraState = rememberCameraState(
-        context = context,
-        currentPhotoUri = currentPhotoUri,
-        onPhotoTaken = { uri ->
-            viewModel.addLocalImage(uri)
-            // In a full implementation, we would upload the image here
-            // For now, just adding to local state
-        }
-    )
+    val cameraState = if (isLoggedIn) {
+        rememberCameraState(
+            context = context,
+            currentPhotoUri = currentPhotoUri,
+            onPhotoTaken = { uri ->
+                viewModel.addLocalImage(uri)
+                // In a full implementation, we would upload the image here
+                // For now, just adding to local state
+            }
+        )
+    } else {
+        null
+    }
 
     // Combine server submissions with local images
     val serverImageUris = state.submissions.mapNotNull { submission ->
@@ -61,27 +68,38 @@ fun MainScreen(
             modifier = Modifier.fillMaxSize()
         )
 
-        // Logout button (top left)
-        IconButton(
-            onClick = onLogout,
-            modifier = Modifier
-                .align(Alignment.TopStart)
-                .padding(16.dp)
-        ) {
-            Icon(
-                imageVector = Icons.AutoMirrored.Filled.Logout,
-                contentDescription = "Logout",
-                tint = MaterialTheme.colorScheme.onSurface
-            )
+        // Logout button (top left) - only shown when logged in
+        if (isLoggedIn) {
+            IconButton(
+                onClick = onLogout,
+                modifier = Modifier
+                    .align(Alignment.TopStart)
+                    .padding(16.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.AutoMirrored.Filled.Logout,
+                    contentDescription = "Logout",
+                    tint = MaterialTheme.colorScheme.onSurface
+                )
+            }
         }
 
-        // Camera FAB (top right)
-        CameraFAB(
-            onClick = { cameraState.launchCamera() },
-            modifier = Modifier
-                .align(Alignment.TopEnd)
-                .padding(16.dp)
-        )
+        // Camera FAB (top right) when logged in, Login FAB when not logged in
+        if (isLoggedIn && cameraState != null) {
+            CameraFAB(
+                onClick = { cameraState.launchCamera() },
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .padding(16.dp)
+            )
+        } else {
+            LoginFAB(
+                onClick = onLoginClick,
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .padding(16.dp)
+            )
+        }
 
         // Loading indicator
         if (state.isLoading || state.isUploading) {
