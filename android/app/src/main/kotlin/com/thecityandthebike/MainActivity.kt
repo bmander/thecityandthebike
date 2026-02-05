@@ -34,11 +34,9 @@ class MainActivity : ComponentActivity() {
                     val authViewModel: AuthViewModel = hiltViewModel()
                     val authState by authViewModel.state.collectAsState()
 
-                    val startDestination = if (authState.isLoggedIn) "main" else "login"
-
                     NavHost(
                         navController = navController,
-                        startDestination = startDestination
+                        startDestination = "main"
                     ) {
                         composable("login") {
                             LoginScreen(
@@ -78,11 +76,12 @@ class MainActivity : ComponentActivity() {
                             val mainViewModel: MainViewModel = hiltViewModel()
                             MainScreen(
                                 viewModel = mainViewModel,
+                                isLoggedIn = authState.isLoggedIn,
                                 onLogout = {
                                     authViewModel.logout()
-                                    navController.navigate("login") {
-                                        popUpTo("main") { inclusive = true }
-                                    }
+                                },
+                                onLoginClick = {
+                                    navController.navigate("login")
                                 }
                             )
                         }

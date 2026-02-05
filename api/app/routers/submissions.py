@@ -1,11 +1,11 @@
 from datetime import datetime
-from typing import Annotated, List
+from typing import Annotated, List, Optional
 
 from fastapi import APIRouter, Depends, status
 from sqlalchemy.orm import Session
 
 from ..database import get_db
-from ..dependencies import get_current_user
+from ..dependencies import get_current_user, get_current_user_optional
 from ..models import User, Bike, FenderSubmission
 from ..schemas import SubmissionCreate, SubmissionResponse
 
@@ -14,8 +14,8 @@ router = APIRouter(prefix="/submissions", tags=["submissions"])
 
 @router.get("", response_model=List[SubmissionResponse])
 def get_global_submissions(
-    current_user: Annotated[User, Depends(get_current_user)],
     db: Annotated[Session, Depends(get_db)],
+    current_user: Annotated[Optional[User], Depends(get_current_user_optional)] = None,
 ):
     submissions = (
         db.query(FenderSubmission)

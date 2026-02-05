@@ -64,9 +64,9 @@ class TestGetSubmissions:
         assert other_user.user_id in user_ids
 
     def test_get_submissions_no_auth(self, client):
-        """Request without auth should return 401."""
+        """Request without auth should return 200 (public endpoint)."""
         response = client.get("/submissions")
-        assert response.status_code == 401
+        assert response.status_code == 200
 
 
 class TestCreateSubmission:

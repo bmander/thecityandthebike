@@ -41,11 +41,12 @@ class SubmissionsIntegrationTest {
     }
 
     @Test
-    fun getSubmissions_withoutToken_fails() = runBlocking {
-        // Try to get submissions without authentication
+    fun getSubmissions_withoutToken_succeeds() = runBlocking {
+        // Get submissions without authentication (public endpoint)
         val response = apiService.getSubmissions()
-        assertFalse("Get submissions without token should fail", response.isSuccessful)
-        assertEquals(401, response.code())
+        assertTrue("Get submissions without token should succeed (public endpoint)", response.isSuccessful)
+        assertEquals(200, response.code())
+        assertNotNull("Response body should not be null", response.body())
     }
 
     @Test
