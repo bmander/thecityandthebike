@@ -20,7 +20,7 @@ cd api && source venv/bin/activate && pytest -x
 
 This prevents overwhelming output when there are multiple failures from the same root cause.
 
-### Android Tests
+### Android Builds
 
 Before running Android builds or tests, set the required environment variables:
 
@@ -29,6 +29,14 @@ export JAVA_HOME="/Applications/Android Studio.app/Contents/jbr/Contents/Home"
 export ANDROID_HOME=~/Library/Android/sdk
 export PATH="$ANDROID_HOME/platform-tools:$PATH"
 ```
+
+Build and install on a connected device:
+
+```bash
+cd android && ./gradlew assembleDebug && adb install app/build/outputs/apk/debug/app-debug.apk
+```
+
+### Android Tests
 
 Run instrumented tests (requires connected device/emulator):
 
@@ -41,6 +49,15 @@ Run a specific test class:
 ```bash
 cd android && ./gradlew connectedAndroidTest -Pandroid.testInstrumentationRunnerArguments.class=com.thecityandthebike.ui.components.CameraFABTest
 ```
+
+#### Java 21 Compatibility
+
+Android Studio bundles Java 21, which requires:
+- Android Gradle Plugin: 8.3.0 or later
+- Gradle: 8.4 or later
+- KSP instead of kapt for annotation processing (Hilt)
+
+If builds fail with `IllegalAccessError: superclass access check failed` related to kapt, migrate from kapt to KSP.
 
 #### Android 16 Compatibility
 
