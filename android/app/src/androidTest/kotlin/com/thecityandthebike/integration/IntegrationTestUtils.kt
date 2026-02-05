@@ -1,5 +1,6 @@
 package com.thecityandthebike.integration
 
+import android.content.Context
 import android.os.Build
 import android.util.Log
 import com.jakewharton.retrofit2.converter.kotlinx.serialization.asConverterFactory
@@ -9,9 +10,13 @@ import com.thecityandthebike.data.model.dto.RegisterRequest
 import com.thecityandthebike.data.model.dto.TokenResponse
 import kotlinx.serialization.json.Json
 import okhttp3.MediaType.Companion.toMediaType
+import okhttp3.MediaType.Companion.toMediaTypeOrNull
+import okhttp3.MultipartBody
 import okhttp3.OkHttpClient
+import okhttp3.RequestBody.Companion.asRequestBody
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
+import java.io.File
 import java.util.UUID
 import java.util.concurrent.TimeUnit
 
@@ -167,5 +172,23 @@ object IntegrationTestUtils {
             val code: Int,
             val error: String?
         ) : LoginResult()
+    }
+
+    fun copyAssetToFile(context: Context, assetName: String, cacheDir: File): File {
+        val inputStream = context.assets.open(assetName)
+        val tempFile = File.createTempFile(
+            assetName.substringBeforeLast("."),
+            ".${assetName.substringAfterLast(".")}",
+            cacheDir
+        )
+        tempFile.outputStream().use { output ->
+            inputStream.copyTo(output)
+        }
+        return tempFile
+    }
+
+    fun createImageMultipart(file: File, partName: String = "image"): MultipartBody.Part {
+        val requestFile = file.asRequestBody("image/*".toMediaTypeOrNull())
+        return MultipartBody.Part.createFormData(partName, file.name, requestFile)
     }
 }
