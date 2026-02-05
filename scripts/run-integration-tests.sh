@@ -94,10 +94,14 @@ else
     export ANDROID_HOME=~/Library/Android/sdk
     export PATH="$ANDROID_HOME/platform-tools:$PATH"
 
+    # Run only integration tests (not UI component tests)
     if [ "$VERBOSE" = true ]; then
-        ./gradlew connectedAndroidTest --info
+        ./gradlew connectedAndroidTest \
+            -Pandroid.testInstrumentationRunnerArguments.package=com.thecityandthebike.integration \
+            --info
     else
-        ./gradlew connectedAndroidTest
+        ./gradlew connectedAndroidTest \
+            -Pandroid.testInstrumentationRunnerArguments.package=com.thecityandthebike.integration
     fi
 
     log "Integration tests completed successfully!"
