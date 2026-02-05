@@ -14,10 +14,13 @@ This repository contains the database schema, FastAPI API code, and Docker Compo
 ### Project Structure
 ```
 .
-├── DESIGN.md            # Application design document
-├── README.md            # Project README
-├── docker-compose.yml   # Docker Compose config for DB and API
-├── api/                 # FastAPI service
+├── DESIGN.md                # Application design document
+├── README.md                # Project README
+├── docker-compose.yml       # Docker Compose config for DB and API
+├── docker-compose.test.yml  # Test infrastructure (isolated DB + API)
+├── scripts/
+│   └── run-integration-tests.sh  # E2E test orchestration script
+├── api/                     # FastAPI service
 │   ├── app/
 │   │   ├── __init__.py
 │   │   ├── main.py           # FastAPI app entry point
@@ -38,12 +41,17 @@ This repository contains the database schema, FastAPI API code, and Docker Compo
 │   │       └── bikes.py
 │   ├── requirements.txt
 │   └── Dockerfile
-├── android/             # Android app (Jetpack Compose)
+├── android/                 # Android app (Jetpack Compose)
 │   ├── app/
+│   │   └── src/androidTest/kotlin/com/thecityandthebike/
+│   │       └── integration/  # E2E integration tests
+│   │           ├── IntegrationTestUtils.kt
+│   │           ├── AuthIntegrationTest.kt
+│   │           └── SubmissionsIntegrationTest.kt
 │   └── gradlew
-└── db/                  # Database initialization
+└── db/                      # Database initialization
     └── init/
-        └── schema.sql   # SQL schema initialization
+        └── schema.sql       # SQL schema initialization
 ```
 
 ### Getting Started
@@ -200,6 +208,103 @@ android/
    ```bash
    adb shell am start -n com.thecityandthebike/.MainActivity
    ```
+
+## End-to-End Integration Tests
+
+The project includes end-to-end integration tests that run the Android app against a real backend. These tests verify that the Android client can successfully communicate with the API for authentication and data operations.
+
+### Prerequisites
+- Docker and Docker Compose
+- Android SDK with a connected device or running emulator
+- Java 21+ (Android Studio's bundled JDK)
+
+### Running Integration Tests
+
+The easiest way to run integration tests is using the orchestration script:
+
+```bash
+./scripts/run-integration-tests.sh
+```
+
+This script will:
+1. Start a test backend (PostgreSQL + API) using Docker Compose
+2. Wait for the API to be healthy
+3. Run the Android integration tests
+4. Clean up containers when done (even on failure)
+
+### Script Options
+
+```bash
+# Run full integration tests
+./scripts/run-integration-tests.sh
+
+# Start backend only (useful for manual testing or debugging)
+./scripts/run-integration-tests.sh --skip-android
+
+# Verbose output (shows container logs on failure)
+./scripts/run-integration-tests.sh --verbose
+```
+
+### Running Specific Test Classes
+
+You can run individual test classes directly with Gradle:
+
+```bash
+# Set up environment
+export JAVA_HOME="/Applications/Android Studio.app/Contents/jbr/Contents/Home"
+export ANDROID_HOME=~/Library/Android/sdk
+export PATH="$ANDROID_HOME/platform-tools:$PATH"
+
+# Start test backend manually
+docker compose -f docker-compose.test.yml up -d --build
+
+# Wait for API to be ready
+curl -f http://localhost:8000/docs
+
+# Run auth tests only
+cd android && ./gradlew connectedAndroidTest \
+  -Pandroid.testInstrumentationRunnerArguments.class=com.thecityandthebike.integration.AuthIntegrationTest
+
+# Run submission tests only
+cd android && ./gradlew connectedAndroidTest \
+  -Pandroid.testInstrumentationRunnerArguments.class=com.thecityandthebike.integration.SubmissionsIntegrationTest
+
+# Run all integration tests
+cd android && ./gradlew connectedAndroidTest \
+  -Pandroid.testInstrumentationRunnerArguments.package=com.thecityandthebike.integration
+
+# Clean up when done
+docker compose -f docker-compose.test.yml down -v
+```
+
+### Physical Device vs Emulator
+
+The integration tests automatically detect whether they're running on an emulator or physical device:
+
+- **Emulator**: Tests connect to `http://10.0.2.2:8000/` (Android's special alias for host localhost)
+- **Physical Device**: Tests connect to `http://10.0.0.17:8000/` (host machine's local IP)
+
+If using a physical device on a different network, update the IP address in:
+`android/app/src/androidTest/kotlin/com/thecityandthebike/integration/IntegrationTestUtils.kt`
+
+### Test Coverage
+
+The integration tests cover:
+
+**AuthIntegrationTest** (6 tests):
+- Register with valid credentials
+- Register with duplicate username/email (conflict handling)
+- Login after registration
+- Login with invalid password
+- Login with nonexistent user
+
+**SubmissionsIntegrationTest** (6 tests):
+- Get submissions with valid token
+- Get submissions without token (auth required)
+- Get user's own submissions
+- Create submission with valid data
+- Create submission without token (auth required)
+- Verify created submission appears in user's list
 
 ---
 _Phase 1: Database setup and schema initialization for The City And The Bike._

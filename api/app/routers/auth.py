@@ -39,5 +39,5 @@ def login(data: UserLogin, db: Annotated[Session, Depends(get_db)]):
             detail={"msg": "Bad username or password"},
         )
 
-    access_token = create_access_token(subject=user.user_id)
+    access_token = create_access_token(subject=str(user.user_id))
     return {"access_token": access_token, "token_type": "bearer"}
