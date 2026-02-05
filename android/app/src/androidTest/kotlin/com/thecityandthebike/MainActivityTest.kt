@@ -3,6 +3,7 @@ package com.thecityandthebike
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
+import androidx.compose.ui.test.onNodeWithText
 import dagger.hilt.android.testing.HiltAndroidRule
 import dagger.hilt.android.testing.HiltAndroidTest
 import org.junit.Rule
@@ -25,15 +26,16 @@ class MainActivityTest {
     }
 
     @Test
-    fun mainActivity_componentsVisibleAfterLaunch() {
+    fun mainActivity_loginScreenVisibleAfterLaunch() {
         composeTestRule.waitForIdle()
 
+        // App should show login screen when not authenticated
         composeTestRule
-            .onNodeWithContentDescription("Menu")
+            .onNodeWithText("The City and the Bike")
             .assertIsDisplayed()
 
         composeTestRule
-            .onNodeWithContentDescription("Add image")
+            .onNodeWithText("Sign In")
             .assertIsDisplayed()
     }
 }
