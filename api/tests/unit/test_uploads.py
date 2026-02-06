@@ -8,10 +8,10 @@ class TestGCSUploadURL:
     """Tests for GCS upload URL construction."""
 
     @patch("app.routers.uploads._get_gcs_bucket")
-    def test_gcs_upload_returns_correct_url_format(
+    def test_gcs_upload_returns_proxy_url(
         self, mock_get_gcs_bucket, client, auth_headers, monkeypatch
     ):
-        """When STORAGE_BUCKET is set, upload should return a GCS URL."""
+        """When STORAGE_BUCKET is set, upload should return a proxy URL."""
         bucket_name = "my-test-bucket"
         monkeypatch.setattr(settings, "STORAGE_BUCKET", bucket_name)
 
@@ -30,7 +30,7 @@ class TestGCSUploadURL:
 
         assert response.status_code == 201
         data = response.json()
-        assert data["url"].startswith(f"https://storage.googleapis.com/{bucket_name}/images/")
+        assert data["url"].startswith("/uploads/images/")
         assert data["filename"].endswith(".jpg")
 
         # Verify blob was created with correct path
