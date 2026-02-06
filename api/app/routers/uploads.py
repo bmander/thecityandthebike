@@ -1,8 +1,10 @@
+import mimetypes
 import os
 import uuid
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, UploadFile, File, HTTPException, status
+from fastapi.responses import FileResponse, Response
 from pydantic import BaseModel
 
 from ..config import settings
@@ -59,12 +61,32 @@ async def upload_image(
         bucket = _get_gcs_bucket()
         blob = bucket.blob(f"images/{unique_filename}")
         blob.upload_from_string(contents, content_type=image.content_type)
-        url = f"https://storage.googleapis.com/{settings.STORAGE_BUCKET}/images/{unique_filename}"
     else:
         # Save locally (development)
         file_path = os.path.join(UPLOAD_DIR, "images", unique_filename)
         with open(file_path, "wb") as f:
             f.write(contents)
-        url = f"/uploads/images/{unique_filename}"
 
+    url = f"/uploads/images/{unique_filename}"
     return UploadResponse(url=url, filename=unique_filename)
+
+
+@router.get("/images/{filename}")
+async def get_image(filename: str):
+    ext = os.path.splitext(filename)[1].lower()
+    if ext not in ALLOWED_EXTENSIONS:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Not found")
+
+    if settings.STORAGE_BUCKET:
+        bucket = _get_gcs_bucket()
+        blob = bucket.blob(f"images/{filename}")
+        if not blob.exists():
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Not found")
+        content = blob.download_as_bytes()
+        content_type = mimetypes.guess_type(filename)[0] or "application/octet-stream"
+        return Response(content=content, media_type=content_type)
+    else:
+        file_path = os.path.join(UPLOAD_DIR, "images", filename)
+        if not os.path.isfile(file_path):
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Not found")
+        return FileResponse(file_path)

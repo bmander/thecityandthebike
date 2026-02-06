@@ -4,7 +4,6 @@ import shutil
 import tempfile
 
 import pytest
-from fastapi.staticfiles import StaticFiles
 
 from app.routers.uploads import UPLOAD_DIR
 
@@ -24,17 +23,11 @@ class TestUploadsRouter:
         import app.routers.uploads as uploads_module
         uploads_module.UPLOAD_DIR = temp_dir
 
-        # Mount static files on test app for round-trip testing
-        from tests.conftest import test_app
-        test_app.mount("/uploads", StaticFiles(directory=temp_dir), name="uploads")
-
         yield
 
         # Cleanup
         shutil.rmtree(temp_dir, ignore_errors=True)
         uploads_module.UPLOAD_DIR = original_dir
-        # Remove the static files mount
-        test_app.router.routes = [r for r in test_app.router.routes if getattr(r, 'name', None) != 'uploads']
 
     def test_upload_image_success(self, client, auth_headers):
         """Test successful image upload."""
@@ -137,3 +130,8 @@ class TestUploadsRouter:
         get_response = client.get(url)
         assert get_response.status_code == 200
         assert get_response.content == image_content
+
+    def test_get_nonexistent_image_returns_404(self, client):
+        """Test that requesting a nonexistent image returns 404."""
+        response = client.get("/uploads/images/nonexistent.jpg")
+        assert response.status_code == 404
