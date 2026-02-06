@@ -6,6 +6,8 @@ plugins {
     id 'com.google.devtools.ksp'
 }
 
+def buildVersionCode = System.getenv("GITHUB_RUN_NUMBER")?.toInteger() ?: 1
+
 android {
     namespace 'com.thecityandthebike'
     compileSdk 34
@@ -26,21 +28,47 @@ android {
         applicationId "com.thecityandthebike"
         minSdk 26
         targetSdk 34
-        versionCode 1
-        versionName "1.0"
+        versionCode buildVersionCode
+        versionName "1.0.${buildVersionCode}"
 
         testInstrumentationRunner "com.thecityandthebike.HiltTestRunner"
+    }
 
-        buildConfigField "String", "BASE_URL", "\"http://10.0.2.2:8000\""
+    signingConfigs {
+        release {
+            storeFile file("../keystore/tcatb-release.keystore")
+            storePassword System.getenv("SIGNING_STORE_PASSWORD") ?: ""
+            keyAlias System.getenv("SIGNING_KEY_ALIAS") ?: ""
+            keyPassword System.getenv("SIGNING_KEY_PASSWORD") ?: ""
+        }
+    }
+
+    flavorDimensions += "environment"
+
+    productFlavors {
+        local {
+            dimension "environment"
+            buildConfigField "String", "BASE_URL", "\"http://10.0.2.2:8000\""
+        }
+        staging {
+            dimension "environment"
+            applicationIdSuffix ".staging"
+            versionNameSuffix "-staging"
+            buildConfigField "String", "BASE_URL", "\"https://tcatb-api-staging-PLACEHOLDER.a.run.app\""
+        }
+        production {
+            dimension "environment"
+            buildConfigField "String", "BASE_URL", "\"https://tcatb-api-production-PLACEHOLDER.a.run.app\""
+        }
     }
 
     buildTypes {
         release {
+            signingConfig signingConfigs.release
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
         debug {
-            buildConfigField "String", "BASE_URL", "\"http://10.0.2.2:8000\""
         }
     }
     compileOptions {

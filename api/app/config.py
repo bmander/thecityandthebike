@@ -11,6 +11,7 @@ class Settings(BaseSettings):
     PGDATABASE: str = "tcatb_dev"
     JWT_SECRET_KEY: str
     DATABASE_URL: Optional[str] = None
+    STORAGE_BUCKET: Optional[str] = None
 
     @property
     def database_url(self) -> str:

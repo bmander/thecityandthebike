@@ -66,7 +66,7 @@ jobs:
         run: chmod +x gradlew
 
       - name: Run unit tests
-        run: ./gradlew testDebugUnitTest
+        run: ./gradlew testLocalDebugUnitTest
 
       - name: Upload test results
         uses: actions/upload-artifact@v4
@@ -126,7 +126,7 @@ jobs:
           api-level: 30
           arch: x86_64
           profile: Nexus 6
-          script: cd android && ./gradlew connectedDebugAndroidTest
+          script: cd android && ./gradlew connectedLocalDebugAndroidTest
           emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim
 
       - name: Upload test results
