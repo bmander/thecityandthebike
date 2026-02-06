@@ -8,6 +8,8 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.ImageCapture
+import androidx.camera.core.resolutionselector.AspectRatioStrategy
+import androidx.camera.core.resolutionselector.ResolutionSelector
 import androidx.camera.core.ImageCaptureException
 import androidx.camera.core.Preview
 import androidx.camera.lifecycle.ProcessCameraProvider
@@ -114,6 +116,11 @@ fun PhotoCaptureScreen(
     val imageCapture = remember {
         ImageCapture.Builder()
             .setCaptureMode(ImageCapture.CAPTURE_MODE_MINIMIZE_LATENCY)
+            .setResolutionSelector(
+                ResolutionSelector.Builder()
+                    .setAspectRatioStrategy(AspectRatioStrategy.RATIO_4_3_FALLBACK_AUTO_STRATEGY)
+                    .build()
+            )
             .build()
     }
 
@@ -192,8 +199,13 @@ fun PhotoCaptureScreen(
                     cameraExecutor,
                     object : ImageCapture.OnImageSavedCallback {
                         override fun onImageSaved(output: ImageCapture.OutputFileResults) {
-                            cropToSquare(file)
+                            try {
+                                cropToSquare(file)
+                            } catch (e: Exception) {
+                                Log.e("PhotoCaptureScreen", "Square crop failed, using original", e)
+                            }
                             ContextCompat.getMainExecutor(context).execute {
+                                isCapturing = false
                                 onPhotoCaptured(uri)
                             }
                         }
