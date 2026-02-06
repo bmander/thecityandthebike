@@ -119,10 +119,6 @@ fun QrScannerScreen(
         onDispose {
             barcodeAnalyzer.close()
             cameraExecutor.shutdown()
-            try {
-                val cameraProvider = cameraProviderFuture.get()
-                cameraProvider.unbindAll()
-            } catch (_: Exception) { }
         }
     }
 

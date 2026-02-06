@@ -41,10 +41,13 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.platform.LocalContext
-import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
+import androidx.lifecycle.LifecycleOwner
 import com.thecityandthebike.util.createImageFileAndUri
 import java.util.concurrent.Executors
 
@@ -54,7 +57,7 @@ fun PhotoCaptureScreen(
     onBack: () -> Unit
 ) {
     val context = LocalContext.current
-    val lifecycleOwner = LocalLifecycleOwner.current
+    val lifecycleOwner = context as LifecycleOwner
     var hasCameraPermission by remember {
         mutableStateOf(
             ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA) ==
@@ -112,12 +115,6 @@ fun PhotoCaptureScreen(
     DisposableEffect(Unit) {
         onDispose {
             cameraExecutor.shutdown()
-            try {
-                if (cameraProviderFuture.isDone) {
-                    val cameraProvider = cameraProviderFuture.get()
-                    cameraProvider.unbindAll()
-                }
-            } catch (_: Exception) { }
         }
     }
 
@@ -146,11 +143,13 @@ fun PhotoCaptureScreen(
 
                 previewView
             },
-            modifier = Modifier.fillMaxSize()
+            modifier = Modifier
+                .fillMaxSize()
+                .testTag("camera_preview")
         )
 
         // Fender template overlay — tall narrow rounded rectangle
-        Canvas(modifier = Modifier.fillMaxSize()) {
+        Canvas(modifier = Modifier.fillMaxSize().testTag("template_overlay")) {
             val overlayWidth = size.width * 0.35f
             val overlayHeight = size.height * 0.7f
             val left = (size.width - overlayWidth) / 2
@@ -191,7 +190,8 @@ fun PhotoCaptureScreen(
             modifier = Modifier
                 .align(Alignment.BottomCenter)
                 .padding(bottom = 48.dp)
-                .size(72.dp),
+                .size(72.dp)
+                .semantics { contentDescription = "Capture photo" },
             shape = CircleShape,
             colors = ButtonDefaults.buttonColors(containerColor = Color.White)
         ) { }
