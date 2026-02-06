@@ -3,8 +3,8 @@ name: Deploy Android
 on:
   push:
     branches:
-      - develop
       - main
+      - staging
     paths:
       - 'android/**'
       - '.github/workflows/deploy-android.yml'
@@ -37,7 +37,7 @@ jobs:
   deploy-staging:
     name: Deploy to Firebase (Staging)
     needs: test
-    if: github.ref == 'refs/heads/develop'
+    if: github.ref == 'refs/heads/staging'
     runs-on: ubuntu-latest
     defaults:
       run:

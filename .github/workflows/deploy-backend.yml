@@ -3,8 +3,8 @@ name: Deploy Backend
 on:
   push:
     branches:
-      - develop
       - main
+      - staging
     paths:
       - 'api/**'
       - '.github/workflows/deploy-backend.yml'
