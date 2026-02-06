@@ -15,6 +15,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.thecityandthebike.ui.screens.LoginScreen
 import com.thecityandthebike.ui.screens.MainScreen
+import com.thecityandthebike.ui.screens.QrScannerScreen
 import com.thecityandthebike.ui.screens.RegisterScreen
 import com.thecityandthebike.ui.viewmodel.AuthViewModel
 import com.thecityandthebike.ui.viewmodel.MainViewModel
@@ -82,6 +83,24 @@ class MainActivity : ComponentActivity() {
                                 },
                                 onLoginClick = {
                                     navController.navigate("login")
+                                },
+                                onScanQrCode = {
+                                    navController.navigate("scanner")
+                                }
+                            )
+                        }
+
+                        composable("scanner") {
+                            val mainViewModel: MainViewModel = hiltViewModel(
+                                navController.getBackStackEntry("main")
+                            )
+                            QrScannerScreen(
+                                onQrCodeScanned = { qrId ->
+                                    mainViewModel.setPendingBikeQrId(qrId)
+                                    navController.popBackStack()
+                                },
+                                onBack = {
+                                    navController.popBackStack()
                                 }
                             )
                         }
