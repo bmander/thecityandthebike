@@ -1,5 +1,6 @@
 package com.thecityandthebike
 
+import android.net.Uri
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -98,7 +99,7 @@ class MainActivity : ComponentActivity() {
                         composable("scanner") {
                             QrScannerScreen(
                                 onQrCodeScanned = { qrId ->
-                                    navController.navigate("photo_capture/$qrId") {
+                                    navController.navigate("photo_capture/${Uri.encode(qrId)}") {
                                         popUpTo("scanner") { inclusive = true }
                                     }
                                 },
@@ -110,11 +111,14 @@ class MainActivity : ComponentActivity() {
 
                         composable("photo_capture/{qrId}") { backStackEntry ->
                             val qrId = backStackEntry.arguments?.getString("qrId") ?: ""
+                            if (qrId.isEmpty()) {
+                                navController.popBackStack()
+                                return@composable
+                            }
                             val mainViewModel: MainViewModel = hiltViewModel(
                                 navController.getBackStackEntry("main")
                             )
                             PhotoCaptureScreen(
-                                qrId = qrId,
                                 onPhotoCaptured = { uri ->
                                     mainViewModel.addLocalImage(uri)
                                     mainViewModel.uploadAndCreateSubmission(

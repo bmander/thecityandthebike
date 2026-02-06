@@ -69,7 +69,7 @@ fun MainScreen(
         // Camera FAB (top right) when logged in, Login FAB when not logged in
         if (isLoggedIn) {
             CameraFAB(
-                onClick = { onScanQrCode() },
+                onClick = onScanQrCode,
                 modifier = Modifier
                     .align(Alignment.TopEnd)
                     .padding(16.dp)

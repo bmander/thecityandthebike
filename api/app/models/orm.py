@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 import uuid
 
 from sqlalchemy import Column, String, DateTime, Float, Text, ForeignKey
@@ -14,9 +14,9 @@ class User(Base):
     username = Column(String(255), unique=True, nullable=False)
     email = Column(String(255), unique=True, nullable=False)
     password_hash = Column(String(255), nullable=False)
-    created_at = Column(DateTime(timezone=True), default=datetime.utcnow)
+    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
     updated_at = Column(
-        DateTime(timezone=True), default=datetime.utcnow, onupdate=datetime.utcnow
+        DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc)
     )
 
     submissions = relationship("FenderSubmission", back_populates="user")
@@ -47,7 +47,7 @@ class FenderSubmission(Base):
     latitude = Column(Float)
     longitude = Column(Float)
     captured_at = Column(DateTime(timezone=True), nullable=False)
-    uploaded_at = Column(DateTime(timezone=True), default=datetime.utcnow)
+    uploaded_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
     user_caption = Column(Text)
 
     user = relationship("User", back_populates="submissions")

@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 
 from app.dependencies import get_password_hash, create_access_token
 from app.models import User, Bike, FenderSubmission
@@ -37,8 +37,8 @@ class TestGetSubmissions:
 
         other_bike = Bike(
             bike_qr_id="BIKE-OTHER",
-            first_seen_at=datetime.utcnow(),
-            last_seen_at=datetime.utcnow(),
+            first_seen_at=datetime.now(timezone.utc),
+            last_seen_at=datetime.now(timezone.utc),
         )
         db_session.add(other_bike)
         db_session.commit()
@@ -48,7 +48,7 @@ class TestGetSubmissions:
             bike_qr_id=other_bike.bike_qr_id,
             image_url_original="https://example.com/other.jpg",
             image_url_processed="https://example.com/other-processed.jpg",
-            captured_at=datetime.utcnow(),
+            captured_at=datetime.now(timezone.utc),
         )
         db_session.add(other_submission)
         db_session.commit()
@@ -78,7 +78,7 @@ class TestCreateSubmission:
             "bike_qr_id": "NEW-BIKE-001",
             "image_url_original": "https://example.com/original.jpg",
             "image_url_processed": "https://example.com/processed.jpg",
-            "captured_at": datetime.utcnow().isoformat(),
+            "captured_at": datetime.now(timezone.utc).isoformat(),
             "latitude": 45.5231,
             "longitude": -122.6765,
             "user_caption": "My new bike submission",
@@ -112,7 +112,7 @@ class TestCreateSubmission:
             "bike_qr_id": test_bike.bike_qr_id,
             "image_url_original": "https://example.com/new.jpg",
             "image_url_processed": "https://example.com/new-processed.jpg",
-            "captured_at": datetime.utcnow().isoformat(),
+            "captured_at": datetime.now(timezone.utc).isoformat(),
         }
 
         response = client.post(
@@ -136,7 +136,7 @@ class TestCreateSubmission:
             "bike_qr_id": "MINIMAL-BIKE",
             "image_url_original": "https://example.com/original.jpg",
             "image_url_processed": "https://example.com/processed.jpg",
-            "captured_at": datetime.utcnow().isoformat(),
+            "captured_at": datetime.now(timezone.utc).isoformat(),
         }
 
         response = client.post(
@@ -155,7 +155,7 @@ class TestCreateSubmission:
         submission_data = {
             "image_url_original": "https://example.com/original.jpg",
             "image_url_processed": "https://example.com/processed.jpg",
-            "captured_at": datetime.utcnow().isoformat(),
+            "captured_at": datetime.now(timezone.utc).isoformat(),
         }
 
         response = client.post(
@@ -186,7 +186,7 @@ class TestCreateSubmission:
             "bike_qr_id": "TEST-BIKE",
             "image_url_original": "https://example.com/original.jpg",
             "image_url_processed": "https://example.com/processed.jpg",
-            "captured_at": datetime.utcnow().isoformat(),
+            "captured_at": datetime.now(timezone.utc).isoformat(),
         }
 
         response = client.post("/submissions", json=submission_data)

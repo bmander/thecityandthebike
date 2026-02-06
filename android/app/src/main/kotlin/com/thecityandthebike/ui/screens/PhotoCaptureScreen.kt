@@ -1,5 +1,3 @@
-@file:Suppress("DEPRECATION")
-
 package com.thecityandthebike.ui.screens
 
 import android.Manifest
@@ -37,10 +35,13 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.CornerRadius
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalLifecycleOwner
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
@@ -49,7 +50,6 @@ import java.util.concurrent.Executors
 
 @Composable
 fun PhotoCaptureScreen(
-    qrId: String,
     onPhotoCaptured: (Uri) -> Unit,
     onBack: () -> Unit
 ) {
@@ -100,6 +100,7 @@ fun PhotoCaptureScreen(
 
     if (!hasCameraPermission) return
 
+    var isCapturing by remember { mutableStateOf(false) }
     val cameraProviderFuture = remember { ProcessCameraProvider.getInstance(context) }
     val cameraExecutor = remember { Executors.newSingleThreadExecutor() }
     val imageCapture = remember {
@@ -112,8 +113,10 @@ fun PhotoCaptureScreen(
         onDispose {
             cameraExecutor.shutdown()
             try {
-                val cameraProvider = cameraProviderFuture.get()
-                cameraProvider.unbindAll()
+                if (cameraProviderFuture.isDone) {
+                    val cameraProvider = cameraProviderFuture.get()
+                    cameraProvider.unbindAll()
+                }
             } catch (_: Exception) { }
         }
     }
@@ -156,9 +159,9 @@ fun PhotoCaptureScreen(
 
             drawRoundRect(
                 color = Color.White.copy(alpha = 0.6f),
-                topLeft = androidx.compose.ui.geometry.Offset(left, top),
-                size = androidx.compose.ui.geometry.Size(overlayWidth, overlayHeight),
-                cornerRadius = androidx.compose.ui.geometry.CornerRadius(cornerRadius),
+                topLeft = Offset(left, top),
+                size = Size(overlayWidth, overlayHeight),
+                cornerRadius = CornerRadius(cornerRadius),
                 style = Stroke(width = 3.dp.toPx())
             )
         }
@@ -166,11 +169,12 @@ fun PhotoCaptureScreen(
         // Capture button
         Button(
             onClick = {
+                isCapturing = true
                 val (file, uri) = createImageFileAndUri(context)
                 val outputOptions = ImageCapture.OutputFileOptions.Builder(file).build()
                 imageCapture.takePicture(
                     outputOptions,
-                    cameraExecutor,
+                    ContextCompat.getMainExecutor(context),
                     object : ImageCapture.OnImageSavedCallback {
                         override fun onImageSaved(output: ImageCapture.OutputFileResults) {
                             onPhotoCaptured(uri)
@@ -178,10 +182,12 @@ fun PhotoCaptureScreen(
 
                         override fun onError(exception: ImageCaptureException) {
                             Log.e("PhotoCaptureScreen", "Photo capture failed", exception)
+                            isCapturing = false
                         }
                     }
                 )
             },
+            enabled = !isCapturing,
             modifier = Modifier
                 .align(Alignment.BottomCenter)
                 .padding(bottom = 48.dp)

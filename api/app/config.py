@@ -1,9 +1,12 @@
 from typing import Optional
 
+from pydantic import ConfigDict
 from pydantic_settings import BaseSettings
 
 
 class Settings(BaseSettings):
+    model_config = ConfigDict(env_file=".env")
+
     PGUSER: str = "tcatb"
     PGPASSWORD: str = ""
     PGHOST: str = "localhost"
@@ -27,9 +30,6 @@ class Settings(BaseSettings):
             f"postgresql://{self.PGUSER}:{self.PGPASSWORD}"
             f"@{self.PGHOST}:{self.PGPORT}/{self.PGDATABASE}"
         )
-
-    class Config:
-        env_file = ".env"
 
 
 settings = Settings()
