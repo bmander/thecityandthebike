@@ -5,7 +5,7 @@
 If a virtual environment doesn't exist, create one:
 
 ```bash
-cd api && python -m venv venv && source venv/bin/activate && pip install -r requirements.txt
+cd api && python -m venv venv && source venv/bin/activate && pip install -r requirements.txt -r requirements-dev.txt
 ```
 
 ## Testing

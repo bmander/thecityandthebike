@@ -64,7 +64,7 @@ class MainViewModel @Inject constructor(
         )
     }
 
-    fun uploadAndCreateSubmission(imageFile: File, bikeQrId: String? = null) {
+    fun uploadAndCreateSubmission(imageFile: File, bikeQrId: String? = null, localUri: Uri? = null) {
         viewModelScope.launch {
             _state.value = _state.value.copy(isUploading = true, error = null)
 
@@ -83,9 +83,15 @@ class MainViewModel @Inject constructor(
 
                     when (val createResult = submissionRepository.createSubmission(submission)) {
                         is SubmissionResult.Success -> {
+                            val updatedLocalImages = if (localUri != null) {
+                                _state.value.localImages.filter { it != localUri }
+                            } else {
+                                _state.value.localImages
+                            }
                             _state.value = _state.value.copy(
                                 isUploading = false,
-                                submissions = listOf(createResult.data) + _state.value.submissions
+                                submissions = listOf(createResult.data) + _state.value.submissions,
+                                localImages = updatedLocalImages
                             )
                         }
                         is SubmissionResult.Error -> {

@@ -22,11 +22,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import com.thecityandthebike.BuildConfig
 import com.thecityandthebike.camera.rememberCameraState
 import com.thecityandthebike.ui.components.CameraFAB
 import com.thecityandthebike.ui.components.ImageGrid
 import com.thecityandthebike.ui.components.LoginFAB
 import com.thecityandthebike.ui.viewmodel.MainViewModel
+import com.thecityandthebike.util.uriToFile
 
 @Composable
 fun MainScreen(
@@ -45,8 +47,10 @@ fun MainScreen(
             currentPhotoUri = currentPhotoUri,
             onPhotoTaken = { uri ->
                 viewModel.addLocalImage(uri)
-                // In a full implementation, we would upload the image here
-                // For now, just adding to local state
+                val file = uriToFile(context, uri)
+                if (file != null) {
+                    viewModel.uploadAndCreateSubmission(file, localUri = uri)
+                }
             }
         )
     } else {
@@ -56,8 +60,8 @@ fun MainScreen(
     // Combine server submissions with local images
     val serverImageUris = state.submissions.mapNotNull { submission ->
         submission.imageUrlOriginal?.let { url ->
-            // Convert server URL to full URL if needed
-            Uri.parse(url)
+            if (url.startsWith("http")) Uri.parse(url)
+            else Uri.parse(BuildConfig.BASE_URL + url)
         }
     }
     val allImageUris = state.localImages + serverImageUris

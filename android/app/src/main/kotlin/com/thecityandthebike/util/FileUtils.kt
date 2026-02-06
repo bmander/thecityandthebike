@@ -14,3 +14,10 @@ fun createImageUri(context: Context): Uri {
         imageFile
     )
 }
+
+fun uriToFile(context: Context, uri: Uri): File? {
+    val inputStream = context.contentResolver.openInputStream(uri) ?: return null
+    val file = File(context.cacheDir, "upload_${System.currentTimeMillis()}.jpg")
+    file.outputStream().use { output -> inputStream.copyTo(output) }
+    return file
+}
