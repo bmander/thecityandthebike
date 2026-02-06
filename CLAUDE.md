@@ -22,7 +22,13 @@ This prevents overwhelming output when there are multiple failures from the same
 
 ### Android Builds
 
-Before running Android builds or tests, set the required environment variables:
+Before running Android builds or tests, ensure `android/local.properties` exists with the SDK path. If it's missing (it's gitignored), create it:
+
+```bash
+echo "sdk.dir=$HOME/Library/Android/sdk" > android/local.properties
+```
+
+Also set the required environment variables:
 
 ```bash
 export JAVA_HOME="/Applications/Android Studio.app/Contents/jbr/Contents/Home"
