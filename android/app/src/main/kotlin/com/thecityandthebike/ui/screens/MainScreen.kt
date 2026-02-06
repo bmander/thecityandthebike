@@ -14,22 +14,16 @@ import androidx.compose.material3.Snackbar
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import com.thecityandthebike.BuildConfig
-import com.thecityandthebike.camera.rememberCameraState
 import com.thecityandthebike.ui.components.CameraFAB
 import com.thecityandthebike.ui.components.ImageGrid
 import com.thecityandthebike.ui.components.LoginFAB
 import com.thecityandthebike.ui.viewmodel.MainViewModel
-import java.io.File
 
 @Composable
 fun MainScreen(
@@ -39,36 +33,7 @@ fun MainScreen(
     onLoginClick: () -> Unit,
     onScanQrCode: () -> Unit
 ) {
-    val context = LocalContext.current
     val state by viewModel.state.collectAsState()
-    val currentPhotoUri = remember { mutableStateOf<Uri?>(null) }
-    val currentPhotoFile = remember { mutableStateOf<File?>(null) }
-
-    val cameraState = if (isLoggedIn) {
-        rememberCameraState(
-            context = context,
-            currentPhotoUri = currentPhotoUri,
-            currentPhotoFile = currentPhotoFile,
-            onPhotoTaken = { uri, file ->
-                viewModel.addLocalImage(uri)
-                // Read directly from StateFlow to avoid stale closure capture
-                val qrId = viewModel.state.value.pendingBikeQrId
-                viewModel.uploadAndCreateSubmission(context.contentResolver, context.cacheDir, uri, qrId)
-                if (qrId != null) {
-                    viewModel.clearPendingBikeQrId()
-                }
-            }
-        )
-    } else {
-        null
-    }
-
-    // Auto-launch camera when QR code has been scanned
-    LaunchedEffect(state.pendingBikeQrId) {
-        if (state.pendingBikeQrId != null && cameraState != null) {
-            cameraState.launchCamera()
-        }
-    }
 
     // Combine server submissions with local images
     val serverImageUris = state.submissions.mapNotNull { submission ->
@@ -102,7 +67,7 @@ fun MainScreen(
         }
 
         // Camera FAB (top right) when logged in, Login FAB when not logged in
-        if (isLoggedIn && cameraState != null) {
+        if (isLoggedIn) {
             CameraFAB(
                 onClick = { onScanQrCode() },
                 modifier = Modifier

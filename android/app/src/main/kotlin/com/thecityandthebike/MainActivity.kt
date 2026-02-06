@@ -17,6 +17,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.thecityandthebike.ui.screens.LoginScreen
 import com.thecityandthebike.ui.screens.MainScreen
+import com.thecityandthebike.ui.screens.PhotoCaptureScreen
 import com.thecityandthebike.ui.screens.QrScannerScreen
 import com.thecityandthebike.ui.screens.RegisterScreen
 import com.thecityandthebike.ui.viewmodel.AuthViewModel
@@ -95,13 +96,34 @@ class MainActivity : ComponentActivity() {
                         }
 
                         composable("scanner") {
+                            QrScannerScreen(
+                                onQrCodeScanned = { qrId ->
+                                    navController.navigate("photo_capture/$qrId") {
+                                        popUpTo("scanner") { inclusive = true }
+                                    }
+                                },
+                                onBack = {
+                                    navController.popBackStack()
+                                }
+                            )
+                        }
+
+                        composable("photo_capture/{qrId}") { backStackEntry ->
+                            val qrId = backStackEntry.arguments?.getString("qrId") ?: ""
                             val mainViewModel: MainViewModel = hiltViewModel(
                                 navController.getBackStackEntry("main")
                             )
-                            QrScannerScreen(
-                                onQrCodeScanned = { qrId ->
-                                    mainViewModel.setPendingBikeQrId(qrId)
-                                    navController.popBackStack()
+                            PhotoCaptureScreen(
+                                qrId = qrId,
+                                onPhotoCaptured = { uri ->
+                                    mainViewModel.addLocalImage(uri)
+                                    mainViewModel.uploadAndCreateSubmission(
+                                        contentResolver,
+                                        cacheDir,
+                                        uri,
+                                        qrId
+                                    )
+                                    navController.popBackStack("main", inclusive = false)
                                 },
                                 onBack = {
                                     navController.popBackStack()
