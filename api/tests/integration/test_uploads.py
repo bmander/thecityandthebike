@@ -4,6 +4,7 @@ import shutil
 import tempfile
 
 import pytest
+from fastapi.staticfiles import StaticFiles
 
 from app.routers.uploads import UPLOAD_DIR
 
@@ -17,16 +18,23 @@ class TestUploadsRouter:
         # Store original dir
         original_dir = UPLOAD_DIR
 
-        # Create temp dir
+        # Create temp dir with images subdirectory
         temp_dir = tempfile.mkdtemp()
+        os.makedirs(os.path.join(temp_dir, "images"), exist_ok=True)
         import app.routers.uploads as uploads_module
         uploads_module.UPLOAD_DIR = temp_dir
+
+        # Mount static files on test app for round-trip testing
+        from tests.conftest import test_app
+        test_app.mount("/uploads", StaticFiles(directory=temp_dir), name="uploads")
 
         yield
 
         # Cleanup
         shutil.rmtree(temp_dir, ignore_errors=True)
         uploads_module.UPLOAD_DIR = original_dir
+        # Remove the static files mount
+        test_app.router.routes = [r for r in test_app.router.routes if getattr(r, 'name', None) != 'uploads']
 
     def test_upload_image_success(self, client, auth_headers):
         """Test successful image upload."""
@@ -111,3 +119,21 @@ class TestUploadsRouter:
             assert response.status_code == 201, f"Failed for extension {ext}"
             data = response.json()
             assert data["filename"].endswith(ext)
+
+    def test_upload_then_retrieve_round_trip(self, client, auth_headers):
+        """Test that an uploaded file can be retrieved via its returned URL."""
+        image_content = b"\xff\xd8\xff\xe0\x00\x10JFIF\x00" + b"\x00" * 100
+
+        # Upload
+        upload_response = client.post(
+            "/uploads/images",
+            headers=auth_headers,
+            files={"image": ("test.jpg", io.BytesIO(image_content), "image/jpeg")},
+        )
+        assert upload_response.status_code == 201
+        url = upload_response.json()["url"]
+
+        # Retrieve
+        get_response = client.get(url)
+        assert get_response.status_code == 200
+        assert get_response.content == image_content

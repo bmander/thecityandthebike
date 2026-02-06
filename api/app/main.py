@@ -1,4 +1,3 @@
-import os
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Request
@@ -39,6 +38,5 @@ app.include_router(bikes_router)
 app.include_router(uploads_router)
 
 if not settings.STORAGE_BUCKET:
-    upload_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "uploads")
-    os.makedirs(upload_dir, exist_ok=True)
-    app.mount("/uploads", StaticFiles(directory=upload_dir), name="uploads")
+    from .routers.uploads import UPLOAD_DIR
+    app.mount("/uploads", StaticFiles(directory=UPLOAD_DIR), name="uploads")

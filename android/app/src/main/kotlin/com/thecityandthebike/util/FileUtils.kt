@@ -1,5 +1,6 @@
 package com.thecityandthebike.util
 
+import android.content.ContentResolver
 import android.content.Context
 import android.net.Uri
 import androidx.core.content.FileProvider
@@ -15,9 +16,14 @@ fun createImageUri(context: Context): Uri {
     )
 }
 
-fun uriToFile(context: Context, uri: Uri): File? {
-    val inputStream = context.contentResolver.openInputStream(uri) ?: return null
-    val file = File(context.cacheDir, "upload_${System.currentTimeMillis()}.jpg")
-    file.outputStream().use { output -> inputStream.copyTo(output) }
+fun uriToFile(contentResolver: ContentResolver, cacheDir: File, uri: Uri): File? {
+    val inputStream = contentResolver.openInputStream(uri) ?: return null
+    val file = File(cacheDir, "upload_${System.currentTimeMillis()}.jpg")
+    inputStream.use { input ->
+        file.outputStream().use { output -> input.copyTo(output) }
+    }
     return file
 }
+
+fun uriToFile(context: Context, uri: Uri): File? =
+    uriToFile(context.contentResolver, context.cacheDir, uri)

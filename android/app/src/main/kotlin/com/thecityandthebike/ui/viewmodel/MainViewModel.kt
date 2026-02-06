@@ -1,5 +1,6 @@
 package com.thecityandthebike.ui.viewmodel
 
+import android.content.ContentResolver
 import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -7,11 +8,14 @@ import com.thecityandthebike.data.model.dto.SubmissionCreate
 import com.thecityandthebike.data.model.dto.SubmissionResponse
 import com.thecityandthebike.data.repository.SubmissionRepository
 import com.thecityandthebike.data.repository.SubmissionResult
+import com.thecityandthebike.util.uriToFile
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.io.File
 import java.time.Instant
 import java.time.format.DateTimeFormatter
@@ -64,50 +68,65 @@ class MainViewModel @Inject constructor(
         )
     }
 
-    fun uploadAndCreateSubmission(imageFile: File, bikeQrId: String? = null, localUri: Uri? = null) {
+    fun uploadAndCreateSubmission(contentResolver: ContentResolver, cacheDir: File, localUri: Uri, bikeQrId: String? = null) {
         viewModelScope.launch {
             _state.value = _state.value.copy(isUploading = true, error = null)
 
-            // First upload the image
-            when (val uploadResult = submissionRepository.uploadImage(imageFile)) {
-                is SubmissionResult.Success -> {
-                    val imageUrl = uploadResult.data.url
+            // Convert URI to file off the main thread
+            val imageFile = withContext(Dispatchers.IO) {
+                uriToFile(contentResolver, cacheDir, localUri)
+            }
 
-                    // Then create the submission
-                    val submission = SubmissionCreate(
-                        bikeQrId = bikeQrId ?: UUID.randomUUID().toString(),
-                        imageUrlOriginal = imageUrl,
-                        imageUrlProcessed = imageUrl,
-                        capturedAt = DateTimeFormatter.ISO_INSTANT.format(Instant.now())
-                    )
+            if (imageFile == null) {
+                _state.value = _state.value.copy(
+                    isUploading = false,
+                    localImages = _state.value.localImages.filter { it != localUri },
+                    error = "Could not read image file"
+                )
+                return@launch
+            }
 
-                    when (val createResult = submissionRepository.createSubmission(submission)) {
-                        is SubmissionResult.Success -> {
-                            val updatedLocalImages = if (localUri != null) {
-                                _state.value.localImages.filter { it != localUri }
-                            } else {
-                                _state.value.localImages
+            try {
+                // First upload the image
+                when (val uploadResult = submissionRepository.uploadImage(imageFile)) {
+                    is SubmissionResult.Success -> {
+                        val imageUrl = uploadResult.data.url
+
+                        // Then create the submission
+                        val submission = SubmissionCreate(
+                            bikeQrId = bikeQrId ?: UUID.randomUUID().toString(),
+                            imageUrlOriginal = imageUrl,
+                            imageUrlProcessed = imageUrl,
+                            capturedAt = DateTimeFormatter.ISO_INSTANT.format(Instant.now())
+                        )
+
+                        when (val createResult = submissionRepository.createSubmission(submission)) {
+                            is SubmissionResult.Success -> {
+                                _state.value = _state.value.copy(
+                                    isUploading = false,
+                                    submissions = listOf(createResult.data) + _state.value.submissions,
+                                    localImages = _state.value.localImages.filter { it != localUri }
+                                )
                             }
-                            _state.value = _state.value.copy(
-                                isUploading = false,
-                                submissions = listOf(createResult.data) + _state.value.submissions,
-                                localImages = updatedLocalImages
-                            )
-                        }
-                        is SubmissionResult.Error -> {
-                            _state.value = _state.value.copy(
-                                isUploading = false,
-                                error = createResult.message
-                            )
+                            is SubmissionResult.Error -> {
+                                _state.value = _state.value.copy(
+                                    isUploading = false,
+                                    localImages = _state.value.localImages.filter { it != localUri },
+                                    error = createResult.message
+                                )
+                            }
                         }
                     }
+                    is SubmissionResult.Error -> {
+                        _state.value = _state.value.copy(
+                            isUploading = false,
+                            localImages = _state.value.localImages.filter { it != localUri },
+                            error = uploadResult.message
+                        )
+                    }
                 }
-                is SubmissionResult.Error -> {
-                    _state.value = _state.value.copy(
-                        isUploading = false,
-                        error = uploadResult.message
-                    )
-                }
+            } finally {
+                imageFile.delete()
             }
         }
     }

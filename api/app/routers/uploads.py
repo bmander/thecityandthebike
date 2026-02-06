@@ -16,7 +16,7 @@ MAX_FILE_SIZE = 10 * 1024 * 1024  # 10 MB
 
 # Local upload dir (used when STORAGE_BUCKET is not set)
 UPLOAD_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "uploads")
-os.makedirs(UPLOAD_DIR, exist_ok=True)
+os.makedirs(os.path.join(UPLOAD_DIR, "images"), exist_ok=True)
 
 
 def _get_gcs_bucket():
@@ -62,7 +62,7 @@ async def upload_image(
         url = f"https://storage.googleapis.com/{settings.STORAGE_BUCKET}/images/{unique_filename}"
     else:
         # Save locally (development)
-        file_path = os.path.join(UPLOAD_DIR, unique_filename)
+        file_path = os.path.join(UPLOAD_DIR, "images", unique_filename)
         with open(file_path, "wb") as f:
             f.write(contents)
         url = f"/uploads/images/{unique_filename}"

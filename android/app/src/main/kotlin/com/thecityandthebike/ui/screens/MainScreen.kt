@@ -28,7 +28,6 @@ import com.thecityandthebike.ui.components.CameraFAB
 import com.thecityandthebike.ui.components.ImageGrid
 import com.thecityandthebike.ui.components.LoginFAB
 import com.thecityandthebike.ui.viewmodel.MainViewModel
-import com.thecityandthebike.util.uriToFile
 
 @Composable
 fun MainScreen(
@@ -47,10 +46,7 @@ fun MainScreen(
             currentPhotoUri = currentPhotoUri,
             onPhotoTaken = { uri ->
                 viewModel.addLocalImage(uri)
-                val file = uriToFile(context, uri)
-                if (file != null) {
-                    viewModel.uploadAndCreateSubmission(file, localUri = uri)
-                }
+                viewModel.uploadAndCreateSubmission(context.contentResolver, context.cacheDir, uri)
             }
         )
     } else {
