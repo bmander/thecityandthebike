@@ -1,7 +1,12 @@
+@file:Suppress("DEPRECATION")
+
 package com.thecityandthebike.ui.screens
 
 import android.Manifest
 import android.content.pm.PackageManager
+import android.os.Handler
+import android.os.Looper
+import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.camera.core.CameraSelector
@@ -44,6 +49,7 @@ import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
 import com.thecityandthebike.camera.BarcodeAnalyzer
 import java.util.concurrent.Executors
+import java.util.concurrent.atomic.AtomicBoolean
 
 @Composable
 fun QrScannerScreen(
@@ -52,19 +58,19 @@ fun QrScannerScreen(
 ) {
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
-    var hasScanned by remember { mutableStateOf(false) }
     var hasCameraPermission by remember {
         mutableStateOf(
             ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA) ==
                 PackageManager.PERMISSION_GRANTED
         )
     }
+    var permissionDenied by remember { mutableStateOf(false) }
 
     val permissionLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestPermission()
     ) { granted ->
         hasCameraPermission = granted
-        if (!granted) onBack()
+        if (!granted) permissionDenied = true
     }
 
     LaunchedEffect(Unit) {
@@ -73,13 +79,51 @@ fun QrScannerScreen(
         }
     }
 
+    if (permissionDenied) {
+        Box(modifier = Modifier.fillMaxSize()) {
+            Text(
+                text = "Camera permission is required to scan QR codes",
+                style = MaterialTheme.typography.bodyLarge,
+                modifier = Modifier.align(Alignment.Center).padding(32.dp)
+            )
+            IconButton(
+                onClick = onBack,
+                modifier = Modifier
+                    .align(Alignment.TopStart)
+                    .padding(16.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                    contentDescription = "Back"
+                )
+            }
+        }
+        return
+    }
+
     if (!hasCameraPermission) return
 
     val cameraProviderFuture = remember { ProcessCameraProvider.getInstance(context) }
     val cameraExecutor = remember { Executors.newSingleThreadExecutor() }
+    val hasScanned = remember { AtomicBoolean(false) }
+    val mainHandler = remember { Handler(Looper.getMainLooper()) }
+    val barcodeAnalyzer = remember {
+        BarcodeAnalyzer { qrValue ->
+            if (hasScanned.compareAndSet(false, true)) {
+                mainHandler.post { onQrCodeScanned(qrValue) }
+            }
+        }
+    }
 
     DisposableEffect(Unit) {
-        onDispose { cameraExecutor.shutdown() }
+        onDispose {
+            barcodeAnalyzer.close()
+            cameraExecutor.shutdown()
+            try {
+                val cameraProvider = cameraProviderFuture.get()
+                cameraProvider.unbindAll()
+            } catch (_: Exception) { }
+        }
     }
 
     Box(modifier = Modifier.fillMaxSize()) {
@@ -94,23 +138,22 @@ fun QrScannerScreen(
                     .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
                     .build()
                     .also { analysis ->
-                        analysis.setAnalyzer(cameraExecutor, BarcodeAnalyzer { qrValue ->
-                            if (!hasScanned) {
-                                hasScanned = true
-                                onQrCodeScanned(qrValue)
-                            }
-                        })
+                        analysis.setAnalyzer(cameraExecutor, barcodeAnalyzer)
                     }
 
                 cameraProviderFuture.addListener({
-                    val cameraProvider = cameraProviderFuture.get()
-                    cameraProvider.unbindAll()
-                    cameraProvider.bindToLifecycle(
-                        lifecycleOwner,
-                        CameraSelector.DEFAULT_BACK_CAMERA,
-                        preview,
-                        imageAnalysis
-                    )
+                    try {
+                        val cameraProvider = cameraProviderFuture.get()
+                        cameraProvider.unbindAll()
+                        cameraProvider.bindToLifecycle(
+                            lifecycleOwner,
+                            CameraSelector.DEFAULT_BACK_CAMERA,
+                            preview,
+                            imageAnalysis
+                        )
+                    } catch (e: Exception) {
+                        Log.e("QrScannerScreen", "Camera initialization failed", e)
+                    }
                 }, ContextCompat.getMainExecutor(ctx))
 
                 previewView

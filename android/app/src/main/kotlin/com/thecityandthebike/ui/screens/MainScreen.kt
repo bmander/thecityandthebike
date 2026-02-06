@@ -36,7 +36,7 @@ fun MainScreen(
     isLoggedIn: Boolean,
     onLogout: () -> Unit,
     onLoginClick: () -> Unit,
-    onScanQrCode: () -> Unit = {}
+    onScanQrCode: () -> Unit
 ) {
     val context = LocalContext.current
     val state by viewModel.state.collectAsState()
@@ -50,7 +50,8 @@ fun MainScreen(
             currentPhotoFile = currentPhotoFile,
             onPhotoTaken = { uri, file ->
                 viewModel.addLocalImage(uri)
-                val qrId = state.pendingBikeQrId
+                // Read directly from StateFlow to avoid stale closure capture
+                val qrId = viewModel.state.value.pendingBikeQrId
                 if (qrId != null) {
                     viewModel.uploadAndCreateSubmission(file, qrId)
                     viewModel.clearPendingBikeQrId()

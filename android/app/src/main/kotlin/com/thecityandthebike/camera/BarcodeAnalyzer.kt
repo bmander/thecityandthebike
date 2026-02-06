@@ -1,5 +1,6 @@
 package com.thecityandthebike.camera
 
+import android.util.Log
 import androidx.annotation.OptIn
 import androidx.camera.core.ExperimentalGetImage
 import androidx.camera.core.ImageAnalysis
@@ -13,6 +14,7 @@ class BarcodeAnalyzer(
     private val onBarcodeDetected: (String) -> Unit
 ) : ImageAnalysis.Analyzer {
 
+    private val scanner = BarcodeScanning.getClient()
     private val isProcessing = AtomicBoolean(false)
 
     @OptIn(ExperimentalGetImage::class)
@@ -30,7 +32,6 @@ class BarcodeAnalyzer(
         }
 
         val inputImage = InputImage.fromMediaImage(mediaImage, imageProxy.imageInfo.rotationDegrees)
-        val scanner = BarcodeScanning.getClient()
 
         scanner.process(inputImage)
             .addOnSuccessListener { barcodes ->
@@ -38,9 +39,16 @@ class BarcodeAnalyzer(
                     ?.rawValue
                     ?.let { onBarcodeDetected(it) }
             }
+            .addOnFailureListener { e ->
+                Log.w("BarcodeAnalyzer", "Barcode scanning failed", e)
+            }
             .addOnCompleteListener {
                 isProcessing.set(false)
                 imageProxy.close()
             }
+    }
+
+    fun close() {
+        scanner.close()
     }
 }

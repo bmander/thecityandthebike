@@ -2,7 +2,7 @@ package com.thecityandthebike.ui.util
 
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
-import com.thecityandthebike.util.createImageUri
+import com.thecityandthebike.util.createImageFileAndUri
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotEquals
 import org.junit.Assert.assertNotNull
@@ -16,14 +16,15 @@ class FileUtilsInstrumentedTest {
     private val context = InstrumentationRegistry.getInstrumentation().targetContext
 
     @Test
-    fun createImageUri_returnsNonNullUri() {
-        val uri = createImageUri(context)
-        assertNotNull("createImageUri should return a non-null URI", uri)
+    fun createImageFileAndUri_returnsNonNullPair() {
+        val (file, uri) = createImageFileAndUri(context)
+        assertNotNull("File should not be null", file)
+        assertNotNull("URI should not be null", uri)
     }
 
     @Test
-    fun createImageUri_hasContentScheme() {
-        val uri = createImageUri(context)
+    fun createImageFileAndUri_uriHasContentScheme() {
+        val (_, uri) = createImageFileAndUri(context)
         assertEquals(
             "URI should have content:// scheme",
             "content",
@@ -32,8 +33,8 @@ class FileUtilsInstrumentedTest {
     }
 
     @Test
-    fun createImageUri_hasCorrectAuthority() {
-        val uri = createImageUri(context)
+    fun createImageFileAndUri_uriHasCorrectAuthority() {
+        val (_, uri) = createImageFileAndUri(context)
         val expectedAuthority = "${context.packageName}.fileprovider"
         assertEquals(
             "URI should have correct authority",
@@ -43,25 +44,30 @@ class FileUtilsInstrumentedTest {
     }
 
     @Test
-    fun createImageUri_generatesUniqueUris() {
-        val uri1 = createImageUri(context)
-        // Small delay to ensure different timestamps
+    fun createImageFileAndUri_generatesUniqueResults() {
+        val (file1, uri1) = createImageFileAndUri(context)
         Thread.sleep(10)
-        val uri2 = createImageUri(context)
+        val (file2, uri2) = createImageFileAndUri(context)
 
-        assertNotEquals(
-            "Each call should generate a unique URI",
-            uri1,
-            uri2
+        assertNotEquals("Each call should generate a unique file", file1, file2)
+        assertNotEquals("Each call should generate a unique URI", uri1, uri2)
+    }
+
+    @Test
+    fun createImageFileAndUri_fileHasJpgExtension() {
+        val (file, _) = createImageFileAndUri(context)
+        assertTrue(
+            "File name should end with .jpg",
+            file.name.endsWith(".jpg")
         )
     }
 
     @Test
-    fun createImageUri_pathContainsJpgExtension() {
-        val uri = createImageUri(context)
+    fun createImageFileAndUri_fileIsInImagesDir() {
+        val (file, _) = createImageFileAndUri(context)
         assertTrue(
-            "URI path should contain .jpg extension",
-            uri.path?.endsWith(".jpg") == true
+            "File should be in the images cache directory",
+            file.parentFile?.name == "images"
         )
     }
 }
