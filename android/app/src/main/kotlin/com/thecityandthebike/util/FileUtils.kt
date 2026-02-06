@@ -2,6 +2,8 @@ package com.thecityandthebike.util
 
 import android.content.ContentResolver
 import android.content.Context
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.net.Uri
 import androidx.core.content.FileProvider
 import java.io.File
@@ -28,3 +30,17 @@ fun uriToFile(contentResolver: ContentResolver, cacheDir: File, uri: Uri): File?
 
 fun uriToFile(context: Context, uri: Uri): File? =
     uriToFile(context.contentResolver, context.cacheDir, uri)
+
+fun cropToSquare(file: File): File {
+    val bitmap = BitmapFactory.decodeFile(file.absolutePath)
+    val size = minOf(bitmap.width, bitmap.height)
+    val x = (bitmap.width - size) / 2
+    val y = (bitmap.height - size) / 2
+    val cropped = Bitmap.createBitmap(bitmap, x, y, size, size)
+    file.outputStream().use { out ->
+        cropped.compress(Bitmap.CompressFormat.JPEG, 90, out)
+    }
+    if (cropped !== bitmap) cropped.recycle()
+    bitmap.recycle()
+    return file
+}
