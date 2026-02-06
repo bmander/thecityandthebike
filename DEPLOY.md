@@ -131,7 +131,7 @@ gcloud secrets versions access latest --secret=SECRET_NAME --project=tcatb-app
 | `FIREBASE_SERVICE_ACCOUNT` | Firebase service account JSON |
 | `PLAY_STORE_SERVICE_ACCOUNT_JSON` | Play Store service account JSON |
 
-Currently configured: `GCP_PROJECT_ID`, `GCP_SA_KEY`. Android secrets are pending setup.
+All secrets above are configured except `PLAY_STORE_SERVICE_ACCOUNT_JSON` (pending Play Store setup).
 
 ## Rollback
 
@@ -168,9 +168,33 @@ cloud-sql-proxy tcatb-app:us-central1:tcatb-staging-db &
 psql "host=127.0.0.1 port=5432 user=tcatb dbname=tcatb"
 ```
 
+## Firebase App Distribution
+
+- **Firebase Project:** `tcatb-app` (linked to GCP project)
+- **Staging App ID:** `1:821600862601:android:53799c0cc0b1dfb7c4a158`
+- **Package:** `com.thecityandthebike.staging`
+- **Tester Group:** `internal-testers`
+- **Console:** https://console.firebase.google.com/project/tcatb-app/appdistribution
+
+### Managing Testers
+
+```bash
+# Add a tester
+firebase appdistribution:testers:add EMAIL --project=tcatb-app --group-alias internal-testers
+
+# List testers
+firebase appdistribution:testers:list --project=tcatb-app
+```
+
+## IAM Notes
+
+The Cloud Run runtime service account (`821600862601-compute@developer.gserviceaccount.com`) needs secret-level `roles/secretmanager.secretAccessor` bindings on each secret it accesses. Project-level binding alone is insufficient.
+
+The deployer service account (`github-deployer`) needs `roles/iam.serviceAccountUser` on the runtime service account to deploy Cloud Run revisions.
+
 ## Remaining Setup
 
-- [ ] Generate Android release keystore and add signing secrets to GitHub
-- [ ] Set up Firebase project and App Distribution
+- [x] Generate Android release keystore and add signing secrets to GitHub
+- [x] Set up Firebase project and App Distribution
 - [ ] Create Google Play developer account and app listing
 - [ ] First production deploy (then update production `BASE_URL` in `android/app/build.gradle`)
