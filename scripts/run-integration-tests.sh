@@ -96,11 +96,11 @@ else
 
     # Run only integration tests (not UI component tests)
     if [ "$VERBOSE" = true ]; then
-        ./gradlew connectedAndroidTest \
+        ./gradlew connectedLocalDebugAndroidTest \
             -Pandroid.testInstrumentationRunnerArguments.package=com.thecityandthebike.integration \
             --info
     else
-        ./gradlew connectedAndroidTest \
+        ./gradlew connectedLocalDebugAndroidTest \
             -Pandroid.testInstrumentationRunnerArguments.package=com.thecityandthebike.integration
     fi
 

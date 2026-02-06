@@ -24,6 +24,11 @@ async def generic_exception_handler(request: Request, exc: Exception):
     )
 
 
+@app.get("/health")
+async def health():
+    return {"status": "healthy"}
+
+
 app.include_router(auth_router)
 app.include_router(users_router)
 app.include_router(submissions_router)
