@@ -23,7 +23,8 @@ data class MainState(
     val submissions: List<SubmissionResponse> = emptyList(),
     val localImages: List<Uri> = emptyList(),
     val error: String? = null,
-    val isUploading: Boolean = false
+    val isUploading: Boolean = false,
+    val pendingBikeQrId: String? = null
 )
 
 @HiltViewModel
@@ -108,5 +109,13 @@ class MainViewModel @Inject constructor(
 
     fun clearError() {
         _state.value = _state.value.copy(error = null)
+    }
+
+    fun setPendingBikeQrId(qrId: String) {
+        _state.value = _state.value.copy(pendingBikeQrId = qrId)
+    }
+
+    fun clearPendingBikeQrId() {
+        _state.value = _state.value.copy(pendingBikeQrId = null)
     }
 }

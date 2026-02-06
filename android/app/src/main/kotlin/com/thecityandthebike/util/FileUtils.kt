@@ -14,3 +14,14 @@ fun createImageUri(context: Context): Uri {
         imageFile
     )
 }
+
+fun createImageFileAndUri(context: Context): Pair<File, Uri> {
+    val imageDir = File(context.cacheDir, "images").apply { mkdirs() }
+    val imageFile = File(imageDir, "photo_${System.currentTimeMillis()}.jpg")
+    val uri = FileProvider.getUriForFile(
+        context,
+        "${context.packageName}.fileprovider",
+        imageFile
+    )
+    return imageFile to uri
+}

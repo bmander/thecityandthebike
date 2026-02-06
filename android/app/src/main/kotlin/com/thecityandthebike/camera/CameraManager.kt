@@ -11,11 +11,13 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.remember
 import androidx.core.content.ContextCompat
-import com.thecityandthebike.util.createImageUri
+import com.thecityandthebike.util.createImageFileAndUri
+import java.io.File
 
 class CameraState(
     private val context: Context,
     private val currentPhotoUri: MutableState<Uri?>,
+    private val currentPhotoFile: MutableState<File?>,
     private val cameraLauncher: ManagedActivityResultLauncher<Uri, Boolean>,
     private val permissionLauncher: ManagedActivityResultLauncher<String, Boolean>
 ) {
@@ -25,7 +27,8 @@ class CameraState(
                 context,
                 Manifest.permission.CAMERA
             ) == PackageManager.PERMISSION_GRANTED -> {
-                val uri = createImageUri(context)
+                val (file, uri) = createImageFileAndUri(context)
+                currentPhotoFile.value = file
                 currentPhotoUri.value = uri
                 cameraLauncher.launch(uri)
             }
@@ -40,14 +43,17 @@ class CameraState(
 fun rememberCameraState(
     context: Context,
     currentPhotoUri: MutableState<Uri?>,
-    onPhotoTaken: (Uri) -> Unit
+    currentPhotoFile: MutableState<File?>,
+    onPhotoTaken: (Uri, File) -> Unit
 ): CameraState {
     val cameraLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.TakePicture()
     ) { success ->
         if (success) {
-            currentPhotoUri.value?.let { uri ->
-                onPhotoTaken(uri)
+            val uri = currentPhotoUri.value
+            val file = currentPhotoFile.value
+            if (uri != null && file != null) {
+                onPhotoTaken(uri, file)
             }
         }
     }
@@ -56,13 +62,14 @@ fun rememberCameraState(
         contract = ActivityResultContracts.RequestPermission()
     ) { granted ->
         if (granted) {
-            val uri = createImageUri(context)
+            val (file, uri) = createImageFileAndUri(context)
+            currentPhotoFile.value = file
             currentPhotoUri.value = uri
             cameraLauncher.launch(uri)
         }
     }
 
-    return remember(context, currentPhotoUri, cameraLauncher, permissionLauncher) {
-        CameraState(context, currentPhotoUri, cameraLauncher, permissionLauncher)
+    return remember(context, currentPhotoUri, currentPhotoFile, cameraLauncher, permissionLauncher) {
+        CameraState(context, currentPhotoUri, currentPhotoFile, cameraLauncher, permissionLauncher)
     }
 }
