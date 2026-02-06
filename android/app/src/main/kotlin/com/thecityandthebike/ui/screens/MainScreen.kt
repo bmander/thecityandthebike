@@ -47,7 +47,8 @@ fun MainScreen(
     Box(modifier = Modifier.fillMaxSize()) {
         ImageGrid(
             imageUris = allImageUris,
-            modifier = Modifier.fillMaxSize()
+            modifier = Modifier.fillMaxSize(),
+            uploadingUris = state.localImages.toSet()
         )
 
         // Logout button (top left) - only shown when logged in
@@ -83,8 +84,8 @@ fun MainScreen(
             )
         }
 
-        // Loading indicator
-        if (state.isLoading || state.isUploading) {
+        // Loading indicator (initial data fetch only)
+        if (state.isLoading) {
             CircularProgressIndicator(
                 modifier = Modifier.align(Alignment.Center)
             )
