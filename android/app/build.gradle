@@ -54,7 +54,7 @@ android {
             dimension "environment"
             applicationIdSuffix ".staging"
             versionNameSuffix "-staging"
-            buildConfigField "String", "BASE_URL", "\"https://tcatb-api-staging-PLACEHOLDER.a.run.app\""
+            buildConfigField "String", "BASE_URL", "\"https://tcatb-api-staging-821600862601.us-central1.run.app\""
         }
         production {
             dimension "environment"
