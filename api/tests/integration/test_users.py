@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 
 from app.dependencies import get_password_hash
 from app.models import User, FenderSubmission, Bike
@@ -72,8 +72,8 @@ class TestGetMySubmissions:
 
         other_bike = Bike(
             bike_qr_id="BIKE-OTHER",
-            first_seen_at=datetime.utcnow(),
-            last_seen_at=datetime.utcnow(),
+            first_seen_at=datetime.now(timezone.utc),
+            last_seen_at=datetime.now(timezone.utc),
         )
         db_session.add(other_bike)
         db_session.commit()
@@ -83,7 +83,7 @@ class TestGetMySubmissions:
             bike_qr_id=other_bike.bike_qr_id,
             image_url_original="https://example.com/other.jpg",
             image_url_processed="https://example.com/other-processed.jpg",
-            captured_at=datetime.utcnow(),
+            captured_at=datetime.now(timezone.utc),
         )
         db_session.add(other_submission)
         db_session.commit()

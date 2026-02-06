@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Annotated, List, Optional
 
 from fastapi import APIRouter, Depends, status
@@ -32,7 +32,7 @@ def create_submission(
     db: Annotated[Session, Depends(get_db)],
 ):
     bike = db.query(Bike).filter(Bike.bike_qr_id == data.bike_qr_id).first()
-    now = datetime.utcnow()
+    now = datetime.now(timezone.utc)
 
     if bike:
         bike.last_seen_at = now

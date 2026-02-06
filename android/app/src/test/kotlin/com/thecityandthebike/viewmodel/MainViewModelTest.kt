@@ -108,30 +108,4 @@ class MainViewModelTest {
         assertNull(viewModel.state.value.error)
     }
 
-    @Test
-    fun `setPendingBikeQrId should set pending QR ID in state`() = runTest {
-        coEvery { submissionRepository.getSubmissions() } returns SubmissionResult.Success(emptyList())
-
-        viewModel = MainViewModel(submissionRepository)
-        testDispatcher.scheduler.advanceUntilIdle()
-
-        assertNull(viewModel.state.value.pendingBikeQrId)
-
-        viewModel.setPendingBikeQrId("bike-123")
-        assertEquals("bike-123", viewModel.state.value.pendingBikeQrId)
-    }
-
-    @Test
-    fun `clearPendingBikeQrId should clear pending QR ID from state`() = runTest {
-        coEvery { submissionRepository.getSubmissions() } returns SubmissionResult.Success(emptyList())
-
-        viewModel = MainViewModel(submissionRepository)
-        testDispatcher.scheduler.advanceUntilIdle()
-
-        viewModel.setPendingBikeQrId("bike-456")
-        assertNotNull(viewModel.state.value.pendingBikeQrId)
-
-        viewModel.clearPendingBikeQrId()
-        assertNull(viewModel.state.value.pendingBikeQrId)
-    }
 }

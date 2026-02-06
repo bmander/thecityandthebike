@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 from jose import jwt
 
@@ -78,17 +78,17 @@ class TestJWTTokens:
         payload = jwt.decode(token, settings.JWT_SECRET_KEY, algorithms=[ALGORITHM])
         assert "exp" in payload
         # Expiration should be in the future
-        exp_datetime = datetime.utcfromtimestamp(payload["exp"])
-        assert exp_datetime > datetime.utcnow()
+        exp_datetime = datetime.fromtimestamp(payload["exp"], tz=timezone.utc)
+        assert exp_datetime > datetime.now(timezone.utc)
 
     def test_token_expiration_is_correct_duration(self):
         """Token expiration should match ACCESS_TOKEN_EXPIRE_MINUTES."""
-        before = datetime.utcnow()
+        before = datetime.now(timezone.utc)
         token = create_access_token(subject="user123")
-        after = datetime.utcnow()
+        after = datetime.now(timezone.utc)
 
         payload = jwt.decode(token, settings.JWT_SECRET_KEY, algorithms=[ALGORITHM])
-        exp_datetime = datetime.utcfromtimestamp(payload["exp"])
+        exp_datetime = datetime.fromtimestamp(payload["exp"], tz=timezone.utc)
 
         # Expiration should be approximately ACCESS_TOKEN_EXPIRE_MINUTES from now
         # Add 1 second tolerance for timing variations

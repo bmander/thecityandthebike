@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 
 from app.models import FenderSubmission
 
@@ -39,14 +39,14 @@ class TestGetBikeSubmissions:
             bike_qr_id=test_bike.bike_qr_id,
             image_url_original="https://example.com/img1.jpg",
             image_url_processed="https://example.com/img1-proc.jpg",
-            captured_at=datetime.utcnow(),
+            captured_at=datetime.now(timezone.utc),
         )
         submission2 = FenderSubmission(
             user_id=test_user.user_id,
             bike_qr_id=test_bike.bike_qr_id,
             image_url_original="https://example.com/img2.jpg",
             image_url_processed="https://example.com/img2-proc.jpg",
-            captured_at=datetime.utcnow(),
+            captured_at=datetime.now(timezone.utc),
         )
         db_session.add_all([submission1, submission2])
         db_session.commit()
