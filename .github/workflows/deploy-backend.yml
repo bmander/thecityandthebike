@@ -50,6 +50,41 @@ jobs:
           docker push "$IMAGE"
           echo "IMAGE=$IMAGE" >> $GITHUB_ENV
 
+      - name: Run database migrations
+        run: |
+          JOB_NAME="migrate-db-${{ env.ENVIRONMENT }}"
+          gcloud run jobs update "$JOB_NAME" \
+            --image="${{ env.IMAGE }}" \
+            --region=${{ env.REGION }} \
+            --command="alembic" \
+            --args="upgrade,head" \
+            --set-cloudsql-instances=${{ env.SQL_INSTANCE }} \
+            --set-env-vars="PGHOST=/cloudsql/${{ env.SQL_INSTANCE }}" \
+            --set-env-vars="PGPORT=5432" \
+            --set-env-vars="PGUSER=tcatb" \
+            --set-env-vars="PGDATABASE=tcatb" \
+            --set-secrets="PGPASSWORD=${{ env.DB_PASSWORD_SECRET }}:latest" \
+            --set-secrets="JWT_SECRET_KEY=${{ env.JWT_SECRET }}:latest" \
+            --project=${{ secrets.GCP_PROJECT_ID }} \
+            2>/dev/null || \
+          gcloud run jobs create "$JOB_NAME" \
+            --image="${{ env.IMAGE }}" \
+            --region=${{ env.REGION }} \
+            --command="alembic" \
+            --args="upgrade,head" \
+            --set-cloudsql-instances=${{ env.SQL_INSTANCE }} \
+            --set-env-vars="PGHOST=/cloudsql/${{ env.SQL_INSTANCE }}" \
+            --set-env-vars="PGPORT=5432" \
+            --set-env-vars="PGUSER=tcatb" \
+            --set-env-vars="PGDATABASE=tcatb" \
+            --set-secrets="PGPASSWORD=${{ env.DB_PASSWORD_SECRET }}:latest" \
+            --set-secrets="JWT_SECRET_KEY=${{ env.JWT_SECRET }}:latest" \
+            --project=${{ secrets.GCP_PROJECT_ID }}
+          gcloud run jobs execute "$JOB_NAME" \
+            --region=${{ env.REGION }} \
+            --project=${{ secrets.GCP_PROJECT_ID }} \
+            --wait
+
       - name: Deploy to Cloud Run
         run: |
           gcloud run deploy ${{ env.SERVICE_NAME }}-${{ env.ENVIRONMENT }} \

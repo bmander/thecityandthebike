@@ -1,7 +1,7 @@
 from datetime import datetime, timezone
 import uuid
 
-from sqlalchemy import Column, String, DateTime, Float, Text, ForeignKey
+from sqlalchemy import Boolean, Column, String, DateTime, Float, Text, ForeignKey
 from sqlalchemy.orm import relationship
 
 from ..database import Base
@@ -14,6 +14,7 @@ class User(Base):
     username = Column(String(255), unique=True, nullable=False)
     email = Column(String(255), unique=True, nullable=False)
     password_hash = Column(String(255), nullable=False)
+    is_admin = Column(Boolean, default=False, nullable=False, server_default="0")
     created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
     updated_at = Column(
         DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc)

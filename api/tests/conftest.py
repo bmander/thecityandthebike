@@ -15,6 +15,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
+from app.admin import setup_admin
 from app.database import Base, get_db
 from app.dependencies import get_password_hash, create_access_token
 from app.models import User, Bike, FenderSubmission
@@ -46,6 +47,7 @@ test_app.include_router(users_router)
 test_app.include_router(submissions_router)
 test_app.include_router(bikes_router)
 test_app.include_router(uploads_router)
+setup_admin(test_app, test_engine, "test-secret-key")
 
 
 @pytest.fixture(scope="function", autouse=True)
@@ -186,3 +188,26 @@ def test_submission(db_session, test_user, test_bike):
     })()
     db_session.expunge(submission)
     return submission_data
+
+
+@pytest.fixture
+def test_admin_user(db_session):
+    """Create and return an admin user in the database."""
+    user = User(
+        username="adminuser",
+        email="admin@example.com",
+        password_hash=get_password_hash("adminpassword123"),
+        is_admin=True,
+    )
+    db_session.add(user)
+    db_session.commit()
+    db_session.refresh(user)
+    user_data = type("UserData", (), {
+        "user_id": user.user_id,
+        "username": user.username,
+        "email": user.email,
+        "password_hash": user.password_hash,
+        "is_admin": user.is_admin,
+    })()
+    db_session.expunge(user)
+    return user_data
