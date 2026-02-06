@@ -62,7 +62,7 @@ If builds fail with `IllegalAccessError: superclass access check failed` related
 #### Android 16 Compatibility
 
 Testing on Android 16 devices requires recent library versions due to `InputManager.getInstance()` API changes:
-- Compose BOM: 2024.12.01 or later
+- Compose BOM: 2025.05.01 or later
 - Espresso: 3.7.0 or later
 - AndroidX Test Runner: 1.6.2 or later
 
