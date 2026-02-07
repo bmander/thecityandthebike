@@ -16,7 +16,15 @@ class TokenManager @Inject constructor(
         .setKeyScheme(MasterKey.KeyScheme.AES256_GCM)
         .build()
 
-    private val sharedPreferences: SharedPreferences = EncryptedSharedPreferences.create(
+    private val sharedPreferences: SharedPreferences = try {
+        createEncryptedPrefs()
+    } catch (e: Exception) {
+        // Corrupted prefs (e.g. signing key changed) — clear and retry
+        context.getSharedPreferences(PREFS_FILENAME, Context.MODE_PRIVATE).edit().clear().apply()
+        createEncryptedPrefs()
+    }
+
+    private fun createEncryptedPrefs(): SharedPreferences = EncryptedSharedPreferences.create(
         context,
         PREFS_FILENAME,
         masterKey,
