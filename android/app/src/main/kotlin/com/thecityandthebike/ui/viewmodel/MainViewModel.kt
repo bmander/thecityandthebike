@@ -8,6 +8,7 @@ import com.thecityandthebike.data.model.dto.SubmissionCreate
 import com.thecityandthebike.data.model.dto.SubmissionResponse
 import com.thecityandthebike.data.repository.SubmissionRepository
 import com.thecityandthebike.data.repository.SubmissionResult
+import com.thecityandthebike.util.stripMetadata
 import com.thecityandthebike.util.uriToFile
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
@@ -84,6 +85,13 @@ class MainViewModel @Inject constructor(
                     error = "Could not read image file"
                 )
                 return@launch
+            }
+
+            // Defense-in-depth: strip metadata right before upload
+            try {
+                stripMetadata(imageFile)
+            } catch (e: Exception) {
+                // Best-effort; proceed with upload even if stripping fails
             }
 
             try {

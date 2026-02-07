@@ -126,7 +126,6 @@ class TestUploadsRouter:
     def test_upload_then_retrieve_round_trip(self, client, auth_headers):
         """Test that an uploaded file can be retrieved via its returned URL."""
         image_buf = create_test_image()
-        original_bytes = image_buf.getvalue()
 
         # Upload
         upload_response = client.post(
@@ -140,7 +139,13 @@ class TestUploadsRouter:
         # Retrieve
         get_response = client.get(url)
         assert get_response.status_code == 200
-        assert get_response.content == original_bytes
+        # EXIF stripping re-encodes JPEG so bytes won't match exactly;
+        # verify the result is a valid image with the same dimensions
+        from PIL import Image
+        import io
+        original = Image.open(image_buf)
+        retrieved = Image.open(io.BytesIO(get_response.content))
+        assert retrieved.size == original.size
 
     def test_upload_thumbnail_retrievable(self, client, auth_headers):
         """Test that the thumbnail can be retrieved via its returned URL."""
