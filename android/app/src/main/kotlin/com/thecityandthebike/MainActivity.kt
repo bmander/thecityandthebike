@@ -28,6 +28,7 @@ import com.thecityandthebike.ui.screens.MainScreen
 import com.thecityandthebike.ui.screens.PhotoCaptureScreen
 import com.thecityandthebike.ui.screens.QrScannerScreen
 import com.thecityandthebike.ui.screens.RegisterScreen
+import com.thecityandthebike.ui.screens.SplashScreen
 import com.thecityandthebike.ui.viewmodel.AuthViewModel
 import com.thecityandthebike.ui.viewmodel.MainViewModel
 import dagger.hilt.android.AndroidEntryPoint
@@ -50,8 +51,18 @@ class MainActivity : ComponentActivity() {
 
                     NavHost(
                         navController = navController,
-                        startDestination = "main"
+                        startDestination = "splash"
                     ) {
+                        composable("splash") {
+                            SplashScreen(
+                                onTimeout = {
+                                    navController.navigate("main") {
+                                        popUpTo("splash") { inclusive = true }
+                                    }
+                                }
+                            )
+                        }
+
                         composable("login") {
                             LoginScreen(
                                 state = authState,
