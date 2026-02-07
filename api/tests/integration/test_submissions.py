@@ -22,6 +22,7 @@ class TestGetSubmissions:
         data = response.json()
         assert len(data) == 1
         assert data[0]["submission_id"] == test_submission.submission_id
+        assert data[0]["username"] == "testuser"
 
     def test_get_submissions_includes_all_users(
         self, client, auth_headers, test_submission, test_user, db_session
@@ -63,6 +64,10 @@ class TestGetSubmissions:
         assert test_user.user_id in user_ids
         assert other_user.user_id in user_ids
 
+        usernames = {sub["username"] for sub in data}
+        assert "testuser" in usernames
+        assert "otheruser" in usernames
+
     def test_get_submissions_no_auth(self, client):
         """Request without auth should return 200 (public endpoint)."""
         response = client.get("/submissions")
@@ -95,6 +100,7 @@ class TestCreateSubmission:
         assert data["user_id"] == test_user.user_id
         assert data["image_url_original"] == submission_data["image_url_original"]
         assert data["user_caption"] == submission_data["user_caption"]
+        assert data["username"] == "testuser"
 
         # Verify bike was created
         bike = db_session.query(Bike).filter(Bike.bike_qr_id == "NEW-BIKE-001").first()

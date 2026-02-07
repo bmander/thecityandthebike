@@ -1,6 +1,5 @@
 package com.thecityandthebike.ui.screens
 
-import android.net.Uri
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -19,11 +18,11 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import com.thecityandthebike.BuildConfig
 import com.thecityandthebike.ui.components.CameraFAB
 import com.thecityandthebike.ui.components.ImageGrid
 import com.thecityandthebike.ui.components.LoginFAB
 import com.thecityandthebike.ui.viewmodel.MainViewModel
+import com.thecityandthebike.util.imageUrlToUri
 
 @Composable
 fun MainScreen(
@@ -31,17 +30,16 @@ fun MainScreen(
     isLoggedIn: Boolean,
     onLogout: () -> Unit,
     onLoginClick: () -> Unit,
-    onScanQrCode: () -> Unit
+    onScanQrCode: () -> Unit,
+    onImageClick: ((String) -> Unit)? = null
 ) {
     val state by viewModel.state.collectAsState()
 
     // Combine server submissions with local images
-    val serverImageUris = state.submissions.mapNotNull { submission ->
-        val url = submission.imageUrlThumbnail ?: submission.imageUrlOriginal
-        url?.let {
-            if (it.startsWith("http")) Uri.parse(it)
-            else Uri.parse(BuildConfig.BASE_URL + it)
-        }
+    val submissionsWithImages = state.submissions.filter { it.imageUrlOriginal != null }
+    val serverImageUris = submissionsWithImages.map { submission ->
+        val url = submission.imageUrlThumbnail ?: submission.imageUrlOriginal!!
+        imageUrlToUri(url)
     }
     val allImageUris = state.localImages + serverImageUris
 
@@ -49,7 +47,17 @@ fun MainScreen(
         ImageGrid(
             imageUris = allImageUris,
             modifier = Modifier.fillMaxSize(),
-            uploadingUris = state.localImages.toSet()
+            uploadingUris = state.localImages.toSet(),
+            onImageClick = onImageClick?.let { callback ->
+                { index ->
+                    val localCount = state.localImages.size
+                    if (index >= localCount) {
+                        val submissionIndex = index - localCount
+                        val submissionId = submissionsWithImages[submissionIndex].submissionId
+                        callback(submissionId)
+                    }
+                }
+            }
         )
 
         // Logout button (top left) - only shown when logged in

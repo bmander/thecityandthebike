@@ -27,7 +27,8 @@ data class SubmissionResponse(
     val longitude: Double? = null,
     @SerialName("captured_at") val capturedAt: String? = null,
     @SerialName("uploaded_at") val uploadedAt: String? = null,
-    @SerialName("user_caption") val userCaption: String? = null
+    @SerialName("user_caption") val userCaption: String? = null,
+    val username: String? = null
 )
 
 @Serializable

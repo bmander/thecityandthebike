@@ -54,3 +54,7 @@ class FenderSubmission(Base):
 
     user = relationship("User", back_populates="submissions")
     bike = relationship("Bike", back_populates="submissions")
+
+    @property
+    def username(self):
+        return self.user.username if self.user else None

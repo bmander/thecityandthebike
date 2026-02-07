@@ -4,11 +4,15 @@ import android.net.Uri
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.ComposeUiFlags
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
@@ -16,6 +20,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.thecityandthebike.ui.screens.ImageDetailScreen
 import com.thecityandthebike.ui.screens.LoginScreen
 import com.thecityandthebike.ui.screens.MainScreen
 import com.thecityandthebike.ui.screens.PhotoCaptureScreen
@@ -92,8 +97,42 @@ class MainActivity : ComponentActivity() {
                                 },
                                 onScanQrCode = {
                                     navController.navigate("scanner")
+                                },
+                                onImageClick = { submissionId ->
+                                    navController.navigate("image_detail/${Uri.encode(submissionId)}")
                                 }
                             )
+                        }
+
+                        composable("image_detail/{submissionId}") { backStackEntry ->
+                            val submissionId = backStackEntry.arguments?.getString("submissionId") ?: ""
+                            if (submissionId.isEmpty()) {
+                                LaunchedEffect(Unit) { navController.popBackStack() }
+                                return@composable
+                            }
+                            val mainEntry = navController.currentBackStack.value
+                                .firstOrNull { it.destination.route == "main" }
+                            if (mainEntry == null) {
+                                LaunchedEffect(Unit) { navController.popBackStack() }
+                                return@composable
+                            }
+                            val mainViewModel: MainViewModel = hiltViewModel(mainEntry)
+                            val mainState by mainViewModel.state.collectAsState()
+                            if (mainState.isLoading) {
+                                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                                    CircularProgressIndicator()
+                                }
+                                return@composable
+                            }
+                            val submission = mainState.submissions.find { it.submissionId == submissionId }
+                            if (submission != null) {
+                                ImageDetailScreen(
+                                    submission = submission,
+                                    onBack = { navController.popBackStack() }
+                                )
+                            } else {
+                                LaunchedEffect(Unit) { navController.popBackStack() }
+                            }
                         }
 
                         composable("scanner") {
