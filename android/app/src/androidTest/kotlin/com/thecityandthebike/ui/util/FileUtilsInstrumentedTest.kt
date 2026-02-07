@@ -4,12 +4,15 @@ import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
+import androidx.exifinterface.media.ExifInterface
 import com.thecityandthebike.util.createImageFileAndUri
 import com.thecityandthebike.util.cropToSquare
+import com.thecityandthebike.util.stripMetadata
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotEquals
 import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -145,5 +148,105 @@ class FileUtilsInstrumentedTest {
         val result = cropToSquare(file)
         assertEquals("Should return the same file object", file, result)
         assertTrue("File should still exist", file.exists())
+    }
+
+    private fun createTestImageFileWithExif(width: Int, height: Int): File {
+        val file = createTestImageFile(width, height)
+        val exif = ExifInterface(file.absolutePath)
+        exif.setLatLong(40.7128, -74.0060)
+        exif.setAttribute(ExifInterface.TAG_GPS_ALTITUDE, "10/1")
+        exif.setAttribute(ExifInterface.TAG_GPS_ALTITUDE_REF, "0")
+        exif.setAttribute(ExifInterface.TAG_GPS_TIMESTAMP, "12:00:00")
+        exif.setAttribute(ExifInterface.TAG_GPS_DATESTAMP, "2025:01:01")
+        exif.setAttribute(ExifInterface.TAG_MAKE, "TestMake")
+        exif.setAttribute(ExifInterface.TAG_MODEL, "TestModel")
+        exif.setAttribute(ExifInterface.TAG_SOFTWARE, "TestSoftware")
+        exif.setAttribute(ExifInterface.TAG_LENS_MAKE, "TestLensMake")
+        exif.setAttribute(ExifInterface.TAG_LENS_MODEL, "TestLensModel")
+        exif.setAttribute(ExifInterface.TAG_DATETIME, "2025:01:01 12:00:00")
+        exif.setAttribute(ExifInterface.TAG_DATETIME_ORIGINAL, "2025:01:01 12:00:00")
+        exif.setAttribute(ExifInterface.TAG_DATETIME_DIGITIZED, "2025:01:01 12:00:00")
+        exif.setAttribute(ExifInterface.TAG_ARTIST, "Test Artist")
+        exif.setAttribute(ExifInterface.TAG_COPYRIGHT, "Test Copyright")
+        exif.setAttribute(ExifInterface.TAG_IMAGE_DESCRIPTION, "Test Description")
+        exif.setAttribute(ExifInterface.TAG_USER_COMMENT, "Test Comment")
+        exif.setAttribute(ExifInterface.TAG_CAMERA_OWNER_NAME, "Test Owner")
+        exif.setAttribute(ExifInterface.TAG_BODY_SERIAL_NUMBER, "123456")
+        exif.saveAttributes()
+        return file
+    }
+
+    @Test
+    fun stripMetadata_removesGpsData() {
+        val file = createTestImageFileWithExif(100, 100)
+        val exifBefore = ExifInterface(file.absolutePath)
+        assertNotNull("GPS latitude should be set before strip",
+            exifBefore.getAttribute(ExifInterface.TAG_GPS_LATITUDE))
+
+        stripMetadata(file)
+
+        val exif = ExifInterface(file.absolutePath)
+        assertNull("GPS latitude should be removed",
+            exif.getAttribute(ExifInterface.TAG_GPS_LATITUDE))
+        assertNull("GPS longitude should be removed",
+            exif.getAttribute(ExifInterface.TAG_GPS_LONGITUDE))
+        assertNull("GPS altitude should be removed",
+            exif.getAttribute(ExifInterface.TAG_GPS_ALTITUDE))
+        assertNull("GPS timestamp should be removed",
+            exif.getAttribute(ExifInterface.TAG_GPS_TIMESTAMP))
+        assertNull("GPS datestamp should be removed",
+            exif.getAttribute(ExifInterface.TAG_GPS_DATESTAMP))
+    }
+
+    @Test
+    fun stripMetadata_removesCameraInfo() {
+        val file = createTestImageFileWithExif(100, 100)
+        stripMetadata(file)
+
+        val exif = ExifInterface(file.absolutePath)
+        assertNull("Make should be removed",
+            exif.getAttribute(ExifInterface.TAG_MAKE))
+        assertNull("Model should be removed",
+            exif.getAttribute(ExifInterface.TAG_MODEL))
+        assertNull("Software should be removed",
+            exif.getAttribute(ExifInterface.TAG_SOFTWARE))
+        assertNull("Lens make should be removed",
+            exif.getAttribute(ExifInterface.TAG_LENS_MAKE))
+        assertNull("Lens model should be removed",
+            exif.getAttribute(ExifInterface.TAG_LENS_MODEL))
+    }
+
+    @Test
+    fun stripMetadata_removesTimestamps() {
+        val file = createTestImageFileWithExif(100, 100)
+        stripMetadata(file)
+
+        val exif = ExifInterface(file.absolutePath)
+        assertNull("DateTime should be removed",
+            exif.getAttribute(ExifInterface.TAG_DATETIME))
+        assertNull("DateTimeOriginal should be removed",
+            exif.getAttribute(ExifInterface.TAG_DATETIME_ORIGINAL))
+        assertNull("DateTimeDigitized should be removed",
+            exif.getAttribute(ExifInterface.TAG_DATETIME_DIGITIZED))
+    }
+
+    @Test
+    fun cropToSquare_outputHasNoExifMetadata() {
+        val file = createTestImageFileWithExif(200, 100)
+        val result = cropToSquare(file)
+
+        val exif = ExifInterface(result.absolutePath)
+        assertNull("GPS latitude should not be in cropped output",
+            exif.getAttribute(ExifInterface.TAG_GPS_LATITUDE))
+        assertNull("Make should not be in cropped output",
+            exif.getAttribute(ExifInterface.TAG_MAKE))
+        assertNull("Model should not be in cropped output",
+            exif.getAttribute(ExifInterface.TAG_MODEL))
+        assertNull("DateTime should not be in cropped output",
+            exif.getAttribute(ExifInterface.TAG_DATETIME))
+        assertNull("Artist should not be in cropped output",
+            exif.getAttribute(ExifInterface.TAG_ARTIST))
+        assertNull("Camera owner should not be in cropped output",
+            exif.getAttribute(ExifInterface.TAG_CAMERA_OWNER_NAME))
     }
 }

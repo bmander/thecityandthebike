@@ -83,5 +83,46 @@ fun cropToSquare(file: File): File {
         if (cropped !== bitmap) cropped.recycle()
         bitmap.recycle()
     }
+    stripMetadata(file)
     return file
+}
+
+fun stripMetadata(file: File) {
+    val exif = ExifInterface(file.absolutePath)
+    val tagsToStrip = listOf(
+        // GPS
+        ExifInterface.TAG_GPS_LATITUDE,
+        ExifInterface.TAG_GPS_LONGITUDE,
+        ExifInterface.TAG_GPS_LATITUDE_REF,
+        ExifInterface.TAG_GPS_LONGITUDE_REF,
+        ExifInterface.TAG_GPS_ALTITUDE,
+        ExifInterface.TAG_GPS_ALTITUDE_REF,
+        ExifInterface.TAG_GPS_TIMESTAMP,
+        ExifInterface.TAG_GPS_DATESTAMP,
+        ExifInterface.TAG_GPS_PROCESSING_METHOD,
+        // Camera
+        ExifInterface.TAG_MAKE,
+        ExifInterface.TAG_MODEL,
+        ExifInterface.TAG_SOFTWARE,
+        ExifInterface.TAG_LENS_MAKE,
+        ExifInterface.TAG_LENS_MODEL,
+        // Timestamps
+        ExifInterface.TAG_DATETIME,
+        ExifInterface.TAG_DATETIME_ORIGINAL,
+        ExifInterface.TAG_DATETIME_DIGITIZED,
+        ExifInterface.TAG_OFFSET_TIME,
+        ExifInterface.TAG_OFFSET_TIME_ORIGINAL,
+        ExifInterface.TAG_OFFSET_TIME_DIGITIZED,
+        // User / owner
+        ExifInterface.TAG_ARTIST,
+        ExifInterface.TAG_COPYRIGHT,
+        ExifInterface.TAG_IMAGE_DESCRIPTION,
+        ExifInterface.TAG_USER_COMMENT,
+        ExifInterface.TAG_BODY_SERIAL_NUMBER,
+        ExifInterface.TAG_CAMERA_OWNER_NAME,
+    )
+    for (tag in tagsToStrip) {
+        exif.setAttribute(tag, null)
+    }
+    exif.saveAttributes()
 }
