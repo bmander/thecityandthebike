@@ -16,6 +16,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.thecityandthebike.ui.screens.ImageDetailScreen
 import com.thecityandthebike.ui.screens.LoginScreen
 import com.thecityandthebike.ui.screens.MainScreen
 import com.thecityandthebike.ui.screens.PhotoCaptureScreen
@@ -92,8 +93,32 @@ class MainActivity : ComponentActivity() {
                                 },
                                 onScanQrCode = {
                                     navController.navigate("scanner")
+                                },
+                                onImageClick = { submissionId ->
+                                    navController.navigate("image_detail/$submissionId")
                                 }
                             )
+                        }
+
+                        composable("image_detail/{submissionId}") { backStackEntry ->
+                            val submissionId = backStackEntry.arguments?.getString("submissionId") ?: ""
+                            if (submissionId.isEmpty()) {
+                                navController.popBackStack()
+                                return@composable
+                            }
+                            val mainViewModel: MainViewModel = hiltViewModel(
+                                navController.getBackStackEntry("main")
+                            )
+                            val mainState by mainViewModel.state.collectAsState()
+                            val submission = mainState.submissions.find { it.submissionId == submissionId }
+                            if (submission != null) {
+                                ImageDetailScreen(
+                                    submission = submission,
+                                    onBack = { navController.popBackStack() }
+                                )
+                            } else {
+                                navController.popBackStack()
+                            }
                         }
 
                         composable("scanner") {

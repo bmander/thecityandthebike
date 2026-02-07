@@ -2,13 +2,14 @@ package com.thecityandthebike.ui.components
 
 import android.net.Uri
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.lazy.grid.itemsIndexed
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -22,7 +23,8 @@ import coil.compose.AsyncImage
 fun ImageGrid(
     imageUris: List<Uri>,
     modifier: Modifier = Modifier,
-    uploadingUris: Set<Uri> = emptySet()
+    uploadingUris: Set<Uri> = emptySet(),
+    onImageClick: ((Int) -> Unit)? = null
 ) {
     LazyVerticalGrid(
         columns = GridCells.Fixed(3),
@@ -30,11 +32,19 @@ fun ImageGrid(
         horizontalArrangement = Arrangement.spacedBy(2.dp),
         verticalArrangement = Arrangement.spacedBy(2.dp)
     ) {
-        items(imageUris) { uri ->
+        itemsIndexed(imageUris) { index, uri ->
+            val isUploading = uri in uploadingUris
             Box(
                 modifier = Modifier
                     .aspectRatio(1f)
                     .background(Color.LightGray)
+                    .then(
+                        if (!isUploading && onImageClick != null) {
+                            Modifier.clickable { onImageClick(index) }
+                        } else {
+                            Modifier
+                        }
+                    )
             ) {
                 AsyncImage(
                     model = uri,
@@ -42,7 +52,7 @@ fun ImageGrid(
                     modifier = Modifier.fillMaxSize(),
                     contentScale = ContentScale.Crop
                 )
-                if (uri in uploadingUris) {
+                if (isUploading) {
                     Box(
                         modifier = Modifier
                             .fillMaxSize()

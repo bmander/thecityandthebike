@@ -31,7 +31,8 @@ fun MainScreen(
     isLoggedIn: Boolean,
     onLogout: () -> Unit,
     onLoginClick: () -> Unit,
-    onScanQrCode: () -> Unit
+    onScanQrCode: () -> Unit,
+    onImageClick: ((String) -> Unit)? = null
 ) {
     val state by viewModel.state.collectAsState()
 
@@ -48,7 +49,17 @@ fun MainScreen(
         ImageGrid(
             imageUris = allImageUris,
             modifier = Modifier.fillMaxSize(),
-            uploadingUris = state.localImages.toSet()
+            uploadingUris = state.localImages.toSet(),
+            onImageClick = onImageClick?.let { callback ->
+                { index ->
+                    val localCount = state.localImages.size
+                    if (index >= localCount) {
+                        val submissionIndex = index - localCount
+                        val submissionId = state.submissions[submissionIndex].submissionId
+                        callback(submissionId)
+                    }
+                }
+            }
         )
 
         // Logout button (top left) - only shown when logged in

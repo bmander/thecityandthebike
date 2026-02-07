@@ -2,7 +2,7 @@ from datetime import datetime, timezone
 from typing import Annotated, List, Optional
 
 from fastapi import APIRouter, Depends, status
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 
 from ..database import get_db
 from ..dependencies import get_current_user, get_current_user_optional
@@ -19,6 +19,7 @@ def get_global_submissions(
 ):
     submissions = (
         db.query(FenderSubmission)
+        .options(joinedload(FenderSubmission.user))
         .order_by(FenderSubmission.uploaded_at.desc())
         .all()
     )
