@@ -1,6 +1,5 @@
 package com.thecityandthebike.ui.screens
 
-import android.net.Uri
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -19,11 +18,11 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import com.thecityandthebike.BuildConfig
 import com.thecityandthebike.ui.components.CameraFAB
 import com.thecityandthebike.ui.components.ImageGrid
 import com.thecityandthebike.ui.components.LoginFAB
 import com.thecityandthebike.ui.viewmodel.MainViewModel
+import com.thecityandthebike.util.imageUrlToUri
 
 @Composable
 fun MainScreen(
@@ -37,11 +36,9 @@ fun MainScreen(
     val state by viewModel.state.collectAsState()
 
     // Combine server submissions with local images
-    val serverImageUris = state.submissions.mapNotNull { submission ->
-        submission.imageUrlOriginal?.let { url ->
-            if (url.startsWith("http")) Uri.parse(url)
-            else Uri.parse(BuildConfig.BASE_URL + url)
-        }
+    val submissionsWithImages = state.submissions.filter { it.imageUrlOriginal != null }
+    val serverImageUris = submissionsWithImages.map { submission ->
+        imageUrlToUri(submission.imageUrlOriginal!!)
     }
     val allImageUris = state.localImages + serverImageUris
 
@@ -55,7 +52,7 @@ fun MainScreen(
                     val localCount = state.localImages.size
                     if (index >= localCount) {
                         val submissionIndex = index - localCount
-                        val submissionId = state.submissions[submissionIndex].submissionId
+                        val submissionId = submissionsWithImages[submissionIndex].submissionId
                         callback(submissionId)
                     }
                 }

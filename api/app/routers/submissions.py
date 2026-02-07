@@ -54,4 +54,6 @@ def create_submission(
     db.add(submission)
     db.commit()
     db.refresh(submission)
+    # Force load the user relationship for the username property
+    _ = submission.user
     return submission

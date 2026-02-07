@@ -1,7 +1,7 @@
 from typing import Annotated, List
 
 from fastapi import APIRouter, Depends
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 
 from ..database import get_db
 from ..dependencies import get_current_user
@@ -23,6 +23,7 @@ def get_my_submissions(
 ):
     submissions = (
         db.query(FenderSubmission)
+        .options(joinedload(FenderSubmission.user))
         .filter(FenderSubmission.user_id == current_user.user_id)
         .order_by(FenderSubmission.uploaded_at.desc())
         .all()

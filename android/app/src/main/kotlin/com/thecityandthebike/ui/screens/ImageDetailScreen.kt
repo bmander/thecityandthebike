@@ -1,6 +1,5 @@
 package com.thecityandthebike.ui.screens
 
-import android.net.Uri
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -8,6 +7,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -19,11 +20,12 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.painter.ColorPainter
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
-import com.thecityandthebike.BuildConfig
 import com.thecityandthebike.data.model.dto.SubmissionResponse
+import com.thecityandthebike.util.imageUrlToUri
 import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
@@ -34,10 +36,7 @@ fun ImageDetailScreen(
     submission: SubmissionResponse,
     onBack: () -> Unit
 ) {
-    val imageUri = submission.imageUrlOriginal?.let { url ->
-        if (url.startsWith("http")) Uri.parse(url)
-        else Uri.parse(BuildConfig.BASE_URL + url)
-    }
+    val imageUri = submission.imageUrlOriginal?.let { imageUrlToUri(it) }
 
     val formattedDate = submission.capturedAt?.let {
         try {
@@ -69,6 +68,7 @@ fun ImageDetailScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
+                .verticalScroll(rememberScrollState())
         ) {
             AsyncImage(
                 model = imageUri,
@@ -76,7 +76,9 @@ fun ImageDetailScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .background(MaterialTheme.colorScheme.surfaceVariant),
-                contentScale = ContentScale.FillWidth
+                contentScale = ContentScale.FillWidth,
+                placeholder = ColorPainter(MaterialTheme.colorScheme.surfaceVariant),
+                error = ColorPainter(MaterialTheme.colorScheme.errorContainer)
             )
 
             Spacer(modifier = Modifier.height(16.dp))

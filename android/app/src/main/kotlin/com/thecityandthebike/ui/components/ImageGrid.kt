@@ -40,7 +40,7 @@ fun ImageGrid(
                     .background(Color.LightGray)
                     .then(
                         if (!isUploading && onImageClick != null) {
-                            Modifier.clickable { onImageClick(index) }
+                            Modifier.clickable(onClickLabel = "View photo") { onImageClick(index) }
                         } else {
                             Modifier
                         }

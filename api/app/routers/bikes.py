@@ -1,7 +1,7 @@
 from typing import Annotated, List
 
 from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 
 from ..database import get_db
 from ..dependencies import get_current_user
@@ -26,6 +26,7 @@ def get_bike_submissions(
 
     submissions = (
         db.query(FenderSubmission)
+        .options(joinedload(FenderSubmission.user))
         .filter(FenderSubmission.bike_qr_id == bike_qr_id)
         .order_by(FenderSubmission.uploaded_at.desc())
         .all()
