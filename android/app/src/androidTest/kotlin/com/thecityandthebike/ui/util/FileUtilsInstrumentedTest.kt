@@ -172,6 +172,16 @@ class FileUtilsInstrumentedTest {
         exif.setAttribute(ExifInterface.TAG_USER_COMMENT, "Test Comment")
         exif.setAttribute(ExifInterface.TAG_CAMERA_OWNER_NAME, "Test Owner")
         exif.setAttribute(ExifInterface.TAG_BODY_SERIAL_NUMBER, "123456")
+        exif.setAttribute(ExifInterface.TAG_GPS_AREA_INFORMATION, "Test Area")
+        exif.setAttribute(ExifInterface.TAG_GPS_SPEED, "10/1")
+        exif.setAttribute(ExifInterface.TAG_GPS_SPEED_REF, "K")
+        exif.setAttribute(ExifInterface.TAG_GPS_IMG_DIRECTION, "180/1")
+        exif.setAttribute(ExifInterface.TAG_GPS_IMG_DIRECTION_REF, "T")
+        exif.setAttribute(ExifInterface.TAG_SUBSEC_TIME, "123")
+        exif.setAttribute(ExifInterface.TAG_SUBSEC_TIME_ORIGINAL, "123")
+        exif.setAttribute(ExifInterface.TAG_SUBSEC_TIME_DIGITIZED, "123")
+        exif.setAttribute(ExifInterface.TAG_IMAGE_UNIQUE_ID, "test-unique-id")
+        exif.setAttribute(ExifInterface.TAG_LENS_SERIAL_NUMBER, "LENS123")
         exif.saveAttributes()
         return file
     }
@@ -201,6 +211,10 @@ class FileUtilsInstrumentedTest {
     @Test
     fun stripMetadata_removesCameraInfo() {
         val file = createTestImageFileWithExif(100, 100)
+        val exifBefore = ExifInterface(file.absolutePath)
+        assertNotNull("Make should be set before strip",
+            exifBefore.getAttribute(ExifInterface.TAG_MAKE))
+
         stripMetadata(file)
 
         val exif = ExifInterface(file.absolutePath)
@@ -219,6 +233,10 @@ class FileUtilsInstrumentedTest {
     @Test
     fun stripMetadata_removesTimestamps() {
         val file = createTestImageFileWithExif(100, 100)
+        val exifBefore = ExifInterface(file.absolutePath)
+        assertNotNull("DateTime should be set before strip",
+            exifBefore.getAttribute(ExifInterface.TAG_DATETIME))
+
         stripMetadata(file)
 
         val exif = ExifInterface(file.absolutePath)
@@ -248,5 +266,74 @@ class FileUtilsInstrumentedTest {
             exif.getAttribute(ExifInterface.TAG_ARTIST))
         assertNull("Camera owner should not be in cropped output",
             exif.getAttribute(ExifInterface.TAG_CAMERA_OWNER_NAME))
+    }
+
+    @Test
+    fun stripMetadata_removesUserAndOwnerData() {
+        val file = createTestImageFileWithExif(100, 100)
+        val exifBefore = ExifInterface(file.absolutePath)
+        assertNotNull("Artist should be set before strip",
+            exifBefore.getAttribute(ExifInterface.TAG_ARTIST))
+
+        stripMetadata(file)
+
+        val exif = ExifInterface(file.absolutePath)
+        assertNull("Artist should be removed",
+            exif.getAttribute(ExifInterface.TAG_ARTIST))
+        assertNull("Copyright should be removed",
+            exif.getAttribute(ExifInterface.TAG_COPYRIGHT))
+        assertNull("Image description should be removed",
+            exif.getAttribute(ExifInterface.TAG_IMAGE_DESCRIPTION))
+        assertNull("User comment should be removed",
+            exif.getAttribute(ExifInterface.TAG_USER_COMMENT))
+        assertNull("Body serial number should be removed",
+            exif.getAttribute(ExifInterface.TAG_BODY_SERIAL_NUMBER))
+        assertNull("Camera owner name should be removed",
+            exif.getAttribute(ExifInterface.TAG_CAMERA_OWNER_NAME))
+    }
+
+    @Test
+    fun stripMetadata_preservesImageContent() {
+        val file = createTestImageFileWithExif(150, 100)
+        val bitmapBefore = BitmapFactory.decodeFile(file.absolutePath)
+        assertNotNull("Image should be decodable before strip", bitmapBefore)
+        val widthBefore = bitmapBefore!!.width
+        val heightBefore = bitmapBefore.height
+        bitmapBefore.recycle()
+
+        stripMetadata(file)
+
+        val bitmapAfter = BitmapFactory.decodeFile(file.absolutePath)
+        assertNotNull("Image should be decodable after strip", bitmapAfter)
+        assertEquals("Width should be preserved", widthBefore, bitmapAfter!!.width)
+        assertEquals("Height should be preserved", heightBefore, bitmapAfter.height)
+        bitmapAfter.recycle()
+    }
+
+    @Test
+    fun stripMetadata_isIdempotent() {
+        val file = createTestImageFileWithExif(100, 100)
+        stripMetadata(file)
+        val sizeAfterFirst = file.length()
+
+        stripMetadata(file)
+        val sizeAfterSecond = file.length()
+
+        val bitmapAfter = BitmapFactory.decodeFile(file.absolutePath)
+        assertNotNull("Image should be decodable after double strip", bitmapAfter)
+        bitmapAfter!!.recycle()
+
+        assertTrue("File size should not grow significantly after second strip",
+            sizeAfterSecond <= sizeAfterFirst * 1.1)
+    }
+
+    @Test
+    fun stripMetadata_handlesFileWithNoExifData() {
+        val file = createTestImageFile(100, 100)
+        stripMetadata(file)
+
+        val bitmap = BitmapFactory.decodeFile(file.absolutePath)
+        assertNotNull("Image should still be decodable after stripping file with no EXIF", bitmap)
+        bitmap!!.recycle()
     }
 }

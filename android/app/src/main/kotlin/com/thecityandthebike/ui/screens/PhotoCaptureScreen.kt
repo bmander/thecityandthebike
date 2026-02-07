@@ -60,6 +60,7 @@ import androidx.lifecycle.LifecycleOwner
 import com.thecityandthebike.R
 import com.thecityandthebike.util.createImageFileAndUri
 import com.thecityandthebike.util.cropToSquare
+import com.thecityandthebike.util.stripMetadata
 import java.util.concurrent.Executors
 
 @Composable
@@ -215,6 +216,11 @@ fun PhotoCaptureScreen(
                                 cropToSquare(file)
                             } catch (e: Exception) {
                                 Log.e("PhotoCaptureScreen", "Square crop failed, using original", e)
+                                try {
+                                    stripMetadata(file)
+                                } catch (stripEx: Exception) {
+                                    Log.e("PhotoCaptureScreen", "Metadata strip also failed", stripEx)
+                                }
                             }
                             ContextCompat.getMainExecutor(context).execute {
                                 isCapturing = false

@@ -1,3 +1,4 @@
+import io
 import mimetypes
 import os
 import uuid
@@ -52,6 +53,17 @@ async def upload_image(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail={"msg": f"File too large. Maximum size: {MAX_FILE_SIZE // (1024 * 1024)} MB"},
         )
+
+    # Strip EXIF metadata from JPEG images
+    if ext in {".jpg", ".jpeg"}:
+        try:
+            from PIL import Image
+            img = Image.open(io.BytesIO(contents))
+            clean = io.BytesIO()
+            img.save(clean, format="JPEG", quality=90)
+            contents = clean.getvalue()
+        except Exception:
+            pass  # If stripping fails, upload the original contents
 
     # Generate unique filename
     unique_filename = f"{uuid.uuid4()}{ext}"
