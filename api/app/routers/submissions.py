@@ -46,9 +46,7 @@ def create_submission(
         bike_qr_id=data.bike_qr_id,
         image_url_original=data.image_url_original,
         image_url_processed=data.image_url_processed,
-        latitude=data.latitude,
-        longitude=data.longitude,
-        captured_at=data.captured_at,
+        captured_date=data.captured_date,
         user_caption=data.user_caption,
     )
     db.add(submission)

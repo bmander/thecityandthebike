@@ -67,11 +67,11 @@ class FenderSubmissionAdmin(ModelView, model=FenderSubmission):
         FenderSubmission.submission_id,
         FenderSubmission.user_id,
         FenderSubmission.bike_qr_id,
-        FenderSubmission.captured_at,
+        FenderSubmission.captured_date,
         FenderSubmission.uploaded_at,
     ]
     column_searchable_list = [FenderSubmission.bike_qr_id]
-    column_sortable_list = [FenderSubmission.captured_at, FenderSubmission.uploaded_at]
+    column_sortable_list = [FenderSubmission.captured_date, FenderSubmission.uploaded_at]
 
 
 def setup_admin(app, engine, secret_key):

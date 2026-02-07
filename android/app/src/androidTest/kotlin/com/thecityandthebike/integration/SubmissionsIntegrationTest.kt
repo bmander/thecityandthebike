@@ -11,7 +11,8 @@ import org.junit.Assert.*
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
-import java.time.Instant
+import java.time.LocalDate
+import java.time.ZoneId
 import java.util.UUID
 
 @RunWith(AndroidJUnit4::class)
@@ -79,9 +80,7 @@ class SubmissionsIntegrationTest {
             bikeQrId = "BIKE_${UUID.randomUUID().toString().take(8)}",
             imageUrlOriginal = "https://example.com/test_image_original.jpg",
             imageUrlProcessed = "https://example.com/test_image_processed.jpg",
-            capturedAt = Instant.now().toString(),
-            latitude = 40.7128,
-            longitude = -74.0060,
+            capturedDate = LocalDate.now(ZoneId.of("America/Los_Angeles")).toString(),
             userCaption = "Test submission"
         )
 
@@ -92,8 +91,6 @@ class SubmissionsIntegrationTest {
         val createdSubmission = response.body()
         assertNotNull("Response body should not be null", createdSubmission)
         assertEquals(submission.bikeQrId, createdSubmission?.bikeQrId)
-        assertEquals(submission.latitude, createdSubmission?.latitude)
-        assertEquals(submission.longitude, createdSubmission?.longitude)
         assertEquals(submission.userCaption, createdSubmission?.userCaption)
     }
 
@@ -104,7 +101,7 @@ class SubmissionsIntegrationTest {
             bikeQrId = "BIKE_${UUID.randomUUID().toString().take(8)}",
             imageUrlOriginal = "https://example.com/test_image_original.jpg",
             imageUrlProcessed = "https://example.com/test_image_processed.jpg",
-            capturedAt = Instant.now().toString()
+            capturedDate = LocalDate.now(ZoneId.of("America/Los_Angeles")).toString()
         )
 
         val response = apiService.createSubmission(submission)
@@ -127,7 +124,7 @@ class SubmissionsIntegrationTest {
             bikeQrId = bikeQrId,
             imageUrlOriginal = "https://example.com/test_image_original.jpg",
             imageUrlProcessed = "https://example.com/test_image_processed.jpg",
-            capturedAt = Instant.now().toString()
+            capturedDate = LocalDate.now(ZoneId.of("America/Los_Angeles")).toString()
         )
 
         val createResponse = authenticatedService.createSubmission(submission)

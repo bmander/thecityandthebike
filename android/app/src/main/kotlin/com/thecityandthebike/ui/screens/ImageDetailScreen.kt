@@ -26,8 +26,7 @@ import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import com.thecityandthebike.data.model.dto.SubmissionResponse
 import com.thecityandthebike.util.imageUrlToUri
-import java.time.Instant
-import java.time.ZoneId
+import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -38,12 +37,11 @@ fun ImageDetailScreen(
 ) {
     val imageUri = submission.imageUrlOriginal?.let { imageUrlToUri(it) }
 
-    val formattedDate = submission.capturedAt?.let {
+    val formattedDate = submission.capturedDate?.let {
         try {
-            val instant = Instant.parse(it)
-            DateTimeFormatter.ofPattern("MMM d, yyyy 'at' h:mm a")
-                .withZone(ZoneId.systemDefault())
-                .format(instant)
+            val localDate = LocalDate.parse(it)
+            DateTimeFormatter.ofPattern("MMM d, yyyy")
+                .format(localDate)
         } catch (_: Exception) {
             it
         }

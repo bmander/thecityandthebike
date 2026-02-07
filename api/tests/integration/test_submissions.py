@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
 
 from app.dependencies import get_password_hash, create_access_token
 from app.models import User, Bike, FenderSubmission
@@ -49,7 +49,7 @@ class TestGetSubmissions:
             bike_qr_id=other_bike.bike_qr_id,
             image_url_original="https://example.com/other.jpg",
             image_url_processed="https://example.com/other-processed.jpg",
-            captured_at=datetime.now(timezone.utc),
+            captured_date=date.today(),
         )
         db_session.add(other_submission)
         db_session.commit()
@@ -83,9 +83,7 @@ class TestCreateSubmission:
             "bike_qr_id": "NEW-BIKE-001",
             "image_url_original": "https://example.com/original.jpg",
             "image_url_processed": "https://example.com/processed.jpg",
-            "captured_at": datetime.now(timezone.utc).isoformat(),
-            "latitude": 45.5231,
-            "longitude": -122.6765,
+            "captured_date": date.today().isoformat(),
             "user_caption": "My new bike submission",
         }
 
@@ -118,7 +116,7 @@ class TestCreateSubmission:
             "bike_qr_id": test_bike.bike_qr_id,
             "image_url_original": "https://example.com/new.jpg",
             "image_url_processed": "https://example.com/new-processed.jpg",
-            "captured_at": datetime.now(timezone.utc).isoformat(),
+            "captured_date": date.today().isoformat(),
         }
 
         response = client.post(
@@ -142,7 +140,7 @@ class TestCreateSubmission:
             "bike_qr_id": "MINIMAL-BIKE",
             "image_url_original": "https://example.com/original.jpg",
             "image_url_processed": "https://example.com/processed.jpg",
-            "captured_at": datetime.now(timezone.utc).isoformat(),
+            "captured_date": date.today().isoformat(),
         }
 
         response = client.post(
@@ -152,8 +150,6 @@ class TestCreateSubmission:
         )
         assert response.status_code == 201
         data = response.json()
-        assert data["latitude"] is None
-        assert data["longitude"] is None
         assert data["user_caption"] is None
 
     def test_create_submission_missing_bike_qr_id(self, client, auth_headers):
@@ -161,7 +157,7 @@ class TestCreateSubmission:
         submission_data = {
             "image_url_original": "https://example.com/original.jpg",
             "image_url_processed": "https://example.com/processed.jpg",
-            "captured_at": datetime.now(timezone.utc).isoformat(),
+            "captured_date": date.today().isoformat(),
         }
 
         response = client.post(
@@ -171,8 +167,8 @@ class TestCreateSubmission:
         )
         assert response.status_code == 422
 
-    def test_create_submission_missing_captured_at(self, client, auth_headers):
-        """Submission without captured_at should return 422."""
+    def test_create_submission_missing_captured_date(self, client, auth_headers):
+        """Submission without captured_date should return 422."""
         submission_data = {
             "bike_qr_id": "TEST-BIKE",
             "image_url_original": "https://example.com/original.jpg",
@@ -192,7 +188,7 @@ class TestCreateSubmission:
             "bike_qr_id": "TEST-BIKE",
             "image_url_original": "https://example.com/original.jpg",
             "image_url_processed": "https://example.com/processed.jpg",
-            "captured_at": datetime.now(timezone.utc).isoformat(),
+            "captured_date": date.today().isoformat(),
         }
 
         response = client.post("/submissions", json=submission_data)

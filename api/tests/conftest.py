@@ -6,7 +6,7 @@ os.environ.setdefault("PGPASSWORD", "testpassword")
 os.environ.setdefault("JWT_SECRET_KEY", "test-secret-key")
 
 from contextlib import asynccontextmanager
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
 import uuid
 
 import pytest
@@ -180,9 +180,7 @@ def test_submission(db_session, test_user, test_bike):
         image_url_original="https://example.com/original.jpg",
         image_url_thumbnail="https://example.com/thumbnail.jpg",
         image_url_processed="https://example.com/processed.jpg",
-        latitude=45.5231,
-        longitude=-122.6765,
-        captured_at=datetime.now(timezone.utc),
+        captured_date=date.today(),
         user_caption="Test caption",
     )
     db_session.add(submission)
@@ -196,9 +194,7 @@ def test_submission(db_session, test_user, test_bike):
         "image_url_original": submission.image_url_original,
         "image_url_thumbnail": submission.image_url_thumbnail,
         "image_url_processed": submission.image_url_processed,
-        "latitude": submission.latitude,
-        "longitude": submission.longitude,
-        "captured_at": submission.captured_at,
+        "captured_date": submission.captured_date,
         "user_caption": submission.user_caption,
     })()
     db_session.expunge(submission)

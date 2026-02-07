@@ -18,7 +18,8 @@ import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import java.io.File
-import java.time.Instant
+import java.time.LocalDate
+import java.time.ZoneId
 import java.util.UUID
 
 @RunWith(AndroidJUnit4::class)
@@ -91,9 +92,7 @@ class ImageUploadIntegrationTest {
             bikeQrId = "BIKE_${UUID.randomUUID().toString().take(8)}",
             imageUrlOriginal = uploadResult!!.url,
             imageUrlProcessed = uploadResult.url,
-            capturedAt = Instant.now().toString(),
-            latitude = 40.7128,
-            longitude = -74.0060,
+            capturedDate = LocalDate.now(ZoneId.of("America/Los_Angeles")).toString(),
             userCaption = "Test submission with uploaded image"
         )
 

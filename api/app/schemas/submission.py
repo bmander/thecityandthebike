@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import date, datetime
 from typing import Optional
 from uuid import UUID
 
@@ -10,9 +10,7 @@ class SubmissionCreate(BaseModel):
     image_url_original: str
     image_url_thumbnail: Optional[str] = None
     image_url_processed: str
-    captured_at: datetime
-    latitude: Optional[float] = None
-    longitude: Optional[float] = None
+    captured_date: date
     user_caption: Optional[str] = None
 
 
@@ -25,9 +23,7 @@ class SubmissionResponse(BaseModel):
     image_url_original: Optional[str] = None
     image_url_thumbnail: Optional[str] = None
     image_url_processed: Optional[str] = None
-    latitude: Optional[float] = None
-    longitude: Optional[float] = None
-    captured_at: Optional[datetime] = None
+    captured_date: Optional[date] = None
     uploaded_at: Optional[datetime] = None
     user_caption: Optional[str] = None
     username: Optional[str] = None
