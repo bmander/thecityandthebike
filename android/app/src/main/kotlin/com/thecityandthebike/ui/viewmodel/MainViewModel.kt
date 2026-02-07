@@ -96,6 +96,7 @@ class MainViewModel @Inject constructor(
                         val submission = SubmissionCreate(
                             bikeQrId = bikeQrId ?: UUID.randomUUID().toString(),
                             imageUrlOriginal = imageUrl,
+                            imageUrlThumbnail = uploadResult.data.thumbnailUrl,
                             imageUrlProcessed = imageUrl,
                             capturedAt = DateTimeFormatter.ISO_INSTANT.format(Instant.now())
                         )

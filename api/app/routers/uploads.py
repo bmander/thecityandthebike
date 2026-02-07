@@ -1,4 +1,5 @@
 import io
+import logging
 import mimetypes
 import os
 import uuid
@@ -12,6 +13,8 @@ from pydantic import BaseModel
 from ..config import settings
 from ..dependencies import get_current_user
 from ..models import User
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/uploads", tags=["uploads"])
 
@@ -33,14 +36,15 @@ def _get_gcs_bucket():
 def _generate_thumbnail(contents: bytes) -> Optional[bytes]:
     """Generate a JPEG thumbnail with max dimension of THUMBNAIL_MAX_SIZE pixels."""
     try:
-        img = Image.open(io.BytesIO(contents))
-        img.thumbnail((THUMBNAIL_MAX_SIZE, THUMBNAIL_MAX_SIZE))
-        if img.mode in ("RGBA", "P"):
-            img = img.convert("RGB")
-        buf = io.BytesIO()
-        img.save(buf, format="JPEG", quality=85)
-        return buf.getvalue()
+        with Image.open(io.BytesIO(contents)) as img:
+            img.thumbnail((THUMBNAIL_MAX_SIZE, THUMBNAIL_MAX_SIZE))
+            if img.mode in ("RGBA", "P"):
+                img = img.convert("RGB")
+            buf = io.BytesIO()
+            img.save(buf, format="JPEG", quality=85)
+            return buf.getvalue()
     except Exception:
+        logger.warning("Failed to generate thumbnail", exc_info=True)
         return None
 
 
@@ -106,6 +110,9 @@ async def upload_image(
 async def get_image(filename: str):
     ext = os.path.splitext(filename)[1].lower()
     if ext not in ALLOWED_EXTENSIONS:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Not found")
+
+    if ".." in filename or "/" in filename or "\\" in filename:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Not found")
 
     if settings.STORAGE_BUCKET:

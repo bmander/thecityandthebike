@@ -1,3 +1,4 @@
+import io
 import os
 
 # Set test environment variables before importing app modules
@@ -11,6 +12,7 @@ import uuid
 import pytest
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
+from PIL import Image
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
@@ -20,6 +22,17 @@ from app.database import Base, get_db
 from app.dependencies import get_password_hash, create_access_token
 from app.models import User, Bike, FenderSubmission
 from app.routers import auth_router, users_router, submissions_router, bikes_router, uploads_router
+
+
+def create_test_image(width=800, height=600, format="JPEG", mode="RGB", color="red"):
+    """Create a real image in memory for testing."""
+    img = Image.new(mode, (width, height), color=color)
+    buf = io.BytesIO()
+    if format == "JPEG" and mode in ("RGBA", "P"):
+        img = img.convert("RGB")
+    img.save(buf, format=format)
+    buf.seek(0)
+    return buf
 
 
 # Create test engine with StaticPool for in-memory SQLite

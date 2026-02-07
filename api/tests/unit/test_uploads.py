@@ -1,18 +1,7 @@
-import io
 from unittest.mock import MagicMock, patch, call
 
-from PIL import Image
-
 from app.config import settings
-
-
-def _create_test_image(width=800, height=600, format="JPEG"):
-    """Create a real image in memory for testing."""
-    img = Image.new("RGB", (width, height), color="red")
-    buf = io.BytesIO()
-    img.save(buf, format=format)
-    buf.seek(0)
-    return buf
+from tests.conftest import create_test_image
 
 
 class TestGCSUploadURL:
@@ -31,7 +20,7 @@ class TestGCSUploadURL:
         mock_bucket.blob.return_value = mock_blob
         mock_get_gcs_bucket.return_value = mock_bucket
 
-        image_buf = _create_test_image()
+        image_buf = create_test_image()
 
         response = client.post(
             "/uploads/images",
@@ -56,3 +45,32 @@ class TestGCSUploadURL:
         assert thumb_path[0].endswith(".jpg")
 
         assert mock_blob.upload_from_string.call_count == 2
+
+    @patch("app.routers.uploads._get_gcs_bucket")
+    def test_gcs_thumbnail_content_type(
+        self, mock_get_gcs_bucket, client, auth_headers, monkeypatch
+    ):
+        """Verify the thumbnail blob is uploaded with content_type='image/jpeg'."""
+        monkeypatch.setattr(settings, "STORAGE_BUCKET", "my-test-bucket")
+
+        mock_bucket = MagicMock()
+        mock_blob = MagicMock()
+        mock_bucket.blob.return_value = mock_blob
+        mock_get_gcs_bucket.return_value = mock_bucket
+
+        image_buf = create_test_image()
+
+        response = client.post(
+            "/uploads/images",
+            headers=auth_headers,
+            files={"image": ("test.jpg", image_buf, "image/jpeg")},
+        )
+
+        assert response.status_code == 201
+
+        # Find the thumbnail upload call (second call)
+        upload_calls = mock_blob.upload_from_string.call_args_list
+        assert len(upload_calls) == 2
+        # The thumbnail upload is the second call
+        thumb_call = upload_calls[1]
+        assert thumb_call[1]["content_type"] == "image/jpeg"

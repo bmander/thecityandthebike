@@ -7,15 +7,7 @@ import pytest
 from PIL import Image
 
 from app.routers.uploads import UPLOAD_DIR
-
-
-def _create_test_image(width=800, height=600, format="JPEG"):
-    """Create a real image in memory for testing."""
-    img = Image.new("RGB", (width, height), color="red")
-    buf = io.BytesIO()
-    img.save(buf, format=format)
-    buf.seek(0)
-    return buf
+from tests.conftest import create_test_image
 
 
 class TestUploadsRouter:
@@ -41,7 +33,7 @@ class TestUploadsRouter:
 
     def test_upload_image_success(self, client, auth_headers):
         """Test successful image upload returns url, filename, and thumbnail_url."""
-        image_buf = _create_test_image()
+        image_buf = create_test_image()
 
         response = client.post(
             "/uploads/images",
@@ -60,7 +52,7 @@ class TestUploadsRouter:
 
     def test_upload_image_png_success(self, client, auth_headers):
         """Test successful PNG image upload generates a JPEG thumbnail."""
-        image_buf = _create_test_image(format="PNG")
+        image_buf = create_test_image(format="PNG")
 
         response = client.post(
             "/uploads/images",
@@ -76,7 +68,7 @@ class TestUploadsRouter:
 
     def test_upload_image_no_auth_fails(self, client):
         """Test that upload without auth returns 401."""
-        image_buf = _create_test_image()
+        image_buf = create_test_image()
 
         response = client.post(
             "/uploads/images",
@@ -119,7 +111,7 @@ class TestUploadsRouter:
         ]
 
         for ext, fmt in extensions_and_formats:
-            image_buf = _create_test_image(format=fmt)
+            image_buf = create_test_image(format=fmt)
 
             response = client.post(
                 "/uploads/images",
@@ -133,7 +125,7 @@ class TestUploadsRouter:
 
     def test_upload_then_retrieve_round_trip(self, client, auth_headers):
         """Test that an uploaded file can be retrieved via its returned URL."""
-        image_buf = _create_test_image()
+        image_buf = create_test_image()
         original_bytes = image_buf.getvalue()
 
         # Upload
@@ -152,7 +144,7 @@ class TestUploadsRouter:
 
     def test_upload_thumbnail_retrievable(self, client, auth_headers):
         """Test that the thumbnail can be retrieved via its returned URL."""
-        image_buf = _create_test_image(width=800, height=600)
+        image_buf = create_test_image(width=800, height=600)
 
         # Upload
         upload_response = client.post(
@@ -174,4 +166,58 @@ class TestUploadsRouter:
     def test_get_nonexistent_image_returns_404(self, client):
         """Test that requesting a nonexistent image returns 404."""
         response = client.get("/uploads/images/nonexistent.jpg")
+        assert response.status_code == 404
+
+    def test_upload_small_image_thumbnail_not_upscaled(self, client, auth_headers):
+        """Test that a small image thumbnail is not upscaled beyond its original size."""
+        image_buf = create_test_image(width=200, height=150)
+
+        upload_response = client.post(
+            "/uploads/images",
+            headers=auth_headers,
+            files={"image": ("small.jpg", image_buf, "image/jpeg")},
+        )
+        assert upload_response.status_code == 201
+        thumbnail_url = upload_response.json()["thumbnail_url"]
+
+        get_response = client.get(thumbnail_url)
+        assert get_response.status_code == 200
+
+        thumb_img = Image.open(io.BytesIO(get_response.content))
+        assert thumb_img.size == (200, 150)
+
+    def test_upload_corrupt_file_returns_null_thumbnail(self, client, auth_headers):
+        """Test that uploading garbage bytes with a valid extension succeeds but thumbnail is null."""
+        response = client.post(
+            "/uploads/images",
+            headers=auth_headers,
+            files={"image": ("corrupt.jpg", io.BytesIO(b"not an image"), "image/jpeg")},
+        )
+
+        assert response.status_code == 201
+        data = response.json()
+        assert data["thumbnail_url"] is None
+
+    def test_upload_rgba_png_thumbnail_is_valid_jpeg(self, client, auth_headers):
+        """Test that an RGBA PNG upload produces a valid JPEG thumbnail."""
+        image_buf = create_test_image(width=800, height=600, format="PNG", mode="RGBA")
+
+        upload_response = client.post(
+            "/uploads/images",
+            headers=auth_headers,
+            files={"image": ("rgba.png", image_buf, "image/png")},
+        )
+        assert upload_response.status_code == 201
+        thumbnail_url = upload_response.json()["thumbnail_url"]
+
+        get_response = client.get(thumbnail_url)
+        assert get_response.status_code == 200
+
+        thumb_img = Image.open(io.BytesIO(get_response.content))
+        assert thumb_img.format == "JPEG"
+        assert thumb_img.mode == "RGB"
+
+    def test_path_traversal_returns_404(self, client):
+        """Test that path traversal attempts return 404."""
+        response = client.get("/uploads/images/../../etc/passwd")
         assert response.status_code == 404

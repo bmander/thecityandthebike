@@ -33,5 +33,6 @@ data class SubmissionResponse(
 @Serializable
 data class UploadResponse(
     val url: String,
-    val filename: String
+    val filename: String,
+    @SerialName("thumbnail_url") val thumbnailUrl: String? = null
 )
