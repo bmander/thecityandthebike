@@ -37,9 +37,10 @@ fun MainScreen(
 
     // Combine server submissions with local images
     val serverImageUris = state.submissions.mapNotNull { submission ->
-        submission.imageUrlOriginal?.let { url ->
-            if (url.startsWith("http")) Uri.parse(url)
-            else Uri.parse(BuildConfig.BASE_URL + url)
+        val url = submission.imageUrlThumbnail ?: submission.imageUrlOriginal
+        url?.let {
+            if (it.startsWith("http")) Uri.parse(it)
+            else Uri.parse(BuildConfig.BASE_URL + it)
         }
     }
     val allImageUris = state.localImages + serverImageUris

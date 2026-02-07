@@ -44,6 +44,7 @@ class FenderSubmission(Base):
     user_id = Column(String(36), ForeignKey("users.user_id"), nullable=False)
     bike_qr_id = Column(String(255), ForeignKey("bikes.bike_qr_id"), nullable=False)
     image_url_original = Column(Text)
+    image_url_thumbnail = Column(Text)
     image_url_processed = Column(Text)
     latitude = Column(Float)
     longitude = Column(Float)
