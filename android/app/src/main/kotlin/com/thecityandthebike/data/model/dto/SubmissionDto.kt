@@ -9,9 +9,7 @@ data class SubmissionCreate(
     @SerialName("image_url_original") val imageUrlOriginal: String,
     @SerialName("image_url_thumbnail") val imageUrlThumbnail: String? = null,
     @SerialName("image_url_processed") val imageUrlProcessed: String,
-    @SerialName("captured_at") val capturedAt: String,
-    val latitude: Double? = null,
-    val longitude: Double? = null,
+    @SerialName("captured_date") val capturedDate: String,
     @SerialName("user_caption") val userCaption: String? = null
 )
 
@@ -23,9 +21,7 @@ data class SubmissionResponse(
     @SerialName("image_url_original") val imageUrlOriginal: String? = null,
     @SerialName("image_url_thumbnail") val imageUrlThumbnail: String? = null,
     @SerialName("image_url_processed") val imageUrlProcessed: String? = null,
-    val latitude: Double? = null,
-    val longitude: Double? = null,
-    @SerialName("captured_at") val capturedAt: String? = null,
+    @SerialName("captured_date") val capturedDate: String? = null,
     @SerialName("uploaded_at") val uploadedAt: String? = null,
     @SerialName("user_caption") val userCaption: String? = null,
     val username: String? = null

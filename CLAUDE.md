@@ -73,3 +73,7 @@ Testing on Android 16 devices requires recent library versions due to `InputMana
 - AndroidX Test Runner: 1.6.2 or later
 
 If tests fail with `NoSuchMethodException: android.hardware.input.InputManager.getInstance`, update these dependencies.
+
+## Background Commands
+
+Do not pipe background shell commands through `tail`, `head`, or other utilities. The background shell environment has a limited PATH and these commands may not be found, causing the entire command to fail with exit code 127.

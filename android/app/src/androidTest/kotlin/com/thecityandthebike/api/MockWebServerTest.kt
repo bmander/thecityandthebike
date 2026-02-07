@@ -155,9 +155,7 @@ class MockWebServerTest {
                     "bike_qr_id": "bike1",
                     "image_url_original": "http://example.com/image1.jpg",
                     "image_url_processed": "http://example.com/image1_processed.jpg",
-                    "latitude": 40.7128,
-                    "longitude": -74.0060,
-                    "captured_at": "2024-01-15T10:30:00Z",
+                    "captured_date": "2024-01-15",
                     "uploaded_at": "2024-01-15T10:31:00Z",
                     "user_caption": "Nice bike!"
                 },
@@ -167,9 +165,7 @@ class MockWebServerTest {
                     "bike_qr_id": "bike2",
                     "image_url_original": "http://example.com/image2.jpg",
                     "image_url_processed": null,
-                    "latitude": null,
-                    "longitude": null,
-                    "captured_at": "2024-01-16T14:00:00Z",
+                    "captured_date": "2024-01-16",
                     "uploaded_at": "2024-01-16T14:01:00Z",
                     "user_caption": null
                 }
@@ -191,7 +187,7 @@ class MockWebServerTest {
         assertEquals(2, submissions?.size)
         assertEquals("sub1", submissions?.get(0)?.submissionId)
         assertEquals("bike1", submissions?.get(0)?.bikeQrId)
-        assertEquals(40.7128, submissions?.get(0)?.latitude)
+        assertEquals("2024-01-15", submissions?.get(0)?.capturedDate)
     }
 
     @Test

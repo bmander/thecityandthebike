@@ -18,8 +18,8 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
-import java.time.Instant
-import java.time.format.DateTimeFormatter
+import java.time.LocalDate
+import java.time.ZoneId
 import java.util.UUID
 import javax.inject.Inject
 
@@ -106,7 +106,7 @@ class MainViewModel @Inject constructor(
                             imageUrlOriginal = imageUrl,
                             imageUrlThumbnail = uploadResult.data.thumbnailUrl,
                             imageUrlProcessed = imageUrl,
-                            capturedAt = DateTimeFormatter.ISO_INSTANT.format(Instant.now())
+                            capturedDate = LocalDate.now(ZoneId.of("America/Los_Angeles")).toString()
                         )
 
                         when (val createResult = submissionRepository.createSubmission(submission)) {

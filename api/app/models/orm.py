@@ -1,7 +1,7 @@
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
 import uuid
 
-from sqlalchemy import Boolean, Column, String, DateTime, Float, Text, ForeignKey
+from sqlalchemy import Boolean, Column, String, Date, DateTime, Text, ForeignKey
 from sqlalchemy.orm import relationship
 
 from ..database import Base
@@ -46,9 +46,7 @@ class FenderSubmission(Base):
     image_url_original = Column(Text)
     image_url_thumbnail = Column(Text)
     image_url_processed = Column(Text)
-    latitude = Column(Float)
-    longitude = Column(Float)
-    captured_at = Column(DateTime(timezone=True), nullable=False)
+    captured_date = Column(Date, nullable=False)
     uploaded_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
     user_caption = Column(Text)
 
