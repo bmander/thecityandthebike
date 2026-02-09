@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">The City and The Bike</string>
+
+    <!-- Onboarding: navigation -->
+    <string name="onboarding_back">Quay lại</string>
+    <string name="onboarding_next">Tiếp theo</string>
+    <string name="onboarding_get_started">Bắt đầu</string>
+    <string name="onboarding_page_indicator">Trang %1$d / %2$d</string>
+
+    <!-- Onboarding: page 1 -->
+    <string name="onboarding_what_is_this_title">Đây là gì?</string>
+    <string name="onboarding_what_is_this_body">The City and The Bike là một bộ sưu tập ảnh do cộng đồng xây dựng về các nhãn dán và nghệ thuật đường phố trên xe đạp chia sẻ ở Seattle.</string>
+
+    <!-- Onboarding: page 2 -->
+    <string name="onboarding_how_title">Làm thế nào?</string>
+    <string name="onboarding_how_step1">Quét mã QR trên xe đạp</string>
+    <string name="onboarding_how_step2">Chụp ảnh bánh xe sau</string>
+    <string name="onboarding_how_step3">Hãy sưu tập tất cả</string>
+
+    <!-- Onboarding: page 3 -->
+    <string name="onboarding_privacy_copyright_title">Quyền riêng tư &amp; Bản quyền</string>
+    <string name="onboarding_privacy_subtitle">Quyền riêng tư</string>
+    <string name="onboarding_privacy_body">Ứng dụng này cố gắng không thu thập nhiều thông tin về bạn. Chúng tôi không yêu cầu tên hay email của bạn. Chúng tôi không theo dõi vị trí của bạn. Khi bạn tải ảnh lên, chúng tôi xóa các chi tiết có thể tiết lộ danh tính của bạn, chẳng hạn như thời gian và ngày chính xác chụp ảnh. Chúng tôi chỉ giữ lại ngày bạn tải lên. Tuy nhiên, ai đó thật sự cố gắng vẫn có thể suy ra bạn là ai bằng cách xem vị trí xe đạp và nội dung trong ảnh của bạn. Hãy lưu ý điều này.</string>
+    <string name="onboarding_copyright_subtitle">Bản quyền</string>
+    <string name="onboarding_copyright_body">Bản quyền của tất cả ảnh bạn tải lên thuộc về bạn. Khi tải tệp lên, bạn đồng ý cấp phép hình ảnh theo Creative Commons BY-NC 4.0. Giấy phép này yêu cầu người sử dụng lại phải ghi nhận tác giả. Giấy phép cho phép người sử dụng lại phân phối, phối lại, chỉnh sửa và xây dựng dựa trên tài liệu ở bất kỳ phương tiện hay định dạng nào, chỉ dành cho mục đích phi thương mại.</string>
+    <string name="onboarding_cc_link">Tìm hiểu thêm về CC BY-NC 4.0</string>
+    <string name="onboarding_cc_link_a11y">Tìm hiểu thêm về CC BY-NC 4.0, mở trong trình duyệt</string>
+</resources>
