@@ -76,7 +76,7 @@ def get_current_user_optional(
     return db.query(User).filter(User.user_id == user_id).first()
 
 
-def create_refresh_token(user_id: str, db: Session) -> str:
+def create_refresh_token(user_id: str, db: Session, *, commit: bool = True) -> str:
     token = secrets.token_hex(32)
     record = RefreshToken(
         token=token,
@@ -84,12 +84,18 @@ def create_refresh_token(user_id: str, db: Session) -> str:
         expires_at=datetime.now(timezone.utc) + timedelta(days=REFRESH_TOKEN_EXPIRE_DAYS),
     )
     db.add(record)
-    db.commit()
+    if commit:
+        db.commit()
     return token
 
 
 def rotate_refresh_token(old_token: str, db: Session) -> tuple[str, str]:
-    record = db.query(RefreshToken).filter(RefreshToken.token == old_token).first()
+    record = (
+        db.query(RefreshToken)
+        .filter(RefreshToken.token == old_token)
+        .with_for_update()
+        .first()
+    )
     if not record:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail={"msg": "Invalid refresh token"})
     expires_at = record.expires_at if record.expires_at.tzinfo else record.expires_at.replace(tzinfo=timezone.utc)
@@ -99,7 +105,7 @@ def rotate_refresh_token(old_token: str, db: Session) -> tuple[str, str]:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail={"msg": "Refresh token expired"})
     user_id = record.user_id
     db.delete(record)
-    db.commit()
     access_token = create_access_token(subject=str(user_id))
-    new_refresh_token = create_refresh_token(user_id, db)
+    new_refresh_token = create_refresh_token(user_id, db, commit=False)
+    db.commit()
     return access_token, new_refresh_token

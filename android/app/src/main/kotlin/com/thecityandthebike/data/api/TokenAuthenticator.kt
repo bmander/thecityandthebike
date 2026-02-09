@@ -14,11 +14,13 @@ import okhttp3.RequestBody.Companion.toRequestBody
 import okhttp3.Response
 import okhttp3.Route
 import javax.inject.Inject
+import javax.inject.Named
 import javax.inject.Singleton
 
 @Singleton
 class TokenAuthenticator @Inject constructor(
-    private val tokenManager: TokenManager
+    private val tokenManager: TokenManager,
+    @Named("refresh") private val refreshClient: OkHttpClient
 ) : Authenticator {
 
     private val json = Json { ignoreUnknownKeys = true }
@@ -30,58 +32,67 @@ class TokenAuthenticator @Inject constructor(
             return null
         }
 
-        val refreshToken = tokenManager.getRefreshToken() ?: run {
-            tokenManager.clearToken()
-            return null
-        }
-
-        // Use a plain OkHttpClient to avoid circular dependency with AuthInterceptor
-        val client = OkHttpClient()
-        val requestBody = json.encodeToString(mapOf("refresh_token" to refreshToken))
-            .toRequestBody("application/json".toMediaType())
-
-        val refreshRequest = Request.Builder()
-            .url(BuildConfig.BASE_URL + "/auth/refresh")
-            .post(requestBody)
-            .build()
-
-        val refreshResponse = try {
-            client.newCall(refreshRequest).execute()
-        } catch (e: Exception) {
-            tokenManager.clearToken()
-            return null
-        }
-
-        if (!refreshResponse.isSuccessful) {
-            refreshResponse.close()
-            tokenManager.clearToken()
-            return null
-        }
-
-        val body = refreshResponse.body?.string() ?: run {
-            tokenManager.clearToken()
-            return null
-        }
-
-        return try {
-            val jsonObj = json.parseToJsonElement(body).jsonObject
-            val newAccessToken = jsonObj["access_token"]?.jsonPrimitive?.content ?: run {
-                tokenManager.clearToken()
-                return null
+        synchronized(this) {
+            // Check if another thread already refreshed the token
+            val currentToken = tokenManager.getToken()
+            if (currentToken != null && response.request.header("Authorization") != "Bearer $currentToken") {
+                // Token was already refreshed by another thread, retry with the new token
+                return response.request.newBuilder()
+                    .header("Authorization", "Bearer $currentToken")
+                    .build()
             }
-            val newRefreshToken = jsonObj["refresh_token"]?.jsonPrimitive?.content ?: run {
+
+            val refreshToken = tokenManager.getRefreshToken() ?: run {
                 tokenManager.clearToken()
                 return null
             }
 
-            tokenManager.saveTokens(newAccessToken, newRefreshToken)
+            val requestBody = json.encodeToString(mapOf("refresh_token" to refreshToken))
+                .toRequestBody("application/json".toMediaType())
 
-            response.request.newBuilder()
-                .header("Authorization", "Bearer $newAccessToken")
+            val refreshRequest = Request.Builder()
+                .url(BuildConfig.BASE_URL + "/auth/refresh")
+                .post(requestBody)
                 .build()
-        } catch (e: Exception) {
-            tokenManager.clearToken()
-            null
+
+            val refreshResponse = try {
+                refreshClient.newCall(refreshRequest).execute()
+            } catch (e: Exception) {
+                tokenManager.clearToken()
+                return null
+            }
+
+            if (!refreshResponse.isSuccessful) {
+                refreshResponse.close()
+                tokenManager.clearToken()
+                return null
+            }
+
+            val body = refreshResponse.body?.string() ?: run {
+                tokenManager.clearToken()
+                return null
+            }
+
+            return try {
+                val jsonObj = json.parseToJsonElement(body).jsonObject
+                val newAccessToken = jsonObj["access_token"]?.jsonPrimitive?.content ?: run {
+                    tokenManager.clearToken()
+                    return null
+                }
+                val newRefreshToken = jsonObj["refresh_token"]?.jsonPrimitive?.content ?: run {
+                    tokenManager.clearToken()
+                    return null
+                }
+
+                tokenManager.saveTokens(newAccessToken, newRefreshToken)
+
+                response.request.newBuilder()
+                    .header("Authorization", "Bearer $newAccessToken")
+                    .build()
+            } catch (e: Exception) {
+                tokenManager.clearToken()
+                null
+            }
         }
     }
 
