@@ -31,13 +31,13 @@ class AuthRepositoryTest {
 
     @Test
     fun `login success should save token and return success`() = runTest {
-        val tokenResponse = TokenResponse(accessToken = "test_token", tokenType = "bearer")
+        val tokenResponse = TokenResponse(accessToken = "test_token", refreshToken = "test_refresh", tokenType = "bearer")
         coEvery { apiService.login(LoginRequest("user", "pass")) } returns Response.success(tokenResponse)
 
         val result = repository.login("user", "pass")
 
         assertTrue(result is AuthResult.Success)
-        verify { tokenManager.saveToken("test_token") }
+        verify { tokenManager.saveTokens("test_token", "test_refresh") }
     }
 
     @Test
@@ -88,7 +88,8 @@ class AuthRepositoryTest {
     }
 
     @Test
-    fun `logout should clear token`() {
+    fun `logout should clear token`() = runTest {
+        coEvery { apiService.logout(any()) } returns Response.success(MessageResponse(msg = "Logged out"))
         repository.logout()
         verify { tokenManager.clearToken() }
     }

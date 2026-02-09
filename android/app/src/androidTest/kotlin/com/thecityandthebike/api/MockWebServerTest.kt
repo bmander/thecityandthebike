@@ -52,6 +52,7 @@ class MockWebServerTest {
         val responseJson = """
             {
                 "access_token": "test_jwt_token",
+                "refresh_token": "test_refresh_token",
                 "token_type": "bearer"
             }
         """.trimIndent()
