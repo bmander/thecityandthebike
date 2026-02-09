@@ -3,8 +3,10 @@ package com.thecityandthebike.data.repository
 import com.thecityandthebike.data.api.ApiService
 import com.thecityandthebike.data.local.TokenManager
 import com.thecityandthebike.data.model.dto.LoginRequest
+import com.thecityandthebike.data.model.dto.RefreshRequest
 import com.thecityandthebike.data.model.dto.RegisterRequest
 import com.thecityandthebike.data.model.dto.UserResponse
+import kotlinx.coroutines.flow.StateFlow
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -18,12 +20,14 @@ class AuthRepository @Inject constructor(
     private val apiService: ApiService,
     private val tokenManager: TokenManager
 ) {
+    val isLoggedIn: StateFlow<Boolean> get() = tokenManager.isLoggedIn
+
     suspend fun login(username: String, password: String): AuthResult<Unit> {
         return try {
             val response = apiService.login(LoginRequest(username, password))
             if (response.isSuccessful) {
                 response.body()?.let { tokenResponse ->
-                    tokenManager.saveToken(tokenResponse.accessToken)
+                    tokenManager.saveTokens(tokenResponse.accessToken, tokenResponse.refreshToken)
                     AuthResult.Success(Unit)
                 } ?: AuthResult.Error("Empty response")
             } else {
@@ -56,9 +60,6 @@ class AuthRepository @Inject constructor(
                 response.body()?.let { user ->
                     AuthResult.Success(user)
                 } ?: AuthResult.Error("Empty response")
-            } else if (response.code() == 401) {
-                tokenManager.clearToken()
-                AuthResult.Error("Session expired")
             } else {
                 AuthResult.Error("Failed to get user")
             }
@@ -67,7 +68,15 @@ class AuthRepository @Inject constructor(
         }
     }
 
-    fun logout() {
+    suspend fun logout() {
+        try {
+            val refreshToken = tokenManager.getRefreshToken()
+            if (refreshToken != null) {
+                apiService.logout(RefreshRequest(refreshToken))
+            }
+        } catch (_: Exception) {
+            // Best-effort server-side logout
+        }
         tokenManager.clearToken()
     }
 

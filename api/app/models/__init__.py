@@ -1,3 +1,3 @@
-from .orm import User, Bike, FenderSubmission
+from .orm import User, RefreshToken, Bike, FenderSubmission
 
-__all__ = ["User", "Bike", "FenderSubmission"]
+__all__ = ["User", "RefreshToken", "Bike", "FenderSubmission"]

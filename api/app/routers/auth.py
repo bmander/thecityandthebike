@@ -5,9 +5,9 @@ from sqlalchemy import or_
 from sqlalchemy.orm import Session
 
 from ..database import get_db
-from ..dependencies import get_password_hash, verify_password, create_access_token
-from ..models import User
-from ..schemas import UserRegister, UserLogin, Token, MessageResponse
+from ..dependencies import get_password_hash, verify_password, create_access_token, create_refresh_token, rotate_refresh_token
+from ..models import User, RefreshToken
+from ..schemas import UserRegister, UserLogin, Token, RefreshRequest, MessageResponse
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
@@ -40,4 +40,20 @@ def login(data: UserLogin, db: Annotated[Session, Depends(get_db)]):
         )
 
     access_token = create_access_token(subject=str(user.user_id))
-    return {"access_token": access_token, "token_type": "bearer"}
+    refresh_token = create_refresh_token(user_id=str(user.user_id), db=db)
+    return {"access_token": access_token, "refresh_token": refresh_token, "token_type": "bearer"}
+
+
+@router.post("/refresh", response_model=Token)
+def refresh(data: RefreshRequest, db: Annotated[Session, Depends(get_db)]):
+    access_token, new_refresh_token = rotate_refresh_token(data.refresh_token, db)
+    return {"access_token": access_token, "refresh_token": new_refresh_token, "token_type": "bearer"}
+
+
+@router.post("/logout", response_model=MessageResponse)
+def logout(data: RefreshRequest, db: Annotated[Session, Depends(get_db)]):
+    record = db.query(RefreshToken).filter(RefreshToken.token == data.refresh_token).first()
+    if record:
+        db.delete(record)
+        db.commit()
+    return {"msg": "Logged out"}

@@ -23,6 +23,18 @@ class User(Base):
     submissions = relationship("FenderSubmission", back_populates="user")
 
 
+class RefreshToken(Base):
+    __tablename__ = "refresh_tokens"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    token = Column(String(64), unique=True, index=True, nullable=False)
+    user_id = Column(String(36), ForeignKey("users.user_id"), nullable=False)
+    expires_at = Column(DateTime(timezone=True), nullable=False)
+    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
+
+    user = relationship("User")
+
+
 class Bike(Base):
     __tablename__ = "bikes"
 

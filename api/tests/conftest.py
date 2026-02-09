@@ -20,7 +20,7 @@ from sqlalchemy.pool import StaticPool
 from app.admin import setup_admin
 from app.database import Base, get_db
 from app.dependencies import get_password_hash, create_access_token
-from app.models import User, Bike, FenderSubmission
+from app.models import User, Bike, FenderSubmission, RefreshToken
 from app.routers import auth_router, users_router, submissions_router, bikes_router, uploads_router
 
 

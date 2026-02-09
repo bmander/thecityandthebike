@@ -7,7 +7,7 @@ from alembic import context
 
 from app.config import settings
 from app.database import Base
-from app.models import User, Bike, FenderSubmission  # noqa: F401 - register models
+from app.models import User, Bike, FenderSubmission, RefreshToken  # noqa: F401 - register models
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.

@@ -23,8 +23,21 @@ class AuthViewModel @Inject constructor(
     private val authRepository: AuthRepository
 ) : ViewModel() {
 
-    private val _state = MutableStateFlow(AuthState(isLoggedIn = authRepository.isLoggedIn()))
+    private val _state = MutableStateFlow(AuthState(isLoggedIn = authRepository.isLoggedIn.value))
     val state: StateFlow<AuthState> = _state.asStateFlow()
+
+    init {
+        viewModelScope.launch {
+            authRepository.isLoggedIn.collect { loggedIn ->
+                if (!loggedIn && _state.value.isLoggedIn) {
+                    _state.value = _state.value.copy(
+                        isLoggedIn = false,
+                        error = "Session expired. Please sign in again."
+                    )
+                }
+            }
+        }
+    }
 
     fun login(username: String, password: String) {
         viewModelScope.launch {
@@ -55,8 +68,10 @@ class AuthViewModel @Inject constructor(
     }
 
     fun logout() {
-        authRepository.logout()
-        _state.value = AuthState(isLoggedIn = false)
+        viewModelScope.launch {
+            authRepository.logout()
+            _state.value = AuthState(isLoggedIn = false)
+        }
     }
 
     fun clearError() {

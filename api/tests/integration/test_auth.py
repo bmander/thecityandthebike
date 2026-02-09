@@ -1,7 +1,10 @@
+from datetime import datetime, timedelta, timezone
+
 from jose import jwt
 
 from app.config import settings
 from app.dependencies import ALGORITHM
+from app.models import RefreshToken
 
 
 class TestRegister:
@@ -168,7 +171,7 @@ class TestLogin:
     """Tests for POST /auth/login endpoint."""
 
     def test_login_success(self, client, test_user, test_user_data):
-        """Successful login should return 200 with valid token."""
+        """Successful login should return 200 with valid token pair."""
         response = client.post(
             "/auth/login",
             json={
@@ -179,6 +182,7 @@ class TestLogin:
         assert response.status_code == 200
         data = response.json()
         assert "access_token" in data
+        assert "refresh_token" in data
         assert data["token_type"] == "bearer"
 
     def test_login_returns_valid_jwt(self, client, test_user, test_user_data):
@@ -237,3 +241,115 @@ class TestLogin:
             },
         )
         assert response.status_code == 422
+
+
+class TestRefresh:
+    """Tests for POST /auth/refresh endpoint."""
+
+    def _login(self, client, test_user_data):
+        response = client.post(
+            "/auth/login",
+            json={
+                "username": test_user_data["username"],
+                "password": test_user_data["password"],
+            },
+        )
+        return response.json()
+
+    def test_refresh_success(self, client, test_user, test_user_data):
+        """Refresh should return a new token pair."""
+        login_data = self._login(client, test_user_data)
+        response = client.post(
+            "/auth/refresh",
+            json={"refresh_token": login_data["refresh_token"]},
+        )
+        assert response.status_code == 200
+        data = response.json()
+        assert "access_token" in data
+        assert "refresh_token" in data
+        assert data["token_type"] == "bearer"
+
+    def test_refresh_rotation(self, client, test_user, test_user_data):
+        """After refresh, old refresh token should fail with 401."""
+        login_data = self._login(client, test_user_data)
+        old_refresh = login_data["refresh_token"]
+        client.post("/auth/refresh", json={"refresh_token": old_refresh})
+        response = client.post("/auth/refresh", json={"refresh_token": old_refresh})
+        assert response.status_code == 401
+
+    def test_refresh_invalid_token(self, client):
+        """Random token should return 401."""
+        response = client.post(
+            "/auth/refresh",
+            json={"refresh_token": "totally-invalid-token"},
+        )
+        assert response.status_code == 401
+
+    def test_refresh_expired_token(self, client, test_user, db_session):
+        """Expired refresh token should return 401."""
+        expired_token = RefreshToken(
+            token="expired-token-value",
+            user_id=test_user.user_id,
+            expires_at=datetime.now(timezone.utc) - timedelta(days=1),
+        )
+        db_session.add(expired_token)
+        db_session.commit()
+
+        response = client.post(
+            "/auth/refresh",
+            json={"refresh_token": "expired-token-value"},
+        )
+        assert response.status_code == 401
+
+    def test_refresh_returns_working_access_token(self, client, test_user, test_user_data):
+        """New access token from refresh should work for authenticated endpoints."""
+        login_data = self._login(client, test_user_data)
+        refresh_response = client.post(
+            "/auth/refresh",
+            json={"refresh_token": login_data["refresh_token"]},
+        )
+        new_access = refresh_response.json()["access_token"]
+        me_response = client.get(
+            "/users/me",
+            headers={"Authorization": f"Bearer {new_access}"},
+        )
+        assert me_response.status_code == 200
+
+
+class TestLogout:
+    """Tests for POST /auth/logout endpoint."""
+
+    def _login(self, client, test_user_data):
+        response = client.post(
+            "/auth/login",
+            json={
+                "username": test_user_data["username"],
+                "password": test_user_data["password"],
+            },
+        )
+        return response.json()
+
+    def test_logout_revokes_refresh_token(self, client, test_user, test_user_data):
+        """After logout, refresh token should be revoked."""
+        login_data = self._login(client, test_user_data)
+        logout_response = client.post(
+            "/auth/logout",
+            json={"refresh_token": login_data["refresh_token"]},
+        )
+        assert logout_response.status_code == 200
+        assert logout_response.json() == {"msg": "Logged out"}
+
+        refresh_response = client.post(
+            "/auth/refresh",
+            json={"refresh_token": login_data["refresh_token"]},
+        )
+        assert refresh_response.status_code == 401
+
+    def test_logout_invalid_token_still_200(self, client):
+        """Logout with random token should still return 200."""
+        response = client.post(
+            "/auth/logout",
+            json={"refresh_token": "nonexistent-token"},
+        )
+        assert response.status_code == 200
+        assert response.json() == {"msg": "Logged out"}

@@ -14,7 +14,7 @@ class AuthInterceptor @Inject constructor(
 
         // Skip auth header for login and register endpoints
         val path = originalRequest.url.encodedPath
-        if (path.contains("/auth/login") || path.contains("/auth/register")) {
+        if (path.contains("/auth/login") || path.contains("/auth/register") || path.contains("/auth/refresh")) {
             return chain.proceed(originalRequest)
         }
 

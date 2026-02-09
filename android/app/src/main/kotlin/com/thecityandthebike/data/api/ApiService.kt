@@ -14,6 +14,12 @@ interface ApiService {
     @POST("auth/login")
     suspend fun login(@Body request: LoginRequest): Response<TokenResponse>
 
+    @POST("auth/refresh")
+    suspend fun refreshToken(@Body request: RefreshRequest): Response<TokenResponse>
+
+    @POST("auth/logout")
+    suspend fun logout(@Body request: RefreshRequest): Response<MessageResponse>
+
     // User endpoints
     @GET("users/me")
     suspend fun getCurrentUser(): Response<UserResponse>

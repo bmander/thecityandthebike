@@ -1,3 +1,4 @@
+import secrets
 from datetime import datetime, timedelta, timezone
 from typing import Annotated, Optional
 
@@ -9,10 +10,11 @@ from sqlalchemy.orm import Session
 
 from .config import settings
 from .database import get_db
-from .models import User
+from .models import User, RefreshToken
 
 ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24  # 24 hours
+ACCESS_TOKEN_EXPIRE_MINUTES = 15
+REFRESH_TOKEN_EXPIRE_DAYS = 30
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
 oauth2_scheme_optional = OAuth2PasswordBearer(tokenUrl="/auth/login", auto_error=False)
@@ -72,3 +74,32 @@ def get_current_user_optional(
         return None
 
     return db.query(User).filter(User.user_id == user_id).first()
+
+
+def create_refresh_token(user_id: str, db: Session) -> str:
+    token = secrets.token_hex(32)
+    record = RefreshToken(
+        token=token,
+        user_id=user_id,
+        expires_at=datetime.now(timezone.utc) + timedelta(days=REFRESH_TOKEN_EXPIRE_DAYS),
+    )
+    db.add(record)
+    db.commit()
+    return token
+
+
+def rotate_refresh_token(old_token: str, db: Session) -> tuple[str, str]:
+    record = db.query(RefreshToken).filter(RefreshToken.token == old_token).first()
+    if not record:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail={"msg": "Invalid refresh token"})
+    expires_at = record.expires_at if record.expires_at.tzinfo else record.expires_at.replace(tzinfo=timezone.utc)
+    if expires_at < datetime.now(timezone.utc):
+        db.delete(record)
+        db.commit()
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail={"msg": "Refresh token expired"})
+    user_id = record.user_id
+    db.delete(record)
+    db.commit()
+    access_token = create_access_token(subject=str(user_id))
+    new_refresh_token = create_refresh_token(user_id, db)
+    return access_token, new_refresh_token
