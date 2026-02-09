@@ -2,6 +2,7 @@ package com.thecityandthebike.ui.screens
 
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
@@ -32,7 +33,10 @@ class OnboardingScreenTest {
         }
 
         composeTestRule.onNodeWithTag("onboarding_next").performClick()
-        composeTestRule.waitForIdle()
+        composeTestRule.waitUntil(timeoutMillis = 5000) {
+            composeTestRule.onAllNodesWithText("How do I do it?")
+                .fetchSemanticsNodes().isNotEmpty()
+        }
 
         composeTestRule.onNodeWithText("How do I do it?").assertIsDisplayed()
         composeTestRule.onNodeWithText("Scan the bike QR code").assertIsDisplayed()
