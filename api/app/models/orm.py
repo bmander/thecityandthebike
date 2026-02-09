@@ -7,6 +7,14 @@ from sqlalchemy.orm import relationship
 from ..database import Base
 
 
+class LoginAttempt(Base):
+    __tablename__ = "login_attempts"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    username = Column(String(255), nullable=False, index=True)
+    attempted_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
+
+
 class User(Base):
     __tablename__ = "users"
 
