@@ -200,6 +200,8 @@ GitHub Actions authenticates to GCP using OIDC-based Workload Identity Federatio
 
 The workflow uses `google-github-actions/auth@v2` with `workload_identity_provider` and `service_account` parameters. GitHub's OIDC token is exchanged for a short-lived GCP access token on each run.
 
+WIF requires the **IAM Service Account Credentials API** (`iamcredentials.googleapis.com`) to be enabled on the project.
+
 ### Other IAM Notes
 
 The Cloud Run runtime service account (`821600862601-compute@developer.gserviceaccount.com`) needs secret-level `roles/secretmanager.secretAccessor` bindings on each secret it accesses. Project-level binding alone is insufficient.
