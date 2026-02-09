@@ -1,6 +1,6 @@
 from datetime import date, datetime, timezone
 
-from app.models import FenderSubmission
+from app.models import Bike, FenderSubmission
 
 
 class TestGetBikeSubmissions:
@@ -36,14 +36,14 @@ class TestGetBikeSubmissions:
         # Create additional submissions for the same bike
         submission1 = FenderSubmission(
             user_id=test_user.user_id,
-            bike_qr_id=test_bike.bike_qr_id,
+            bike_id=test_bike.id,
             image_url_original="https://example.com/img1.jpg",
             image_url_processed="https://example.com/img1-proc.jpg",
             captured_date=date.today(),
         )
         submission2 = FenderSubmission(
             user_id=test_user.user_id,
-            bike_qr_id=test_bike.bike_qr_id,
+            bike_id=test_bike.id,
             image_url_original="https://example.com/img2.jpg",
             image_url_processed="https://example.com/img2-proc.jpg",
             captured_date=date.today(),

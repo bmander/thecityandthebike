@@ -47,10 +47,11 @@ def create_submission(
             last_seen_at=now,
         )
         db.add(bike)
+        db.flush()
 
     submission = FenderSubmission(
         user_id=current_user.user_id,
-        bike_qr_id=parsed.bike_id,
+        bike_id=bike.id,
         image_url_original=data.image_url_original,
         image_url_processed=data.image_url_processed,
         captured_date=data.captured_date,

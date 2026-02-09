@@ -161,6 +161,7 @@ def test_bike(db_session):
     db_session.refresh(bike)
     # Capture values before expunging
     bike_data = type("BikeData", (), {
+        "id": bike.id,
         "bike_qr_id": bike.bike_qr_id,
         "bike_brand": bike.bike_brand,
         "first_seen_at": bike.first_seen_at,
@@ -176,7 +177,7 @@ def test_submission(db_session, test_user, test_bike):
     """Create and return a test submission in the database."""
     submission = FenderSubmission(
         user_id=test_user.user_id,
-        bike_qr_id=test_bike.bike_qr_id,
+        bike_id=test_bike.id,
         image_url_original="https://example.com/original.jpg",
         image_url_thumbnail="https://example.com/thumbnail.jpg",
         image_url_processed="https://example.com/processed.jpg",

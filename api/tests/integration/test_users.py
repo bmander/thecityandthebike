@@ -80,7 +80,7 @@ class TestGetMySubmissions:
 
         other_submission = FenderSubmission(
             user_id=other_user.user_id,
-            bike_qr_id=other_bike.bike_qr_id,
+            bike_id=other_bike.id,
             image_url_original="https://example.com/other.jpg",
             image_url_processed="https://example.com/other-processed.jpg",
             captured_date=date.today(),

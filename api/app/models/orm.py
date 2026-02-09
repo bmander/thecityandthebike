@@ -1,7 +1,7 @@
 from datetime import date, datetime, timezone
 import uuid
 
-from sqlalchemy import Boolean, Column, String, Date, DateTime, Text, ForeignKey
+from sqlalchemy import Boolean, Column, Integer, String, Date, DateTime, Text, ForeignKey
 from sqlalchemy.orm import relationship
 
 from ..database import Base
@@ -26,7 +26,8 @@ class User(Base):
 class Bike(Base):
     __tablename__ = "bikes"
 
-    bike_qr_id = Column(String(255), primary_key=True)
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    bike_qr_id = Column(String(255), unique=True, nullable=False)
     provider = Column(String(50))
     bike_brand = Column(String(255))
     first_seen_at = Column(DateTime(timezone=True))
@@ -43,7 +44,7 @@ class FenderSubmission(Base):
         String(36), primary_key=True, default=lambda: str(uuid.uuid4())
     )
     user_id = Column(String(36), ForeignKey("users.user_id"), nullable=False)
-    bike_qr_id = Column(String(255), ForeignKey("bikes.bike_qr_id"), nullable=False)
+    bike_id = Column(Integer, ForeignKey("bikes.id"), nullable=False)
     image_url_original = Column(Text)
     image_url_thumbnail = Column(Text)
     image_url_processed = Column(Text)
@@ -53,6 +54,10 @@ class FenderSubmission(Base):
 
     user = relationship("User", back_populates="submissions")
     bike = relationship("Bike", back_populates="submissions")
+
+    @property
+    def bike_qr_id(self):
+        return self.bike.bike_qr_id if self.bike else None
 
     @property
     def username(self):

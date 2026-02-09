@@ -27,7 +27,7 @@ def get_bike_submissions(
     submissions = (
         db.query(FenderSubmission)
         .options(joinedload(FenderSubmission.user), joinedload(FenderSubmission.bike))
-        .filter(FenderSubmission.bike_qr_id == bike_qr_id)
+        .filter(FenderSubmission.bike_id == bike.id)
         .order_by(FenderSubmission.uploaded_at.desc())
         .all()
     )

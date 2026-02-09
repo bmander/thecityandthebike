@@ -56,9 +56,9 @@ class UserAdmin(ModelView, model=User):
 
 
 class BikeAdmin(ModelView, model=Bike):
-    column_list = [Bike.bike_qr_id, Bike.bike_brand, Bike.first_seen_at, Bike.last_seen_at]
+    column_list = [Bike.id, Bike.bike_qr_id, Bike.provider, Bike.bike_brand, Bike.first_seen_at, Bike.last_seen_at]
     column_searchable_list = [Bike.bike_qr_id, Bike.bike_brand]
-    column_sortable_list = [Bike.bike_qr_id, Bike.bike_brand, Bike.first_seen_at]
+    column_sortable_list = [Bike.id, Bike.bike_qr_id, Bike.bike_brand, Bike.first_seen_at]
     form_excluded_columns = [Bike.submissions]
 
 
@@ -66,11 +66,11 @@ class FenderSubmissionAdmin(ModelView, model=FenderSubmission):
     column_list = [
         FenderSubmission.submission_id,
         FenderSubmission.user_id,
-        FenderSubmission.bike_qr_id,
+        FenderSubmission.bike_id,
         FenderSubmission.captured_date,
         FenderSubmission.uploaded_at,
     ]
-    column_searchable_list = [FenderSubmission.bike_qr_id]
+    column_searchable_list = [FenderSubmission.bike_id]
     column_sortable_list = [FenderSubmission.captured_date, FenderSubmission.uploaded_at]
 
 
