@@ -3,11 +3,7 @@ package com.thecityandthebike.ui.screens
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.spring
 import androidx.compose.foundation.background
-import androidx.compose.foundation.gestures.awaitEachGesture
-import androidx.compose.foundation.gestures.awaitFirstDown
-import androidx.compose.foundation.gestures.calculateCentroid
-import androidx.compose.foundation.gestures.calculatePan
-import androidx.compose.foundation.gestures.calculateZoom
+import com.thecityandthebike.ui.gestures.detectPinchGestures
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
@@ -121,44 +117,25 @@ fun ImageDetailScreen(
                     .aspectRatio(1f)
                     .clipToBounds()
                     .pointerInput(Unit) {
-                        awaitEachGesture {
-                            awaitFirstDown(requireUnconsumed = false)
-                            var hadMultiTouch = false
-                            do {
-                                val event = awaitPointerEvent()
-                                if (event.changes.count { it.pressed } >= 2) {
-                                    if (!hadMultiTouch) {
-                                        hadMultiTouch = true
-                                        isZooming = true
-                                    }
-                                    val zoomChange = event.calculateZoom()
-                                    val panChange = event.calculatePan()
-                                    val centroid = event.calculateCentroid(useCurrent = false)
+                        detectPinchGestures(
+                            onGestureStart = { isZooming = true },
+                            onGestureEnd = { isZooming = false },
+                            onGesture = { centroid, pan, zoom ->
+                                val oldScale = scale
+                                scale = (scale * zoom).coerceIn(1f, 5f)
+                                val effectiveZoom = scale / oldScale
 
-                                    val oldScale = scale
-                                    scale = (scale * zoomChange).coerceIn(1f, 5f)
-                                    val effectiveZoom = scale / oldScale
+                                offsetX = centroid.x * (1 - effectiveZoom) +
+                                    offsetX * effectiveZoom + pan.x
+                                offsetY = centroid.y * (1 - effectiveZoom) +
+                                    offsetY * effectiveZoom + pan.y
 
-                                    // Zoom around the centroid: keep the point under
-                                    // the pinch center fixed on screen
-                                    offsetX = centroid.x * (1 - effectiveZoom) +
-                                        offsetX * effectiveZoom + panChange.x
-                                    offsetY = centroid.y * (1 - effectiveZoom) +
-                                        offsetY * effectiveZoom + panChange.y
-
-                                    if (scale <= 1f) {
-                                        offsetX = 0f
-                                        offsetY = 0f
-                                    }
-
-                                    event.changes.forEach { it.consume() }
+                                if (scale <= 1f) {
+                                    offsetX = 0f
+                                    offsetY = 0f
                                 }
-                            } while (event.changes.any { it.pressed })
-
-                            if (hadMultiTouch) {
-                                isZooming = false
                             }
-                        }
+                        )
                     }
                     .graphicsLayer {
                         transformOrigin = TransformOrigin(0f, 0f)
