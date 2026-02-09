@@ -50,22 +50,6 @@ class TestUploadsRouter:
         assert data["url"].startswith("/uploads/images/")
         assert data["thumbnail_url"].startswith("/uploads/images/thumb_")
 
-    def test_upload_image_png_success(self, client, auth_headers):
-        """Test successful PNG image upload generates a JPEG thumbnail."""
-        image_buf = create_test_image(format="PNG")
-
-        response = client.post(
-            "/uploads/images",
-            headers=auth_headers,
-            files={"image": ("test.png", image_buf, "image/png")},
-        )
-
-        assert response.status_code == 201
-        data = response.json()
-        assert data["filename"].endswith(".png")
-        # Thumbnail is always JPEG
-        assert data["thumbnail_url"].endswith(".jpg")
-
     def test_upload_image_no_auth_fails(self, client):
         """Test that upload without auth returns 401."""
         image_buf = create_test_image()
@@ -101,13 +85,10 @@ class TestUploadsRouter:
         assert response.status_code == 422
 
     def test_upload_image_different_extensions(self, client, auth_headers):
-        """Test upload with various allowed extensions."""
+        """Test upload with allowed JPEG extensions."""
         extensions_and_formats = [
             (".jpg", "JPEG"),
             (".jpeg", "JPEG"),
-            (".png", "PNG"),
-            (".gif", "GIF"),
-            (".webp", "WEBP"),
         ]
 
         for ext, fmt in extensions_and_formats:
@@ -116,7 +97,7 @@ class TestUploadsRouter:
             response = client.post(
                 "/uploads/images",
                 headers=auth_headers,
-                files={"image": (f"test{ext}", image_buf, "image/png")},
+                files={"image": (f"test{ext}", image_buf, "image/jpeg")},
             )
 
             assert response.status_code == 201, f"Failed for extension {ext}"
@@ -191,36 +172,45 @@ class TestUploadsRouter:
         thumb_img = Image.open(io.BytesIO(get_response.content))
         assert thumb_img.size == (200, 150)
 
-    def test_upload_corrupt_file_returns_null_thumbnail(self, client, auth_headers):
-        """Test that uploading garbage bytes with a valid extension succeeds but thumbnail is null."""
+    def test_upload_corrupt_file_returns_400(self, client, auth_headers):
+        """Test that uploading garbage bytes with a valid extension returns 400."""
         response = client.post(
             "/uploads/images",
             headers=auth_headers,
             files={"image": ("corrupt.jpg", io.BytesIO(b"not an image"), "image/jpeg")},
         )
 
-        assert response.status_code == 201
+        assert response.status_code == 400
         data = response.json()
-        assert data["thumbnail_url"] is None
+        assert "not a valid image" in data["detail"]["msg"].lower()
 
-    def test_upload_rgba_png_thumbnail_is_valid_jpeg(self, client, auth_headers):
-        """Test that an RGBA PNG upload produces a valid JPEG thumbnail."""
-        image_buf = create_test_image(width=800, height=600, format="PNG", mode="RGBA")
+    def test_upload_png_extension_rejected(self, client, auth_headers):
+        """Test that .png extension is rejected with 400."""
+        image_buf = create_test_image(format="PNG")
 
-        upload_response = client.post(
+        response = client.post(
             "/uploads/images",
             headers=auth_headers,
-            files={"image": ("rgba.png", image_buf, "image/png")},
+            files={"image": ("test.png", image_buf, "image/png")},
         )
-        assert upload_response.status_code == 201
-        thumbnail_url = upload_response.json()["thumbnail_url"]
 
-        get_response = client.get(thumbnail_url)
-        assert get_response.status_code == 200
+        assert response.status_code == 400
+        data = response.json()
+        assert "not allowed" in data["detail"]["msg"].lower()
 
-        thumb_img = Image.open(io.BytesIO(get_response.content))
-        assert thumb_img.format == "JPEG"
-        assert thumb_img.mode == "RGB"
+    def test_upload_non_image_bytes_rejected(self, client, auth_headers):
+        """Test that non-image bytes with .jpg extension returns 400."""
+        fake_content = b"\x00\x01\x02\x03\x04\x05" * 100
+
+        response = client.post(
+            "/uploads/images",
+            headers=auth_headers,
+            files={"image": ("fake.jpg", io.BytesIO(fake_content), "image/jpeg")},
+        )
+
+        assert response.status_code == 400
+        data = response.json()
+        assert "not a valid image" in data["detail"]["msg"].lower()
 
     def test_path_traversal_returns_404(self, client):
         """Test that path traversal attempts return 404."""

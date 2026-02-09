@@ -69,9 +69,12 @@ class TestGCSUploadURL:
 
         assert response.status_code == 201
 
-        # Find the thumbnail upload call (second call)
+        # Both uploads should use content_type="image/jpeg"
         upload_calls = mock_blob.upload_from_string.call_args_list
         assert len(upload_calls) == 2
+        # The original upload is the first call
+        original_call = upload_calls[0]
+        assert original_call[1]["content_type"] == "image/jpeg"
         # The thumbnail upload is the second call
         thumb_call = upload_calls[1]
         assert thumb_call[1]["content_type"] == "image/jpeg"
