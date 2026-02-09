@@ -4,6 +4,7 @@ import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.spring
 import androidx.compose.foundation.background
 import com.thecityandthebike.ui.gestures.detectPinchGestures
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
@@ -105,13 +106,7 @@ fun ImageDetailScreen(
                 .padding(paddingValues)
                 .verticalScroll(rememberScrollState())
         ) {
-            AsyncImage(
-                model = ImageRequest.Builder(LocalContext.current)
-                    .data(imageUri ?: thumbnailUri)
-                    .placeholderMemoryCacheKey(thumbnailUri?.toString())
-                    .crossfade(true)
-                    .build(),
-                contentDescription = "Submission photo",
+            Box(
                 modifier = Modifier
                     .fillMaxWidth()
                     .aspectRatio(1f)
@@ -144,10 +139,30 @@ fun ImageDetailScreen(
                         translationX = offsetX
                         translationY = offsetY
                     }
-                    .background(MaterialTheme.colorScheme.surfaceVariant),
-                contentScale = ContentScale.Crop,
-                error = ColorPainter(MaterialTheme.colorScheme.errorContainer)
-            )
+                    .background(MaterialTheme.colorScheme.surfaceVariant)
+            ) {
+                // Thumbnail layer — loads fast from disk cache
+                if (thumbnailUri != null) {
+                    AsyncImage(
+                        model = thumbnailUri,
+                        contentDescription = null,
+                        modifier = Modifier.fillMaxSize(),
+                        contentScale = ContentScale.Crop
+                    )
+                }
+
+                // Full-resolution layer — loads on top with crossfade
+                AsyncImage(
+                    model = ImageRequest.Builder(LocalContext.current)
+                        .data(imageUri ?: thumbnailUri)
+                        .crossfade(true)
+                        .build(),
+                    contentDescription = "Submission photo",
+                    modifier = Modifier.fillMaxSize(),
+                    contentScale = ContentScale.Crop,
+                    error = ColorPainter(MaterialTheme.colorScheme.errorContainer)
+                )
+            }
 
             Spacer(modifier = Modifier.height(16.dp))
 
