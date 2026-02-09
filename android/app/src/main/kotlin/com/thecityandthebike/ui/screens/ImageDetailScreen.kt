@@ -1,6 +1,10 @@
 package com.thecityandthebike.ui.screens
 
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.spring
 import androidx.compose.foundation.background
+import androidx.compose.foundation.gestures.rememberTransformableState
+import androidx.compose.foundation.gestures.transformable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
@@ -20,7 +24,14 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clipToBounds
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.painter.ColorPainter
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
@@ -48,6 +59,36 @@ fun ImageDetailScreen(
                 .format(localDate)
         } catch (_: Exception) {
             it
+        }
+    }
+
+    // Pinch-to-zoom state
+    var scale by remember { mutableFloatStateOf(1f) }
+    var offsetX by remember { mutableFloatStateOf(0f) }
+    var offsetY by remember { mutableFloatStateOf(0f) }
+
+    val transformableState = rememberTransformableState { zoomChange, panChange, _ ->
+        scale = (scale * zoomChange).coerceIn(1f, 5f)
+        if (scale > 1f) {
+            offsetX += panChange.x
+            offsetY += panChange.y
+        } else {
+            offsetX = 0f
+            offsetY = 0f
+        }
+    }
+
+    // Animate back to default zoom when gesture ends
+    LaunchedEffect(transformableState.isTransformInProgress) {
+        if (!transformableState.isTransformInProgress && scale > 1f) {
+            val startScale = scale
+            val startOffsetX = offsetX
+            val startOffsetY = offsetY
+            Animatable(0f).animateTo(1f, spring()) {
+                scale = startScale + (1f - startScale) * value
+                offsetX = startOffsetX * (1f - value)
+                offsetY = startOffsetY * (1f - value)
+            }
         }
     }
 
@@ -82,6 +123,14 @@ fun ImageDetailScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .aspectRatio(1f)
+                    .clipToBounds()
+                    .transformable(state = transformableState)
+                    .graphicsLayer {
+                        scaleX = scale
+                        scaleY = scale
+                        translationX = offsetX
+                        translationY = offsetY
+                    }
                     .background(MaterialTheme.colorScheme.surfaceVariant),
                 contentScale = ContentScale.Crop,
                 error = ColorPainter(MaterialTheme.colorScheme.errorContainer)
