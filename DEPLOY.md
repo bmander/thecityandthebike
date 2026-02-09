@@ -114,7 +114,7 @@ gcloud secrets versions access latest --secret=SECRET_NAME --project=tcatb-app
 
 | Account | Purpose |
 |---------|---------|
-| `github-deployer@tcatb-app.iam.gserviceaccount.com` | GitHub Actions deploys |
+| `github-deployer@tcatb-app.iam.gserviceaccount.com` | GitHub Actions deploys (via Workload Identity Federation) |
 | `821600862601-compute@developer.gserviceaccount.com` | Cloud Run runtime (default) |
 
 ### GitHub Repository Secrets
@@ -122,7 +122,8 @@ gcloud secrets versions access latest --secret=SECRET_NAME --project=tcatb-app
 | Secret | Description |
 |--------|-------------|
 | `GCP_PROJECT_ID` | `tcatb-app` |
-| `GCP_SA_KEY` | Service account JSON key for `github-deployer` |
+| `WIF_PROVIDER` | Workload Identity Federation provider (`projects/821600862601/locations/global/workloadIdentityPools/github-actions/providers/github`) |
+| `WIF_SERVICE_ACCOUNT` | Service account for WIF (`github-deployer@tcatb-app.iam.gserviceaccount.com`) |
 | `SIGNING_KEYSTORE_BASE64` | Android release keystore (base64) |
 | `SIGNING_KEY_ALIAS` | Keystore key alias |
 | `SIGNING_KEY_PASSWORD` | Keystore key password |
@@ -187,6 +188,19 @@ firebase appdistribution:testers:list --project=tcatb-app
 ```
 
 ## IAM Notes
+
+### Workload Identity Federation
+
+GitHub Actions authenticates to GCP using OIDC-based Workload Identity Federation (no static keys). The setup:
+
+- **Workload Identity Pool:** `github-actions` (global)
+- **OIDC Provider:** `github` (issuer: `https://token.actions.githubusercontent.com`)
+- **Attribute condition:** `assertion.repository=='bmander/thecityandthebike'` — only this repo can authenticate
+- **IAM binding:** `github-deployer` SA has `roles/iam.workloadIdentityUser` for the pool
+
+The workflow uses `google-github-actions/auth@v2` with `workload_identity_provider` and `service_account` parameters. GitHub's OIDC token is exchanged for a short-lived GCP access token on each run.
+
+### Other IAM Notes
 
 The Cloud Run runtime service account (`821600862601-compute@developer.gserviceaccount.com`) needs secret-level `roles/secretmanager.secretAccessor` bindings on each secret it accesses. Project-level binding alone is insufficient.
 
