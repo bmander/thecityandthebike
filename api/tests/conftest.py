@@ -4,23 +4,29 @@ import os
 # Set test environment variables before importing app modules
 os.environ.setdefault("PGPASSWORD", "testpassword")
 os.environ.setdefault("JWT_SECRET_KEY", "test-secret-key")
+os.environ.setdefault("LOGIN_RATE_LIMIT", "1000/minute")
+os.environ.setdefault("REGISTER_RATE_LIMIT", "1000/minute")
 
 from contextlib import asynccontextmanager
 from datetime import date, datetime, timezone
 import uuid
 
 import pytest
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
+from fastapi.responses import JSONResponse
 from fastapi.testclient import TestClient
 from PIL import Image
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
+from slowapi.errors import RateLimitExceeded
+
 from app.admin import setup_admin
 from app.database import Base, get_db
 from app.dependencies import get_password_hash, create_access_token
 from app.models import User, Bike, FenderSubmission, RefreshToken
+from app.rate_limit import AccountLockout, get_account_lockout, limiter, rate_limit_exceeded_handler
 from app.routers import auth_router, users_router, submissions_router, bikes_router, uploads_router
 
 
@@ -55,12 +61,15 @@ async def test_lifespan(app: FastAPI):
 
 # Create a test app instance that uses test_engine
 test_app = FastAPI(title="The City and the Bike API - Test", lifespan=test_lifespan)
+test_app.state.limiter = limiter
 test_app.include_router(auth_router)
 test_app.include_router(users_router)
 test_app.include_router(submissions_router)
 test_app.include_router(bikes_router)
 test_app.include_router(uploads_router)
 setup_admin(test_app, test_engine, "test-secret-key")
+
+test_app.add_exception_handler(RateLimitExceeded, rate_limit_exceeded_handler)
 
 
 @pytest.fixture(scope="function", autouse=True)
@@ -94,6 +103,7 @@ def db_session():
 def client():
     """Create a test client with the database dependency overridden."""
     test_app.dependency_overrides[get_db] = get_test_db
+    test_app.dependency_overrides[get_account_lockout] = lambda: AccountLockout()
     with TestClient(test_app) as test_client:
         yield test_client
     test_app.dependency_overrides.clear()

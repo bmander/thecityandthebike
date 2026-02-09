@@ -15,6 +15,10 @@ class Settings(BaseSettings):
     JWT_SECRET_KEY: str
     DATABASE_URL: Optional[str] = None
     STORAGE_BUCKET: Optional[str] = None
+    LOGIN_RATE_LIMIT: str = "5/minute"
+    REGISTER_RATE_LIMIT: str = "3/hour"
+    ACCOUNT_LOCKOUT_ATTEMPTS: int = 10
+    ACCOUNT_LOCKOUT_DURATION: int = 900  # seconds (15 min)
 
     @property
     def database_url(self) -> str:
