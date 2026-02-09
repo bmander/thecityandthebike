@@ -62,24 +62,31 @@ This repository contains the database schema, FastAPI API code, and Docker Compo
    cd thecityandthebike
    ```
 
-2. Start services (PostgreSQL database and API):
+2. (Optional) Configure secrets for Docker Compose:
+   ```bash
+   cp .env.example .env
+   # Edit .env with your own passwords/secrets
+   ```
+   If you skip this step, dev-only defaults will be used automatically.
+
+3. Start services (PostgreSQL database and API):
    ```bash
    docker-compose up -d --build
    ```
 
-3. Verify the services are running:
+4. Verify the services are running:
    ```bash
    docker-compose ps
    ```
 
-4. Connect to the database using `psql`:
+5. Connect to the database using `psql`:
    ```bash
    psql -h localhost -U tcatb -d tcatb_dev
    # Enter your database password when prompted
    ```
    You should see the tables: `users`, `bikes`, and `fender_submissions`.
 
-5. To stop and remove the containers:
+6. To stop and remove the containers:
    ```bash
    docker-compose down
    ```
@@ -97,6 +104,8 @@ JWT_SECRET_KEY=<your-secret-key>
 ```
 
 See `api/.env.example` for a template you can copy to `api/.env`.
+
+**Production deployments must use unique, strong secrets.** The defaults in `docker-compose.yml` are for local development only and must not be reused in production. Copy `.env.example` to `.env` and set `POSTGRES_PASSWORD` and `JWT_SECRET_KEY` to secure values.
 
 ### Next Steps
 - Integrate object storage (e.g., AWS S3) for handling image uploads.
