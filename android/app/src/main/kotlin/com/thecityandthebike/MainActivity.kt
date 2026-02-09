@@ -94,9 +94,11 @@ class MainActivity : ComponentActivity() {
                             )
 
                             // Navigate to main when logged in
-                            if (authState.isLoggedIn) {
-                                navController.navigate("main") {
-                                    popUpTo("login") { inclusive = true }
+                            LaunchedEffect(authState.isLoggedIn) {
+                                if (authState.isLoggedIn) {
+                                    navController.navigate("main") {
+                                        popUpTo("login") { inclusive = true }
+                                    }
                                 }
                             }
                         }
