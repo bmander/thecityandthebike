@@ -8,7 +8,7 @@ from starlette.middleware.base import BaseHTTPMiddleware
 from .admin import setup_admin
 from .config import settings
 from .database import engine
-from .rate_limit import limiter
+from .rate_limit import limiter, rate_limit_exceeded_handler
 from .routers import auth_router, users_router, submissions_router, bikes_router, uploads_router
 
 
@@ -28,21 +28,7 @@ app = FastAPI(title="The City and the Bike API", lifespan=lifespan)
 app.state.limiter = limiter
 app.add_middleware(NoSniffMiddleware)
 
-
-async def _rate_limit_exceeded_handler(request: Request, exc: RateLimitExceeded):
-    headers = getattr(exc, "headers", {}) or {}
-    response = JSONResponse(
-        status_code=429,
-        content={"msg": "Rate limit exceeded. Try again later."},
-    )
-    if "Retry-After" in headers:
-        response.headers["Retry-After"] = headers["Retry-After"]
-    elif hasattr(exc, "retry_after"):
-        response.headers["Retry-After"] = str(exc.retry_after)
-    return response
-
-
-app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+app.add_exception_handler(RateLimitExceeded, rate_limit_exceeded_handler)
 
 
 @app.exception_handler(Exception)

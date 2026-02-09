@@ -26,7 +26,7 @@ from app.admin import setup_admin
 from app.database import Base, get_db
 from app.dependencies import get_password_hash, create_access_token
 from app.models import User, Bike, FenderSubmission
-from app.rate_limit import AccountLockout, get_account_lockout, limiter
+from app.rate_limit import AccountLockout, get_account_lockout, limiter, rate_limit_exceeded_handler
 from app.routers import auth_router, users_router, submissions_router, bikes_router, uploads_router
 
 
@@ -69,21 +69,7 @@ test_app.include_router(bikes_router)
 test_app.include_router(uploads_router)
 setup_admin(test_app, test_engine, "test-secret-key")
 
-
-async def _test_rate_limit_handler(request: Request, exc: RateLimitExceeded):
-    headers = getattr(exc, "headers", {}) or {}
-    response = JSONResponse(
-        status_code=429,
-        content={"msg": "Rate limit exceeded. Try again later."},
-    )
-    if "Retry-After" in headers:
-        response.headers["Retry-After"] = headers["Retry-After"]
-    elif hasattr(exc, "retry_after"):
-        response.headers["Retry-After"] = str(exc.retry_after)
-    return response
-
-
-test_app.add_exception_handler(RateLimitExceeded, _test_rate_limit_handler)
+test_app.add_exception_handler(RateLimitExceeded, rate_limit_exceeded_handler)
 
 
 @pytest.fixture(scope="function", autouse=True)

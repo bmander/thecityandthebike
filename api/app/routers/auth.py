@@ -15,7 +15,7 @@ router = APIRouter(prefix="/auth", tags=["auth"])
 
 
 @router.post("/register", response_model=MessageResponse, status_code=status.HTTP_201_CREATED)
-@limiter.limit(settings.REGISTER_RATE_LIMIT)
+@limiter.limit(lambda: settings.REGISTER_RATE_LIMIT)
 def register(request: Request, data: UserRegister, db: Annotated[Session, Depends(get_db)]):
     existing = db.query(User).filter(
         or_(User.username == data.username, User.email == data.email)
@@ -34,14 +34,14 @@ def register(request: Request, data: UserRegister, db: Annotated[Session, Depend
 
 
 @router.post("/login", response_model=Token)
-@limiter.limit(settings.LOGIN_RATE_LIMIT)
+@limiter.limit(lambda: settings.LOGIN_RATE_LIMIT)
 def login(
     request: Request,
     data: UserLogin,
     db: Annotated[Session, Depends(get_db)],
     lockout: Annotated[AccountLockout, Depends(get_account_lockout)],
 ):
-    if lockout.is_locked(data.username):
+    if lockout.is_locked(data.username, db):
         raise HTTPException(
             status_code=status.HTTP_423_LOCKED,
             detail={"msg": "Account temporarily locked due to too many failed attempts"},
@@ -49,12 +49,12 @@ def login(
 
     user = db.query(User).filter(User.username == data.username).first()
     if not user or not verify_password(data.password, user.password_hash):
-        lockout.record_failure(data.username)
+        lockout.record_failure(data.username, db)
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail={"msg": "Bad username or password"},
         )
 
-    lockout.clear(data.username)
+    lockout.clear(data.username, db)
     access_token = create_access_token(subject=str(user.user_id))
     return {"access_token": access_token, "token_type": "bearer"}
