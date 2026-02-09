@@ -79,6 +79,90 @@ class TestRegister:
         )
         assert response.status_code == 422
 
+    def test_register_password_too_short(self, client):
+        """Registration with password shorter than 8 characters should return 422."""
+        response = client.post(
+            "/auth/register",
+            json={
+                "username": "newuser",
+                "email": "new@example.com",
+                "password": "short",
+            },
+        )
+        assert response.status_code == 422
+
+    def test_register_password_exactly_8_chars(self, client):
+        """Registration with exactly 8-character password should succeed."""
+        response = client.post(
+            "/auth/register",
+            json={
+                "username": "newuser",
+                "email": "new@example.com",
+                "password": "exactly8",
+            },
+        )
+        assert response.status_code == 201
+
+    def test_register_username_too_short(self, client):
+        """Registration with username shorter than 3 characters should return 422."""
+        response = client.post(
+            "/auth/register",
+            json={
+                "username": "ab",
+                "email": "new@example.com",
+                "password": "password123",
+            },
+        )
+        assert response.status_code == 422
+
+    def test_register_username_too_long(self, client):
+        """Registration with username longer than 50 characters should return 422."""
+        response = client.post(
+            "/auth/register",
+            json={
+                "username": "a" * 51,
+                "email": "new@example.com",
+                "password": "password123",
+            },
+        )
+        assert response.status_code == 422
+
+    def test_register_username_invalid_characters(self, client):
+        """Registration with special characters in username should return 422."""
+        response = client.post(
+            "/auth/register",
+            json={
+                "username": "user@name!",
+                "email": "new@example.com",
+                "password": "password123",
+            },
+        )
+        assert response.status_code == 422
+
+    def test_register_username_with_spaces(self, client):
+        """Registration with spaces in username should return 422."""
+        response = client.post(
+            "/auth/register",
+            json={
+                "username": "user name",
+                "email": "new@example.com",
+                "password": "password123",
+            },
+        )
+        assert response.status_code == 422
+
+    def test_register_username_with_underscores(self, client):
+        """Registration with underscores in username should succeed."""
+        response = client.post(
+            "/auth/register",
+            json={
+                "username": "new_user_1",
+                "email": "new@example.com",
+                "password": "password123",
+            },
+        )
+        assert response.status_code == 201
+
 
 class TestLogin:
     """Tests for POST /auth/login endpoint."""
