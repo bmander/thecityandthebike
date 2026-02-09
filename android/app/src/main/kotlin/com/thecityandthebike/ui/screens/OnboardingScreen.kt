@@ -146,10 +146,8 @@ private fun WhatIsThisPage() {
         )
         Spacer(modifier = Modifier.height(16.dp))
         Text(
-            text = "The City and the Bike is a community project to document " +
-                "bike infrastructure in your city. Snap photos of bike racks, " +
-                "lanes, and signage to help build a shared picture of how your " +
-                "city supports cycling.",
+            text = "The City and The Bike is a community-built collection of tags and " +
+                "street art on bike share vehicles in Seattle.",
             style = MaterialTheme.typography.bodyLarge,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             textAlign = TextAlign.Center
@@ -176,9 +174,9 @@ private fun HowDoIDoItPage() {
         Column(
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            StepRow(number = 1, text = "Find a bike rack with a QR code sticker")
-            StepRow(number = 2, text = "Scan the code with the in-app scanner")
-            StepRow(number = 3, text = "Take a photo and submit it to the map")
+            StepRow(number = 1, text = "Scan the bike QR code")
+            StepRow(number = 2, text = "Take a picture of the rear fender")
+            StepRow(number = 3, text = "Try to catch them all")
         }
     }
 }
@@ -233,16 +231,19 @@ private fun PrivacyCopyrightPage() {
 
         // Privacy section
         Text(
-            text = "Your Privacy",
+            text = "Privacy",
             style = MaterialTheme.typography.titleSmall,
             fontWeight = FontWeight.SemiBold,
             modifier = Modifier.fillMaxWidth()
         )
         Spacer(modifier = Modifier.height(8.dp))
         Text(
-            text = "Photos you submit are linked to the bike rack location, " +
-                "not to your personal identity. We do not track your location " +
-                "in the background or share your data with third parties.",
+            text = "This app attempts to collect as little data as possible. We do not ask for " +
+                "your email address or name, we don't collect location information, and we strip " +
+                "personally identify metadata from the images, including all timestamp information " +
+                "except the upload date. However, a motivated investigator could deduce information " +
+                "about a user from the known location of bikes combined with context from the " +
+                "photographs. Act accordingly.",
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.fillMaxWidth()
@@ -251,17 +252,18 @@ private fun PrivacyCopyrightPage() {
 
         // Copyright section
         Text(
-            text = "Content License",
+            text = "Copyright",
             style = MaterialTheme.typography.titleSmall,
             fontWeight = FontWeight.SemiBold,
             modifier = Modifier.fillMaxWidth()
         )
         Spacer(modifier = Modifier.height(8.dp))
         Text(
-            text = "All photos submitted to The City and the Bike are published under the " +
-                "Creative Commons Attribution-NonCommercial 4.0 International license. " +
-                "This means anyone can share and adapt the images for non-commercial " +
-                "purposes, as long as they give credit.",
+            text = "You retain the copyright of all images you upload. By uploading the file you " +
+                "agree to license the image under Creative Commons BY-NC 4.0. This license " +
+                "requires that reusers give credit to the creator. It allows reusers to distribute, " +
+                "remix, adapt, and build upon the material in any medium or format, for " +
+                "noncommercial purposes only.",
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.fillMaxWidth()

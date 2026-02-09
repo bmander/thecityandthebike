@@ -35,9 +35,9 @@ class OnboardingScreenTest {
         composeTestRule.waitForIdle()
 
         composeTestRule.onNodeWithText("How do I do it?").assertIsDisplayed()
-        composeTestRule.onNodeWithText("Find a bike rack with a QR code sticker").assertIsDisplayed()
-        composeTestRule.onNodeWithText("Scan the code with the in-app scanner").assertIsDisplayed()
-        composeTestRule.onNodeWithText("Take a photo and submit it to the map").assertIsDisplayed()
+        composeTestRule.onNodeWithText("Scan the bike QR code").assertIsDisplayed()
+        composeTestRule.onNodeWithText("Take a picture of the rear fender").assertIsDisplayed()
+        composeTestRule.onNodeWithText("Try to catch them all").assertIsDisplayed()
     }
 
     @Test
@@ -53,8 +53,8 @@ class OnboardingScreenTest {
         composeTestRule.waitForIdle()
 
         composeTestRule.onNodeWithText("Privacy & Copyright").assertIsDisplayed()
-        composeTestRule.onNodeWithText("Your Privacy").assertIsDisplayed()
-        composeTestRule.onNodeWithText("Content License").assertIsDisplayed()
+        composeTestRule.onNodeWithText("Privacy").assertIsDisplayed()
+        composeTestRule.onNodeWithText("Copyright").assertIsDisplayed()
         composeTestRule.onNodeWithTag("onboarding_get_started").assertIsDisplayed()
     }
 
