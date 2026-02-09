@@ -28,8 +28,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import com.thecityandthebike.R
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
@@ -77,17 +79,22 @@ fun OnboardingScreen(onFinished: () -> Unit) {
                     },
                     modifier = Modifier.testTag("onboarding_back")
                 ) {
-                    Text("Back")
+                    Text(stringResource(R.string.onboarding_back))
                 }
             } else {
                 Spacer(modifier = Modifier.size(1.dp))
             }
 
             // Page indicator dots
+            val pageIndicatorDescription = stringResource(
+                R.string.onboarding_page_indicator,
+                pagerState.currentPage + 1,
+                3
+            )
             Row(
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 modifier = Modifier.semantics {
-                    contentDescription = "Page ${pagerState.currentPage + 1} of 3"
+                    contentDescription = pageIndicatorDescription
                 }
             ) {
                 repeat(3) { index ->
@@ -115,14 +122,14 @@ fun OnboardingScreen(onFinished: () -> Unit) {
                     },
                     modifier = Modifier.testTag("onboarding_next")
                 ) {
-                    Text("Next")
+                    Text(stringResource(R.string.onboarding_next))
                 }
             } else {
                 Button(
                     onClick = onFinished,
                     modifier = Modifier.testTag("onboarding_get_started")
                 ) {
-                    Text("Get Started")
+                    Text(stringResource(R.string.onboarding_get_started))
                 }
             }
         }
@@ -139,15 +146,14 @@ private fun WhatIsThisPage() {
         verticalArrangement = Arrangement.Center
     ) {
         Text(
-            text = "What is this?",
+            text = stringResource(R.string.onboarding_what_is_this_title),
             style = MaterialTheme.typography.headlineMedium,
             fontWeight = FontWeight.Bold,
             textAlign = TextAlign.Center
         )
         Spacer(modifier = Modifier.height(16.dp))
         Text(
-            text = "The City and The Bike is a community-built collection of tags and " +
-                "street art on bike share vehicles in Seattle.",
+            text = stringResource(R.string.onboarding_what_is_this_body),
             style = MaterialTheme.typography.bodyLarge,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             textAlign = TextAlign.Center
@@ -165,7 +171,7 @@ private fun HowDoIDoItPage() {
         verticalArrangement = Arrangement.Center
     ) {
         Text(
-            text = "How do I do it?",
+            text = stringResource(R.string.onboarding_how_title),
             style = MaterialTheme.typography.headlineMedium,
             fontWeight = FontWeight.Bold,
             textAlign = TextAlign.Center
@@ -174,9 +180,9 @@ private fun HowDoIDoItPage() {
         Column(
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            StepRow(number = 1, text = "Scan the bike QR code")
-            StepRow(number = 2, text = "Take a picture of the rear fender")
-            StepRow(number = 3, text = "Try to catch them all")
+            StepRow(number = 1, text = stringResource(R.string.onboarding_how_step1))
+            StepRow(number = 2, text = stringResource(R.string.onboarding_how_step2))
+            StepRow(number = 3, text = stringResource(R.string.onboarding_how_step3))
         }
     }
 }
@@ -222,7 +228,7 @@ private fun PrivacyCopyrightPage() {
         verticalArrangement = Arrangement.Center
     ) {
         Text(
-            text = "Privacy & Copyright",
+            text = stringResource(R.string.onboarding_privacy_copyright_title),
             style = MaterialTheme.typography.headlineMedium,
             fontWeight = FontWeight.Bold,
             textAlign = TextAlign.Center
@@ -231,19 +237,14 @@ private fun PrivacyCopyrightPage() {
 
         // Privacy section
         Text(
-            text = "Privacy",
+            text = stringResource(R.string.onboarding_privacy_subtitle),
             style = MaterialTheme.typography.titleSmall,
             fontWeight = FontWeight.SemiBold,
             modifier = Modifier.fillMaxWidth()
         )
         Spacer(modifier = Modifier.height(8.dp))
         Text(
-            text = "This app attempts to collect as little data as possible. We do not ask for " +
-                "your email address or name, we don't collect location information, and we strip " +
-                "personally identify metadata from the images, including all timestamp information " +
-                "except the upload date. However, a motivated investigator could deduce information " +
-                "about a user from the known location of bikes combined with context from the " +
-                "photographs. Act accordingly.",
+            text = stringResource(R.string.onboarding_privacy_body),
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.fillMaxWidth()
@@ -252,18 +253,14 @@ private fun PrivacyCopyrightPage() {
 
         // Copyright section
         Text(
-            text = "Copyright",
+            text = stringResource(R.string.onboarding_copyright_subtitle),
             style = MaterialTheme.typography.titleSmall,
             fontWeight = FontWeight.SemiBold,
             modifier = Modifier.fillMaxWidth()
         )
         Spacer(modifier = Modifier.height(8.dp))
         Text(
-            text = "You retain the copyright of all images you upload. By uploading the file you " +
-                "agree to license the image under Creative Commons BY-NC 4.0. This license " +
-                "requires that reusers give credit to the creator. It allows reusers to distribute, " +
-                "remix, adapt, and build upon the material in any medium or format, for " +
-                "noncommercial purposes only.",
+            text = stringResource(R.string.onboarding_copyright_body),
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.fillMaxWidth()
@@ -271,6 +268,8 @@ private fun PrivacyCopyrightPage() {
         Spacer(modifier = Modifier.height(8.dp))
 
         val linkColor = MaterialTheme.colorScheme.primary
+        val ccLinkLabel = stringResource(R.string.onboarding_cc_link)
+        val ccLinkA11y = stringResource(R.string.onboarding_cc_link_a11y)
         val linkText = buildAnnotatedString {
             val linkStyle = TextLinkStyles(
                 style = SpanStyle(
@@ -282,7 +281,7 @@ private fun PrivacyCopyrightPage() {
                 url = "https://creativecommons.org/licenses/by-nc/4.0/",
                 styles = linkStyle
             ))
-            append("Learn more about CC BY-NC 4.0")
+            append(ccLinkLabel)
             pop()
         }
         Text(
@@ -291,7 +290,7 @@ private fun PrivacyCopyrightPage() {
             modifier = Modifier
                 .fillMaxWidth()
                 .semantics {
-                    contentDescription = "Learn more about CC BY-NC 4.0, opens in browser"
+                    contentDescription = ccLinkA11y
                 }
         )
     }

@@ -1,4 +1,29 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">The City and The Bike</string>
+
+    <!-- Onboarding: navigation -->
+    <string name="onboarding_back">Back</string>
+    <string name="onboarding_next">Next</string>
+    <string name="onboarding_get_started">Get Started</string>
+    <string name="onboarding_page_indicator">Page %1$d of %2$d</string>
+
+    <!-- Onboarding: page 1 -->
+    <string name="onboarding_what_is_this_title">What is this?</string>
+    <string name="onboarding_what_is_this_body">The City and The Bike is a community-built collection of tags and street art on bike share vehicles in Seattle.</string>
+
+    <!-- Onboarding: page 2 -->
+    <string name="onboarding_how_title">How do I do it?</string>
+    <string name="onboarding_how_step1">Scan the bike QR code</string>
+    <string name="onboarding_how_step2">Take a picture of the rear fender</string>
+    <string name="onboarding_how_step3">Try to catch them all</string>
+
+    <!-- Onboarding: page 3 -->
+    <string name="onboarding_privacy_copyright_title">Privacy &amp; Copyright</string>
+    <string name="onboarding_privacy_subtitle">Privacy</string>
+    <string name="onboarding_privacy_body">This app attempts to collect as little data as possible. We do not ask for your email address or name, we don\'t collect location information, and we strip personally identify metadata from the images, including all timestamp information except the upload date. However, a motivated investigator could deduce information about a user from the known location of bikes combined with context from the photographs. Act accordingly.</string>
+    <string name="onboarding_copyright_subtitle">Copyright</string>
+    <string name="onboarding_copyright_body">You retain the copyright of all images you upload. By uploading the file you agree to license the image under Creative Commons BY-NC 4.0. This license requires that reusers give credit to the creator. It allows reusers to distribute, remix, adapt, and build upon the material in any medium or format, for noncommercial purposes only.</string>
+    <string name="onboarding_cc_link">Learn more about CC BY-NC 4.0</string>
+    <string name="onboarding_cc_link_a11y">Learn more about CC BY-NC 4.0, opens in browser</string>
 </resources>
