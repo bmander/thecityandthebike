@@ -1,5 +1,7 @@
 package com.thecityandthebike.viewmodel
 
+import com.thecityandthebike.data.api.ApiService
+import com.thecityandthebike.data.local.TokenManager
 import com.thecityandthebike.data.repository.AuthRepository
 import com.thecityandthebike.data.repository.AuthResult
 import com.thecityandthebike.ui.viewmodel.AuthViewModel
@@ -8,10 +10,12 @@ import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
+import okhttp3.ResponseBody.Companion.toResponseBody
 import org.junit.After
 import org.junit.Assert.*
 import org.junit.Before
@@ -21,14 +25,20 @@ import org.junit.Test
 class AuthViewModelTest {
 
     private val testDispatcher = StandardTestDispatcher()
+    private lateinit var apiService: ApiService
+    private lateinit var tokenManager: TokenManager
     private lateinit var authRepository: AuthRepository
     private lateinit var viewModel: AuthViewModel
+    private val isLoggedInFlow = MutableStateFlow(false)
 
     @Before
     fun setup() {
         Dispatchers.setMain(testDispatcher)
-        authRepository = mockk()
-        every { authRepository.isLoggedIn() } returns false
+        apiService = mockk(relaxed = true)
+        tokenManager = mockk(relaxed = true)
+        every { tokenManager.isLoggedIn } returns isLoggedInFlow
+        every { tokenManager.hasToken() } returns false
+        authRepository = AuthRepository(apiService, tokenManager)
     }
 
     @After
@@ -44,14 +54,19 @@ class AuthViewModelTest {
 
     @Test
     fun `initial state should be logged in when token exists`() {
-        every { authRepository.isLoggedIn() } returns true
+        isLoggedInFlow.value = true
+        every { tokenManager.hasToken() } returns true
+        authRepository = AuthRepository(apiService, tokenManager)
         viewModel = AuthViewModel(authRepository)
         assertTrue(viewModel.state.value.isLoggedIn)
     }
 
     @Test
     fun `login success should update state to logged in`() = runTest {
-        coEvery { authRepository.login("user", "pass") } returns AuthResult.Success(Unit)
+        val tokenResponse = com.thecityandthebike.data.model.dto.TokenResponse(
+            accessToken = "token", refreshToken = "refresh"
+        )
+        coEvery { apiService.login(any()) } returns retrofit2.Response.success(tokenResponse)
         viewModel = AuthViewModel(authRepository)
 
         viewModel.login("user", "pass")
@@ -64,7 +79,9 @@ class AuthViewModelTest {
 
     @Test
     fun `login failure should set error state`() = runTest {
-        coEvery { authRepository.login("user", "wrong") } returns AuthResult.Error("Invalid credentials")
+        coEvery { apiService.login(any()) } returns retrofit2.Response.error(
+            401, "{}".toResponseBody()
+        )
         viewModel = AuthViewModel(authRepository)
 
         viewModel.login("user", "wrong")
@@ -77,7 +94,9 @@ class AuthViewModelTest {
 
     @Test
     fun `register success should set registration success state`() = runTest {
-        coEvery { authRepository.register("user", "email@test.com", "pass") } returns AuthResult.Success(Unit)
+        coEvery { apiService.register(any()) } returns retrofit2.Response.success(
+            com.thecityandthebike.data.model.dto.MessageResponse(msg = "User created")
+        )
         viewModel = AuthViewModel(authRepository)
 
         viewModel.register("user", "email@test.com", "pass")
@@ -89,7 +108,9 @@ class AuthViewModelTest {
 
     @Test
     fun `register failure should set error state`() = runTest {
-        coEvery { authRepository.register("user", "email@test.com", "pass") } returns AuthResult.Error("User already exists")
+        coEvery { apiService.register(any()) } returns retrofit2.Response.error(
+            409, "{}".toResponseBody()
+        )
         viewModel = AuthViewModel(authRepository)
 
         viewModel.register("user", "email@test.com", "pass")
@@ -100,19 +121,23 @@ class AuthViewModelTest {
     }
 
     @Test
-    fun `logout should clear logged in state`() {
-        every { authRepository.isLoggedIn() } returns true
-        every { authRepository.logout() } returns Unit
+    fun `logout should clear logged in state`() = runTest {
+        isLoggedInFlow.value = true
+        every { tokenManager.hasToken() } returns true
+        authRepository = AuthRepository(apiService, tokenManager)
         viewModel = AuthViewModel(authRepository)
 
         viewModel.logout()
+        testDispatcher.scheduler.advanceUntilIdle()
 
         assertFalse(viewModel.state.value.isLoggedIn)
     }
 
     @Test
     fun `clearError should reset error state`() = runTest {
-        coEvery { authRepository.login("user", "wrong") } returns AuthResult.Error("Error")
+        coEvery { apiService.login(any()) } returns retrofit2.Response.error(
+            401, "{}".toResponseBody()
+        )
         viewModel = AuthViewModel(authRepository)
 
         viewModel.login("user", "wrong")
