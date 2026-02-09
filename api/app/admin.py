@@ -4,7 +4,7 @@ from sqlalchemy.orm import sessionmaker
 from starlette.requests import Request
 
 from .dependencies import verify_password
-from .models import User, Bike, FenderSubmission
+from .models import User, Bike, FenderSubmission, RefreshToken, LoginAttempt
 
 
 class AdminAuth(AuthenticationBackend):
@@ -74,6 +74,17 @@ class FenderSubmissionAdmin(ModelView, model=FenderSubmission):
     column_sortable_list = [FenderSubmission.captured_date, FenderSubmission.uploaded_at]
 
 
+class RefreshTokenAdmin(ModelView, model=RefreshToken):
+    column_list = [RefreshToken.id, RefreshToken.user_id, RefreshToken.expires_at, RefreshToken.created_at]
+    column_sortable_list = [RefreshToken.created_at, RefreshToken.expires_at]
+
+
+class LoginAttemptAdmin(ModelView, model=LoginAttempt):
+    column_list = [LoginAttempt.id, LoginAttempt.username, LoginAttempt.attempted_at]
+    column_searchable_list = [LoginAttempt.username]
+    column_sortable_list = [LoginAttempt.attempted_at]
+
+
 def setup_admin(app, engine, secret_key):
     session_factory = sessionmaker(autocommit=False, autoflush=False, bind=engine)
     auth_backend = AdminAuth(secret_key=secret_key, session_factory=session_factory)
@@ -81,4 +92,6 @@ def setup_admin(app, engine, secret_key):
     admin.add_view(UserAdmin)
     admin.add_view(BikeAdmin)
     admin.add_view(FenderSubmissionAdmin)
+    admin.add_view(RefreshTokenAdmin)
+    admin.add_view(LoginAttemptAdmin)
     return admin
