@@ -1,10 +1,12 @@
+# WARNING: Default values are for LOCAL TESTING ONLY.
+# For production, create a .env file with unique secrets (see .env.example).
 services:
   db_test:
     image: postgres:14
     container_name: tcatb_db_test
     environment:
       POSTGRES_USER: tcatb
-      POSTGRES_PASSWORD: tcatbpass
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-tcatbpass}
       POSTGRES_DB: tcatb_test
     ports:
       - "5433:5432"
@@ -26,9 +28,9 @@ services:
       PGHOST: db_test
       PGPORT: 5432
       PGUSER: tcatb
-      PGPASSWORD: tcatbpass
+      PGPASSWORD: ${POSTGRES_PASSWORD:-tcatbpass}
       PGDATABASE: tcatb_test
-      JWT_SECRET_KEY: test-secret-key
+      JWT_SECRET_KEY: ${JWT_SECRET_KEY:-test-secret-key}
     ports:
       - "8000:5000"
     healthcheck:

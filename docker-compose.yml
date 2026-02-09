@@ -1,3 +1,5 @@
+# WARNING: Default values are for LOCAL DEVELOPMENT ONLY.
+# For production, create a .env file with unique secrets (see .env.example).
 services:
   db:
     image: postgres:14
@@ -5,7 +7,7 @@ services:
     restart: unless-stopped
     environment:
       POSTGRES_USER: tcatb
-      POSTGRES_PASSWORD: tcatbpass
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-tcatbpass}
       POSTGRES_DB: tcatb_dev
     ports:
       - "5432:5432"
@@ -23,9 +25,9 @@ services:
       PGHOST: db
       PGPORT: 5432
       PGUSER: tcatb
-      PGPASSWORD: tcatbpass
+      PGPASSWORD: ${POSTGRES_PASSWORD:-tcatbpass}
       PGDATABASE: tcatb_dev
-      JWT_SECRET_KEY: super-secret
+      JWT_SECRET_KEY: ${JWT_SECRET_KEY:-dev-only-secret}
     ports:
       - "5000:5000"
 
