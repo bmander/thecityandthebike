@@ -98,8 +98,13 @@ fun ImageDetailScreen(
                     Spacer(modifier = Modifier.height(4.dp))
                 }
 
+                val bikeLabel = if (submission.provider != null) {
+                    "${submission.provider.replaceFirstChar { it.uppercase() }}: ${submission.bikeQrId}"
+                } else {
+                    "Bike: ${submission.bikeQrId}"
+                }
                 Text(
-                    text = "Bike: ${submission.bikeQrId}",
+                    text = bikeLabel,
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )

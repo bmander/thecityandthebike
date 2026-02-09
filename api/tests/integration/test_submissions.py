@@ -182,6 +182,72 @@ class TestCreateSubmission:
         )
         assert response.status_code == 422
 
+    def test_create_submission_lime_url(self, client, auth_headers, test_user, db_session):
+        """Submitting a Lime URL should parse provider and bike ID."""
+        submission_data = {
+            "bike_qr_id": "https://lime.bike/bc/v1/G5EZAYI=",
+            "image_url_original": "https://example.com/original.jpg",
+            "image_url_processed": "https://example.com/processed.jpg",
+            "captured_date": date.today().isoformat(),
+        }
+
+        response = client.post("/submissions", json=submission_data, headers=auth_headers)
+        assert response.status_code == 201
+        data = response.json()
+        assert data["bike_qr_id"] == "G5EZAYI"
+        assert data["provider"] == "lime"
+
+        bike = db_session.query(Bike).filter(Bike.bike_qr_id == "G5EZAYI").first()
+        assert bike is not None
+        assert bike.provider == "lime"
+
+    def test_create_submission_bird_url(self, client, auth_headers, test_user, db_session):
+        """Submitting a Bird URL should parse provider and bike ID."""
+        submission_data = {
+            "bike_qr_id": "https://ride.bird.co/bc/v1/abc123",
+            "image_url_original": "https://example.com/original.jpg",
+            "image_url_processed": "https://example.com/processed.jpg",
+            "captured_date": date.today().isoformat(),
+        }
+
+        response = client.post("/submissions", json=submission_data, headers=auth_headers)
+        assert response.status_code == 201
+        data = response.json()
+        assert data["bike_qr_id"] == "abc123"
+        assert data["provider"] == "bird"
+
+    def test_create_submission_unknown_url(self, client, auth_headers, test_user, db_session):
+        """Submitting an unknown URL should store it as-is with no provider."""
+        submission_data = {
+            "bike_qr_id": "https://unknown.com/bikes/XYZ",
+            "image_url_original": "https://example.com/original.jpg",
+            "image_url_processed": "https://example.com/processed.jpg",
+            "captured_date": date.today().isoformat(),
+        }
+
+        response = client.post("/submissions", json=submission_data, headers=auth_headers)
+        assert response.status_code == 201
+        data = response.json()
+        assert data["bike_qr_id"] == "https://unknown.com/bikes/XYZ"
+        assert data["provider"] is None
+
+    def test_create_submission_plain_string_provider_null(
+        self, client, auth_headers, test_user
+    ):
+        """Submitting a plain string should have provider=None."""
+        submission_data = {
+            "bike_qr_id": "PLAIN-BIKE-ID",
+            "image_url_original": "https://example.com/original.jpg",
+            "image_url_processed": "https://example.com/processed.jpg",
+            "captured_date": date.today().isoformat(),
+        }
+
+        response = client.post("/submissions", json=submission_data, headers=auth_headers)
+        assert response.status_code == 201
+        data = response.json()
+        assert data["bike_qr_id"] == "PLAIN-BIKE-ID"
+        assert data["provider"] is None
+
     def test_create_submission_no_auth(self, client):
         """Request without auth should return 401."""
         submission_data = {

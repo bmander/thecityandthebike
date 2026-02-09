@@ -27,6 +27,7 @@ class Bike(Base):
     __tablename__ = "bikes"
 
     bike_qr_id = Column(String(255), primary_key=True)
+    provider = Column(String(50))
     bike_brand = Column(String(255))
     first_seen_at = Column(DateTime(timezone=True))
     last_seen_at = Column(DateTime(timezone=True))
@@ -56,3 +57,7 @@ class FenderSubmission(Base):
     @property
     def username(self):
         return self.user.username if self.user else None
+
+    @property
+    def provider(self):
+        return self.bike.provider if self.bike else None

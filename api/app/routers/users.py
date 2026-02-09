@@ -23,7 +23,7 @@ def get_my_submissions(
 ):
     submissions = (
         db.query(FenderSubmission)
-        .options(joinedload(FenderSubmission.user))
+        .options(joinedload(FenderSubmission.user), joinedload(FenderSubmission.bike))
         .filter(FenderSubmission.user_id == current_user.user_id)
         .order_by(FenderSubmission.uploaded_at.desc())
         .all()

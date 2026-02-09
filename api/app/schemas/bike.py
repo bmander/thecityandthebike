@@ -8,6 +8,7 @@ class BikeResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
     bike_qr_id: str
+    provider: Optional[str] = None
     bike_brand: Optional[str] = None
     first_seen_at: Optional[datetime] = None
     last_seen_at: Optional[datetime] = None

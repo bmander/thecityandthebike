@@ -24,7 +24,8 @@ data class SubmissionResponse(
     @SerialName("captured_date") val capturedDate: String? = null,
     @SerialName("uploaded_at") val uploadedAt: String? = null,
     @SerialName("user_caption") val userCaption: String? = null,
-    val username: String? = null
+    val username: String? = null,
+    val provider: String? = null
 )
 
 @Serializable

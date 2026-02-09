@@ -20,6 +20,7 @@ class SubmissionResponse(BaseModel):
     submission_id: UUID
     user_id: UUID
     bike_qr_id: str
+    provider: Optional[str] = None
     image_url_original: Optional[str] = None
     image_url_thumbnail: Optional[str] = None
     image_url_processed: Optional[str] = None

@@ -4,6 +4,7 @@ from typing import Annotated, List, Optional
 from fastapi import APIRouter, Depends, status
 from sqlalchemy.orm import Session, joinedload
 
+from ..bike_url_parser import parse_bike_url
 from ..database import get_db
 from ..dependencies import get_current_user, get_current_user_optional
 from ..models import User, Bike, FenderSubmission
@@ -19,7 +20,7 @@ def get_global_submissions(
 ):
     submissions = (
         db.query(FenderSubmission)
-        .options(joinedload(FenderSubmission.user))
+        .options(joinedload(FenderSubmission.user), joinedload(FenderSubmission.bike))
         .order_by(FenderSubmission.uploaded_at.desc())
         .all()
     )
@@ -32,18 +33,24 @@ def create_submission(
     current_user: Annotated[User, Depends(get_current_user)],
     db: Annotated[Session, Depends(get_db)],
 ):
-    bike = db.query(Bike).filter(Bike.bike_qr_id == data.bike_qr_id).first()
+    parsed = parse_bike_url(data.bike_qr_id)
+    bike = db.query(Bike).filter(Bike.bike_qr_id == parsed.bike_id).first()
     now = datetime.now(timezone.utc)
 
     if bike:
         bike.last_seen_at = now
     else:
-        bike = Bike(bike_qr_id=data.bike_qr_id, first_seen_at=now, last_seen_at=now)
+        bike = Bike(
+            bike_qr_id=parsed.bike_id,
+            provider=parsed.provider,
+            first_seen_at=now,
+            last_seen_at=now,
+        )
         db.add(bike)
 
     submission = FenderSubmission(
         user_id=current_user.user_id,
-        bike_qr_id=data.bike_qr_id,
+        bike_qr_id=parsed.bike_id,
         image_url_original=data.image_url_original,
         image_url_processed=data.image_url_processed,
         captured_date=data.captured_date,
@@ -52,6 +59,7 @@ def create_submission(
     db.add(submission)
     db.commit()
     db.refresh(submission)
-    # Force load the user relationship for the username property
+    # Force load relationships for the username and provider properties
     _ = submission.user
+    _ = submission.bike
     return submission
