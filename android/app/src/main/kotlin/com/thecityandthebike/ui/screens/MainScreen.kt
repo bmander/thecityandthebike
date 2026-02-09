@@ -3,11 +3,9 @@ package com.thecityandthebike.ui.screens
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.Logout
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Snackbar
 import androidx.compose.material3.Text
@@ -15,12 +13,16 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.thecityandthebike.ui.components.CameraFAB
 import com.thecityandthebike.ui.components.ImageGrid
 import com.thecityandthebike.ui.components.LoginFAB
+import com.thecityandthebike.ui.components.MenuButton
 import com.thecityandthebike.ui.viewmodel.MainViewModel
 import com.thecityandthebike.util.imageUrlToUri
 
@@ -31,6 +33,7 @@ fun MainScreen(
     onLogout: () -> Unit,
     onLoginClick: () -> Unit,
     onScanQrCode: () -> Unit,
+    onShowPrivacyCopyright: () -> Unit = {},
     onImageClick: ((String) -> Unit)? = null
 ) {
     val state by viewModel.state.collectAsState()
@@ -60,19 +63,36 @@ fun MainScreen(
             }
         )
 
-        // Logout button (top left) - only shown when logged in
-        if (isLoggedIn) {
-            IconButton(
-                onClick = onLogout,
-                modifier = Modifier
-                    .align(Alignment.TopStart)
-                    .padding(16.dp)
+        // Hamburger menu (top left) - always visible
+        Box(
+            modifier = Modifier
+                .align(Alignment.TopStart)
+                .padding(16.dp)
+        ) {
+            var menuExpanded by remember { mutableStateOf(false) }
+
+            MenuButton(onClick = { menuExpanded = true })
+
+            DropdownMenu(
+                expanded = menuExpanded,
+                onDismissRequest = { menuExpanded = false }
             ) {
-                Icon(
-                    imageVector = Icons.AutoMirrored.Filled.Logout,
-                    contentDescription = "Logout",
-                    tint = MaterialTheme.colorScheme.onSurface
+                DropdownMenuItem(
+                    text = { Text("Privacy & Copyright") },
+                    onClick = {
+                        menuExpanded = false
+                        onShowPrivacyCopyright()
+                    }
                 )
+                if (isLoggedIn) {
+                    DropdownMenuItem(
+                        text = { Text("Log out") },
+                        onClick = {
+                            menuExpanded = false
+                            onLogout()
+                        }
+                    )
+                }
             }
         }
 

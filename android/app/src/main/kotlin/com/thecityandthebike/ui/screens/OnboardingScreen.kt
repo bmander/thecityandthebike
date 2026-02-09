@@ -216,11 +216,11 @@ private fun StepRow(number: Int, text: String) {
 }
 
 @Composable
-private fun PrivacyCopyrightPage() {
+internal fun PrivacyCopyrightPage(modifier: Modifier = Modifier) {
     val scrollState = rememberScrollState()
 
     Column(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxSize()
             .padding(horizontal = 32.dp)
             .verticalScroll(scrollState),

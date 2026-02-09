@@ -28,6 +28,7 @@ import com.thecityandthebike.ui.screens.LoginScreen
 import com.thecityandthebike.ui.screens.MainScreen
 import com.thecityandthebike.ui.screens.OnboardingScreen
 import com.thecityandthebike.ui.screens.PhotoCaptureScreen
+import com.thecityandthebike.ui.screens.PrivacyCopyrightScreen
 import com.thecityandthebike.ui.screens.QrScannerScreen
 import com.thecityandthebike.ui.screens.RegisterScreen
 import com.thecityandthebike.ui.screens.SplashScreen
@@ -128,9 +129,18 @@ class MainActivity : ComponentActivity() {
                                 onScanQrCode = {
                                     navController.navigate("scanner")
                                 },
+                                onShowPrivacyCopyright = {
+                                    navController.navigate("privacy_copyright")
+                                },
                                 onImageClick = { submissionId ->
                                     navController.navigate("image_detail/${Uri.encode(submissionId)}")
                                 }
+                            )
+                        }
+
+                        composable("privacy_copyright") {
+                            PrivacyCopyrightScreen(
+                                onBack = { navController.popBackStack() }
                             )
                         }
 

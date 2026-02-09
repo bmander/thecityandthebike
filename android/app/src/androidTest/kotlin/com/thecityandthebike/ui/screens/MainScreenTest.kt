@@ -3,16 +3,20 @@ package com.thecityandthebike.ui.screens
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.Logout
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.Text
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
+import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.performClick
 import androidx.compose.ui.unit.dp
 import com.thecityandthebike.setContentWithTheme
 import com.thecityandthebike.ui.components.CameraFAB
@@ -168,30 +172,52 @@ class MainScreenTest {
     }
 
     @Test
-    fun mainScreen_guestUser_doesNotShowLogoutButton() {
+    fun mainScreen_guestUser_doesNotShowLogoutInMenu() {
         val isLoggedIn = false
 
         composeTestRule.setContentWithTheme {
             Box(modifier = Modifier.fillMaxSize()) {
-                if (isLoggedIn) {
-                    IconButton(
-                        onClick = {},
-                        modifier = Modifier
-                            .align(Alignment.TopStart)
-                            .padding(16.dp)
+                Box(
+                    modifier = Modifier
+                        .align(Alignment.TopStart)
+                        .padding(16.dp)
+                ) {
+                    var menuExpanded by remember { mutableStateOf(false) }
+
+                    MenuButton(onClick = { menuExpanded = true })
+
+                    DropdownMenu(
+                        expanded = menuExpanded,
+                        onDismissRequest = { menuExpanded = false }
                     ) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.Logout,
-                            contentDescription = "Logout",
-                            tint = MaterialTheme.colorScheme.onSurface
+                        DropdownMenuItem(
+                            text = { Text("Privacy & Copyright") },
+                            onClick = { menuExpanded = false }
                         )
+                        if (isLoggedIn) {
+                            DropdownMenuItem(
+                                text = { Text("Log out") },
+                                onClick = { menuExpanded = false }
+                            )
+                        }
                     }
                 }
             }
         }
 
+        // Open the menu
         composeTestRule
-            .onNodeWithContentDescription("Logout")
+            .onNodeWithContentDescription("Menu")
+            .performClick()
+
+        // "Privacy & Copyright" should be visible
+        composeTestRule
+            .onNodeWithText("Privacy & Copyright")
+            .assertIsDisplayed()
+
+        // "Log out" should not be present for guest users
+        composeTestRule
+            .onNodeWithText("Log out")
             .assertDoesNotExist()
     }
 
@@ -234,30 +260,51 @@ class MainScreenTest {
     }
 
     @Test
-    fun mainScreen_loggedInUser_showsLogoutButton() {
+    fun mainScreen_loggedInUser_showsLogoutInMenu() {
         val isLoggedIn = true
 
         composeTestRule.setContentWithTheme {
             Box(modifier = Modifier.fillMaxSize()) {
-                if (isLoggedIn) {
-                    IconButton(
-                        onClick = {},
-                        modifier = Modifier
-                            .align(Alignment.TopStart)
-                            .padding(16.dp)
+                Box(
+                    modifier = Modifier
+                        .align(Alignment.TopStart)
+                        .padding(16.dp)
+                ) {
+                    var menuExpanded by remember { mutableStateOf(false) }
+
+                    MenuButton(onClick = { menuExpanded = true })
+
+                    DropdownMenu(
+                        expanded = menuExpanded,
+                        onDismissRequest = { menuExpanded = false }
                     ) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.Logout,
-                            contentDescription = "Logout",
-                            tint = MaterialTheme.colorScheme.onSurface
+                        DropdownMenuItem(
+                            text = { Text("Privacy & Copyright") },
+                            onClick = { menuExpanded = false }
                         )
+                        if (isLoggedIn) {
+                            DropdownMenuItem(
+                                text = { Text("Log out") },
+                                onClick = { menuExpanded = false }
+                            )
+                        }
                     }
                 }
             }
         }
 
+        // Open the menu
         composeTestRule
-            .onNodeWithContentDescription("Logout")
+            .onNodeWithContentDescription("Menu")
+            .performClick()
+
+        // Both items should be visible for logged-in users
+        composeTestRule
+            .onNodeWithText("Privacy & Copyright")
+            .assertIsDisplayed()
+
+        composeTestRule
+            .onNodeWithText("Log out")
             .assertIsDisplayed()
     }
 }
