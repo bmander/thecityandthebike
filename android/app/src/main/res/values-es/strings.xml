@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">The City and The Bike</string>
+
+    <!-- Onboarding: navigation -->
+    <string name="onboarding_back">Atrás</string>
+    <string name="onboarding_next">Siguiente</string>
+    <string name="onboarding_get_started">Comenzar</string>
+    <string name="onboarding_page_indicator">Página %1$d de %2$d</string>
+
+    <!-- Onboarding: page 1 -->
+    <string name="onboarding_what_is_this_title">¿Qué es esto?</string>
+    <string name="onboarding_what_is_this_body">The City and The Bike es un álbum fotográfico creado por la comunidad de etiquetas y arte callejero en bicicletas compartidas en Seattle.</string>
+
+    <!-- Onboarding: page 2 -->
+    <string name="onboarding_how_title">¿Cómo lo hago?</string>
+    <string name="onboarding_how_step1">Escanea el código QR de la bicicleta</string>
+    <string name="onboarding_how_step2">Toma una foto de la rueda trasera</string>
+    <string name="onboarding_how_step3">Intenta coleccionarlas todas</string>
+
+    <!-- Onboarding: page 3 -->
+    <string name="onboarding_privacy_copyright_title">Privacidad y derechos de autor</string>
+    <string name="onboarding_privacy_subtitle">Privacidad</string>
+    <string name="onboarding_privacy_body">Esta aplicación intenta no recopilar mucha información sobre ti. No pedimos tu nombre ni tu correo electrónico. No rastreamos dónde estás. Cuando subes una foto, eliminamos los detalles adicionales que podrían revelar quién eres, como la fecha y hora exacta en que se tomó la foto. Solo conservamos la fecha en que la subiste. Sin embargo, alguien que se esfuerce mucho podría deducir quién eres mirando la ubicación de las bicicletas y el contenido de tus fotos. Tenlo en cuenta.</string>
+    <string name="onboarding_copyright_subtitle">Derechos de autor</string>
+    <string name="onboarding_copyright_body">Los derechos de autor de todas las fotos que subas te pertenecen. Al subir el archivo aceptas licenciar la imagen bajo Creative Commons BY-NC 4.0. Esta licencia requiere que quienes la reutilicen den crédito al creador. Permite a los reutilizadores distribuir, remezclar, adaptar y construir sobre el material en cualquier medio o formato, solo con fines no comerciales.</string>
+    <string name="onboarding_cc_link">Más información sobre CC BY-NC 4.0</string>
+    <string name="onboarding_cc_link_a11y">Más información sobre CC BY-NC 4.0, se abre en el navegador</string>
+</resources>
