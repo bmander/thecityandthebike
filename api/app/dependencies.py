@@ -5,7 +5,8 @@ from typing import Annotated, Optional
 import bcrypt
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
-from jose import JWTError, jwt
+import jwt
+from jwt.exceptions import PyJWTError
 from sqlalchemy.orm import Session
 
 from .config import settings
@@ -50,7 +51,7 @@ def get_current_user(
         user_id: str = payload.get("sub")
         if user_id is None:
             raise credentials_exception
-    except JWTError:
+    except PyJWTError:
         raise credentials_exception
 
     user = db.query(User).filter(User.user_id == user_id).first()
@@ -70,7 +71,7 @@ def get_current_user_optional(
         user_id: str = payload.get("sub")
         if user_id is None:
             return None
-    except JWTError:
+    except PyJWTError:
         return None
 
     return db.query(User).filter(User.user_id == user_id).first()
