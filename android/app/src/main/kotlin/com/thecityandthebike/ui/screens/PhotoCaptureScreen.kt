@@ -56,7 +56,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
-import androidx.lifecycle.LifecycleOwner
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.thecityandthebike.R
 import com.thecityandthebike.util.createImageFileAndUri
 import com.thecityandthebike.util.cropToSquare
@@ -69,7 +69,7 @@ fun PhotoCaptureScreen(
     onBack: () -> Unit
 ) {
     val context = LocalContext.current
-    val lifecycleOwner = context as LifecycleOwner
+    val lifecycleOwner = LocalLifecycleOwner.current
     var hasCameraPermission by remember {
         mutableStateOf(
             ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA) ==
