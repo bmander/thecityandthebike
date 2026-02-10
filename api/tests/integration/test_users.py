@@ -42,21 +42,26 @@ class TestGetMySubmissions:
     """Tests for GET /users/me/submissions endpoint."""
 
     def test_get_my_submissions_empty(self, client, auth_headers):
-        """User with no submissions should receive empty list."""
+        """User with no submissions should receive paginated response with no items."""
         response = client.get("/users/me/submissions", headers=auth_headers)
         assert response.status_code == 200
-        assert response.json() == []
+        data = response.json()
+        assert data["items"] == []
+        assert data["total"] == 0
+        assert data["limit"] == 20
+        assert data["offset"] == 0
 
     def test_get_my_submissions_with_data(
         self, client, auth_headers, test_submission, test_user
     ):
-        """User should see their own submissions."""
+        """User should see their own submissions in paginated wrapper."""
         response = client.get("/users/me/submissions", headers=auth_headers)
         assert response.status_code == 200
         data = response.json()
-        assert len(data) == 1
-        assert data[0]["submission_id"] == test_submission.submission_id
-        assert data[0]["user_id"] == test_user.user_id
+        assert data["total"] == 1
+        assert len(data["items"]) == 1
+        assert data["items"][0]["submission_id"] == test_submission.submission_id
+        assert data["items"][0]["user_id"] == test_user.user_id
 
     def test_get_my_submissions_excludes_other_users(
         self, client, auth_headers, test_submission, test_user, db_session
@@ -92,9 +97,10 @@ class TestGetMySubmissions:
         response = client.get("/users/me/submissions", headers=auth_headers)
         assert response.status_code == 200
         data = response.json()
-        assert len(data) == 1
-        assert data[0]["user_id"] == test_user.user_id
-        assert data[0]["submission_id"] == test_submission.submission_id
+        assert data["total"] == 1
+        assert len(data["items"]) == 1
+        assert data["items"][0]["user_id"] == test_user.user_id
+        assert data["items"][0]["submission_id"] == test_submission.submission_id
 
     def test_get_my_submissions_no_auth(self, client):
         """Request without auth should return 401."""

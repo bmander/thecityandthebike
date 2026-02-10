@@ -29,6 +29,14 @@ data class SubmissionResponse(
 )
 
 @Serializable
+data class PaginatedSubmissions(
+    val items: List<SubmissionResponse>,
+    val total: Int,
+    val limit: Int,
+    val offset: Int
+)
+
+@Serializable
 data class UploadResponse(
     val url: String,
     val filename: String,

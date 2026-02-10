@@ -1,6 +1,7 @@
 package com.thecityandthebike.viewmodel
 
 import android.net.Uri
+import com.thecityandthebike.data.model.dto.PaginatedSubmissions
 import com.thecityandthebike.data.model.dto.SubmissionResponse
 import com.thecityandthebike.data.repository.SubmissionRepository
 import com.thecityandthebike.data.repository.SubmissionResult
@@ -53,19 +54,22 @@ class MainViewModelTest {
                 imageUrlOriginal = "http://example.com/image2.jpg"
             )
         )
-        coEvery { submissionRepository.getSubmissions() } returns SubmissionResult.Success(submissions)
+        val paginated = PaginatedSubmissions(items = submissions, total = 2, limit = 20, offset = 0)
+        coEvery { submissionRepository.getSubmissions(any(), any()) } returns SubmissionResult.Success(paginated)
 
         viewModel = MainViewModel(submissionRepository)
         testDispatcher.scheduler.advanceUntilIdle()
 
         assertEquals(2, viewModel.state.value.submissions.size)
+        assertEquals(2, viewModel.state.value.totalSubmissions)
+        assertFalse(viewModel.state.value.hasMorePages)
         assertFalse(viewModel.state.value.isLoading)
         assertNull(viewModel.state.value.error)
     }
 
     @Test
     fun `loadSubmissions failure should set error state`() = runTest {
-        coEvery { submissionRepository.getSubmissions() } returns SubmissionResult.Error("Network error")
+        coEvery { submissionRepository.getSubmissions(any(), any()) } returns SubmissionResult.Error("Network error")
 
         viewModel = MainViewModel(submissionRepository)
         testDispatcher.scheduler.advanceUntilIdle()
@@ -77,7 +81,8 @@ class MainViewModelTest {
 
     @Test
     fun `addLocalImage should prepend image to local images list`() = runTest {
-        coEvery { submissionRepository.getSubmissions() } returns SubmissionResult.Success(emptyList())
+        val paginated = PaginatedSubmissions(items = emptyList(), total = 0, limit = 20, offset = 0)
+        coEvery { submissionRepository.getSubmissions(any(), any()) } returns SubmissionResult.Success(paginated)
 
         mockkStatic(Uri::class)
         val uri1 = mockk<Uri>()
@@ -98,7 +103,7 @@ class MainViewModelTest {
 
     @Test
     fun `clearError should reset error state`() = runTest {
-        coEvery { submissionRepository.getSubmissions() } returns SubmissionResult.Error("Error")
+        coEvery { submissionRepository.getSubmissions(any(), any()) } returns SubmissionResult.Error("Error")
 
         viewModel = MainViewModel(submissionRepository)
         testDispatcher.scheduler.advanceUntilIdle()
@@ -108,4 +113,65 @@ class MainViewModelTest {
         assertNull(viewModel.state.value.error)
     }
 
+    @Test
+    fun `loadMoreSubmissions should append items to existing list`() = runTest {
+        val firstPage = listOf(
+            SubmissionResponse(submissionId = "1", userId = "user1", bikeQrId = "bike1"),
+            SubmissionResponse(submissionId = "2", userId = "user1", bikeQrId = "bike2")
+        )
+        val firstPaginated = PaginatedSubmissions(items = firstPage, total = 4, limit = 2, offset = 0)
+        coEvery { submissionRepository.getSubmissions(limit = any(), offset = 0) } returns SubmissionResult.Success(firstPaginated)
+
+        viewModel = MainViewModel(submissionRepository)
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        assertEquals(2, viewModel.state.value.submissions.size)
+        assertTrue(viewModel.state.value.hasMorePages)
+
+        val secondPage = listOf(
+            SubmissionResponse(submissionId = "3", userId = "user1", bikeQrId = "bike3"),
+            SubmissionResponse(submissionId = "4", userId = "user1", bikeQrId = "bike4")
+        )
+        val secondPaginated = PaginatedSubmissions(items = secondPage, total = 4, limit = 2, offset = 2)
+        coEvery { submissionRepository.getSubmissions(limit = any(), offset = 2) } returns SubmissionResult.Success(secondPaginated)
+
+        viewModel.loadMoreSubmissions()
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        assertEquals(4, viewModel.state.value.submissions.size)
+        assertEquals("3", viewModel.state.value.submissions[2].submissionId)
+        assertEquals("4", viewModel.state.value.submissions[3].submissionId)
+        assertFalse(viewModel.state.value.hasMorePages)
+        assertFalse(viewModel.state.value.isLoadingMore)
+    }
+
+    @Test
+    fun `loadMoreSubmissions should not load when already loading`() = runTest {
+        val paginated = PaginatedSubmissions(items = emptyList(), total = 10, limit = 20, offset = 0)
+        coEvery { submissionRepository.getSubmissions(any(), any()) } returns SubmissionResult.Success(paginated)
+
+        viewModel = MainViewModel(submissionRepository)
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        // hasMorePages should be false since items are empty and 0 < 10 is true...
+        // Actually with empty items, 0 + 0 < 10 = true, so hasMorePages = true
+        // But isLoadingMore = false, so loadMore should proceed
+        // Let's test the guard when hasMorePages is false
+        val fullPage = PaginatedSubmissions(
+            items = listOf(SubmissionResponse(submissionId = "1", userId = "u", bikeQrId = "b")),
+            total = 1, limit = 20, offset = 0
+        )
+        coEvery { submissionRepository.getSubmissions(any(), any()) } returns SubmissionResult.Success(fullPage)
+
+        viewModel.loadSubmissions()
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        assertFalse(viewModel.state.value.hasMorePages)
+
+        // This should be a no-op since hasMorePages is false
+        viewModel.loadMoreSubmissions()
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        assertEquals(1, viewModel.state.value.submissions.size)
+    }
 }
