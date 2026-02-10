@@ -24,6 +24,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.thecityandthebike.data.local.OnboardingPrefs
+import com.thecityandthebike.ui.screens.BikeScreen
 import com.thecityandthebike.ui.screens.ImageDetailScreen
 import com.thecityandthebike.ui.screens.LoginScreen
 import com.thecityandthebike.ui.screens.MainScreen
@@ -34,6 +35,7 @@ import com.thecityandthebike.ui.screens.QrScannerScreen
 import com.thecityandthebike.ui.screens.RegisterScreen
 import com.thecityandthebike.ui.screens.SplashScreen
 import com.thecityandthebike.ui.viewmodel.AuthViewModel
+import com.thecityandthebike.ui.viewmodel.BikeViewModel
 import com.thecityandthebike.ui.viewmodel.MainViewModel
 import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
@@ -171,6 +173,54 @@ class MainActivity : ComponentActivity() {
                                 return@composable
                             }
                             val submission = mainState.submissions.find { it.submissionId == submissionId }
+                            if (submission != null) {
+                                ImageDetailScreen(
+                                    submission = submission,
+                                    onBack = { navController.popBackStack() },
+                                    onBikeClick = { bikeQrId ->
+                                        navController.navigate("bike/${Uri.encode(bikeQrId)}")
+                                    }
+                                )
+                            } else {
+                                LaunchedEffect(Unit) { navController.popBackStack() }
+                            }
+                        }
+
+                        composable("bike/{bikeQrId}") { backStackEntry ->
+                            val bikeViewModel: BikeViewModel = hiltViewModel()
+                            BikeScreen(
+                                viewModel = bikeViewModel,
+                                onBack = { navController.popBackStack() },
+                                onImageClick = { submissionId ->
+                                    navController.navigate("bike_image_detail/${Uri.encode(submissionId)}")
+                                }
+                            )
+                        }
+
+                        composable(
+                            "bike_image_detail/{submissionId}",
+                            enterTransition = { EnterTransition.None },
+                            exitTransition = { ExitTransition.None },
+                            popEnterTransition = { EnterTransition.None },
+                            popExitTransition = { ExitTransition.None }
+                        ) { backStackEntry ->
+                            val submissionId = backStackEntry.arguments?.getString("submissionId") ?: ""
+                            if (submissionId.isEmpty()) {
+                                LaunchedEffect(Unit) { navController.popBackStack() }
+                                return@composable
+                            }
+                            val bikeEntry = remember(backStackEntry) {
+                                navController.getBackStackEntry("bike/{bikeQrId}")
+                            }
+                            val bikeViewModel: BikeViewModel = hiltViewModel(bikeEntry)
+                            val bikeState by bikeViewModel.state.collectAsState()
+                            if (bikeState.isLoading) {
+                                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                                    CircularProgressIndicator()
+                                }
+                                return@composable
+                            }
+                            val submission = bikeState.submissions.find { it.submissionId == submissionId }
                             if (submission != null) {
                                 ImageDetailScreen(
                                     submission = submission,

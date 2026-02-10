@@ -3,6 +3,44 @@ from datetime import date
 from app.models import FenderSubmission
 
 
+class TestGetBikeDetail:
+    """Tests for GET /bikes/{bike_qr_id} endpoint."""
+
+    def test_get_bike_detail_success(self, client, test_bike):
+        """Should return bike details with submission count."""
+        response = client.get(f"/bikes/{test_bike.bike_qr_id}")
+        assert response.status_code == 200
+        data = response.json()
+        assert data["bike_qr_id"] == test_bike.bike_qr_id
+        assert data["submission_count"] == 0
+
+    def test_get_bike_detail_not_found(self, client):
+        """Request for nonexistent bike should return 404."""
+        response = client.get("/bikes/NONEXISTENT-BIKE")
+        assert response.status_code == 404
+        assert "Bike not found" in response.json()["detail"]["msg"]
+
+    def test_get_bike_detail_submission_count(
+        self, client, test_bike, test_user, db_session
+    ):
+        """Should return correct submission count."""
+        for i in range(3):
+            sub = FenderSubmission(
+                user_id=test_user.user_id,
+                bike_id=test_bike.id,
+                image_url_original=f"https://example.com/img{i}.jpg",
+                image_url_processed=f"https://example.com/img{i}-proc.jpg",
+                captured_date=date.today(),
+            )
+            db_session.add(sub)
+        db_session.commit()
+
+        response = client.get(f"/bikes/{test_bike.bike_qr_id}")
+        assert response.status_code == 200
+        data = response.json()
+        assert data["submission_count"] == 3
+
+
 class TestGetBikeSubmissions:
     """Tests for GET /bikes/{bike_qr_id}/submissions endpoint."""
 
@@ -79,9 +117,9 @@ class TestGetBikeSubmissions:
         assert data["offset"] == 0
 
     def test_get_bike_submissions_no_auth(self, client, test_bike):
-        """Request without auth should return 401."""
+        """Request without auth should return 200 (public endpoint)."""
         response = client.get(f"/bikes/{test_bike.bike_qr_id}/submissions")
-        assert response.status_code == 401
+        assert response.status_code == 200
 
     def test_get_bike_submissions_custom_limit_offset(
         self, client, auth_headers, test_bike, test_user, db_session

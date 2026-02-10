@@ -3,6 +3,7 @@ package com.thecityandthebike.ui.screens
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.spring
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import com.thecityandthebike.ui.gestures.detectPinchGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -50,7 +51,8 @@ import java.time.format.DateTimeFormatter
 @Composable
 fun ImageDetailScreen(
     submission: SubmissionResponse,
-    onBack: () -> Unit
+    onBack: () -> Unit,
+    onBikeClick: ((String) -> Unit)? = null
 ) {
     val imageUri = submission.imageUrlOriginal?.let { imageUrlToUri(it) }
     val thumbnailUri = submission.imageUrlThumbnail?.let { imageUrlToUri(it) }
@@ -183,7 +185,13 @@ fun ImageDetailScreen(
                 Text(
                     text = bikeLabel,
                     style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    color = if (onBikeClick != null) MaterialTheme.colorScheme.primary
+                        else MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = if (onBikeClick != null) {
+                        Modifier.clickable { onBikeClick(submission.bikeQrId) }
+                    } else {
+                        Modifier
+                    }
                 )
 
                 formattedDate?.let { date ->

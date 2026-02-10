@@ -13,3 +13,7 @@ class BikeResponse(BaseModel):
     first_seen_at: Optional[datetime] = None
     last_seen_at: Optional[datetime] = None
     notes: Optional[str] = None
+
+
+class BikeDetailResponse(BikeResponse):
+    submission_count: int

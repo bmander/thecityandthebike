@@ -40,6 +40,17 @@ interface ApiService {
     @POST("submissions")
     suspend fun createSubmission(@Body submission: SubmissionCreate): Response<SubmissionResponse>
 
+    // Bike endpoints
+    @GET("bikes/{bikeQrId}")
+    suspend fun getBikeDetail(@Path("bikeQrId") bikeQrId: String): Response<BikeDetailResponse>
+
+    @GET("bikes/{bikeQrId}/submissions")
+    suspend fun getBikeSubmissions(
+        @Path("bikeQrId") bikeQrId: String,
+        @Query("limit") limit: Int = 20,
+        @Query("offset") offset: Int = 0
+    ): Response<PaginatedSubmissions>
+
     // Upload endpoint
     @Multipart
     @POST("uploads/images")
