@@ -59,7 +59,7 @@ android {
         }
         production {
             dimension "environment"
-            buildConfigField "String", "BASE_URL", "\"https://tcatb-api-production-PLACEHOLDER.a.run.app\""
+            buildConfigField "String", "BASE_URL", "\"${System.getenv("PRODUCTION_BASE_URL") ?: ""}\""
         }
     }
 
