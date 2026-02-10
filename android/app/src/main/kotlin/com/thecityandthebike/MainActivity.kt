@@ -14,6 +14,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ComposeUiFlags
 import androidx.compose.ui.ExperimentalComposeUiApi
@@ -158,11 +159,8 @@ class MainActivity : ComponentActivity() {
                                 LaunchedEffect(Unit) { navController.popBackStack() }
                                 return@composable
                             }
-                            val mainEntry = navController.currentBackStack.value
-                                .firstOrNull { it.destination.route == "main" }
-                            if (mainEntry == null) {
-                                LaunchedEffect(Unit) { navController.popBackStack() }
-                                return@composable
+                            val mainEntry = remember(backStackEntry) {
+                                navController.getBackStackEntry("main")
                             }
                             val mainViewModel: MainViewModel = hiltViewModel(mainEntry)
                             val mainState by mainViewModel.state.collectAsState()
@@ -202,9 +200,10 @@ class MainActivity : ComponentActivity() {
                                 navController.popBackStack()
                                 return@composable
                             }
-                            val mainViewModel: MainViewModel = hiltViewModel(
+                            val mainEntry = remember(backStackEntry) {
                                 navController.getBackStackEntry("main")
-                            )
+                            }
+                            val mainViewModel: MainViewModel = hiltViewModel(mainEntry)
                             PhotoCaptureScreen(
                                 onPhotoCaptured = { uri ->
                                     mainViewModel.addLocalImage(uri)

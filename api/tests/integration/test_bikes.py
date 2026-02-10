@@ -1,6 +1,6 @@
-from datetime import date, datetime, timezone
+from datetime import date
 
-from app.models import Bike, FenderSubmission
+from app.models import FenderSubmission
 
 
 class TestGetBikeSubmissions:

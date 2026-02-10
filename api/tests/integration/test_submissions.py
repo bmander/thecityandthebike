@@ -1,6 +1,6 @@
 from datetime import date, datetime, timezone
 
-from app.dependencies import get_password_hash, create_access_token
+from app.dependencies import get_password_hash
 from app.models import User, Bike, FenderSubmission
 
 

@@ -9,11 +9,9 @@ os.environ.setdefault("REGISTER_RATE_LIMIT", "1000/minute")
 
 from contextlib import asynccontextmanager
 from datetime import date, datetime, timezone
-import uuid
 
 import pytest
-from fastapi import FastAPI, Request
-from fastapi.responses import JSONResponse
+from fastapi import FastAPI
 from fastapi.testclient import TestClient
 from PIL import Image
 from sqlalchemy import create_engine
@@ -25,7 +23,7 @@ from slowapi.errors import RateLimitExceeded
 from app.admin import setup_admin
 from app.database import Base, get_db
 from app.dependencies import get_password_hash, create_access_token
-from app.models import User, Bike, FenderSubmission, RefreshToken
+from app.models import User, Bike, FenderSubmission
 from app.rate_limit import AccountLockout, get_account_lockout, limiter, rate_limit_exceeded_handler
 from app.routers import auth_router, users_router, submissions_router, bikes_router, uploads_router
 

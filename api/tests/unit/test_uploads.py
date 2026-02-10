@@ -1,5 +1,5 @@
 import io
-from unittest.mock import MagicMock, patch, call
+from unittest.mock import MagicMock, patch
 
 from app.config import settings
 from tests.conftest import create_test_image

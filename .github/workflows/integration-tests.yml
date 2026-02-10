@@ -170,7 +170,6 @@ jobs:
       - name: Run Python linter
         working-directory: api
         run: ruff check .
-        continue-on-error: true
 
       - name: Grant execute permission for gradlew
         working-directory: android
@@ -179,7 +178,6 @@ jobs:
       - name: Run Android lint
         working-directory: android
         run: ./gradlew lint
-        continue-on-error: true
 
       - name: Upload lint results
         uses: actions/upload-artifact@v4
