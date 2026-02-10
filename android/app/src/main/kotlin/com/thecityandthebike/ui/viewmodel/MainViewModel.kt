@@ -1,6 +1,5 @@
 package com.thecityandthebike.ui.viewmodel
 
-import android.content.ContentResolver
 import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -8,16 +7,12 @@ import com.thecityandthebike.data.model.dto.SubmissionCreate
 import com.thecityandthebike.data.model.dto.SubmissionResponse
 import com.thecityandthebike.data.repository.SubmissionRepository
 import com.thecityandthebike.data.repository.SubmissionResult
-import com.thecityandthebike.util.stripMetadata
-import com.thecityandthebike.util.uriToFile
+import com.thecityandthebike.util.ImagePreparer
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
-import java.io.File
 import java.time.LocalDate
 import java.time.ZoneId
 import java.util.UUID
@@ -33,7 +28,8 @@ data class MainState(
 
 @HiltViewModel
 class MainViewModel @Inject constructor(
-    private val submissionRepository: SubmissionRepository
+    private val submissionRepository: SubmissionRepository,
+    private val imagePreparer: ImagePreparer
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(MainState())
@@ -69,14 +65,11 @@ class MainViewModel @Inject constructor(
         )
     }
 
-    fun uploadAndCreateSubmission(contentResolver: ContentResolver, cacheDir: File, localUri: Uri, bikeQrId: String? = null) {
+    fun uploadAndCreateSubmission(localUri: Uri, bikeQrId: String? = null) {
         viewModelScope.launch {
             _state.value = _state.value.copy(isUploading = true, error = null)
 
-            // Convert URI to file off the main thread
-            val imageFile = withContext(Dispatchers.IO) {
-                uriToFile(contentResolver, cacheDir, localUri)
-            }
+            val imageFile = imagePreparer.prepareImageFile(localUri)
 
             if (imageFile == null) {
                 _state.value = _state.value.copy(
@@ -85,13 +78,6 @@ class MainViewModel @Inject constructor(
                     error = "Could not read image file"
                 )
                 return@launch
-            }
-
-            // Defense-in-depth: strip metadata right before upload
-            try {
-                stripMetadata(imageFile)
-            } catch (e: Exception) {
-                // Best-effort; proceed with upload even if stripping fails
             }
 
             try {
