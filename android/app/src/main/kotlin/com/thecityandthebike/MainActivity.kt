@@ -208,12 +208,7 @@ class MainActivity : ComponentActivity() {
                             PhotoCaptureScreen(
                                 onPhotoCaptured = { uri ->
                                     mainViewModel.addLocalImage(uri)
-                                    mainViewModel.uploadAndCreateSubmission(
-                                        contentResolver,
-                                        cacheDir,
-                                        uri,
-                                        qrId
-                                    )
+                                    mainViewModel.uploadAndCreateSubmission(uri, qrId)
                                     navController.popBackStack("main", inclusive = false)
                                 },
                                 onBack = {
