@@ -1,4 +1,5 @@
 import secrets
+import uuid as uuid_mod
 from datetime import datetime, timedelta, timezone
 from typing import Annotated, Optional
 
@@ -48,10 +49,11 @@ def get_current_user(
     )
     try:
         payload = jwt.decode(token, settings.JWT_SECRET_KEY, algorithms=[ALGORITHM])
-        user_id: str = payload.get("sub")
-        if user_id is None:
+        user_id_str: str = payload.get("sub")
+        if user_id_str is None:
             raise credentials_exception
-    except PyJWTError:
+        user_id = uuid_mod.UUID(user_id_str)
+    except (PyJWTError, ValueError):
         raise credentials_exception
 
     user = db.query(User).filter(User.user_id == user_id).first()
@@ -68,16 +70,17 @@ def get_current_user_optional(
         return None
     try:
         payload = jwt.decode(token, settings.JWT_SECRET_KEY, algorithms=[ALGORITHM])
-        user_id: str = payload.get("sub")
-        if user_id is None:
+        user_id_str: str = payload.get("sub")
+        if user_id_str is None:
             return None
-    except PyJWTError:
+        user_id = uuid_mod.UUID(user_id_str)
+    except (PyJWTError, ValueError):
         return None
 
     return db.query(User).filter(User.user_id == user_id).first()
 
 
-def create_refresh_token(user_id: str, db: Session, *, commit: bool = True) -> str:
+def create_refresh_token(user_id: uuid_mod.UUID, db: Session, *, commit: bool = True) -> str:
     token = secrets.token_hex(32)
     record = RefreshToken(
         token=token,

@@ -1,7 +1,7 @@
 from datetime import date, datetime, timezone
 import uuid
 
-from sqlalchemy import Boolean, Column, Integer, String, Date, DateTime, Text, ForeignKey
+from sqlalchemy import Boolean, Column, Integer, String, Date, DateTime, Text, ForeignKey, Uuid
 from sqlalchemy.orm import relationship
 
 from ..database import Base
@@ -18,7 +18,7 @@ class LoginAttempt(Base):
 class User(Base):
     __tablename__ = "users"
 
-    user_id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    user_id = Column(Uuid, primary_key=True, default=uuid.uuid4)
     username = Column(String(255), unique=True, nullable=False)
     email = Column(String(255), unique=True, nullable=False)
     password_hash = Column(String(255), nullable=False)
@@ -36,7 +36,7 @@ class RefreshToken(Base):
 
     id = Column(Integer, primary_key=True, autoincrement=True)
     token = Column(String(64), unique=True, index=True, nullable=False)
-    user_id = Column(String(36), ForeignKey("users.user_id"), nullable=False)
+    user_id = Column(Uuid, ForeignKey("users.user_id"), nullable=False)
     expires_at = Column(DateTime(timezone=True), nullable=False)
     created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
 
@@ -60,10 +60,8 @@ class Bike(Base):
 class FenderSubmission(Base):
     __tablename__ = "fender_submissions"
 
-    submission_id = Column(
-        String(36), primary_key=True, default=lambda: str(uuid.uuid4())
-    )
-    user_id = Column(String(36), ForeignKey("users.user_id"), nullable=False)
+    submission_id = Column(Uuid, primary_key=True, default=uuid.uuid4)
+    user_id = Column(Uuid, ForeignKey("users.user_id"), nullable=False)
     bike_id = Column(Integer, ForeignKey("bikes.id"), nullable=False)
     image_url_original = Column(Text)
     image_url_thumbnail = Column(Text)

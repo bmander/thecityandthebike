@@ -18,7 +18,7 @@ class TestGetBikeSubmissions:
         data = response.json()
         assert len(data) == 1
         assert data[0]["bike_qr_id"] == test_bike.bike_qr_id
-        assert data[0]["submission_id"] == test_submission.submission_id
+        assert data[0]["submission_id"] == str(test_submission.submission_id)
 
     def test_get_bike_submissions_not_found(self, client, auth_headers):
         """Request for nonexistent bike should return 404."""

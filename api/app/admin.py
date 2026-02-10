@@ -1,3 +1,5 @@
+import uuid as uuid_mod
+
 from sqladmin import Admin, ModelView
 from sqladmin.authentication import AuthenticationBackend
 from sqlalchemy.orm import sessionmaker
@@ -24,7 +26,7 @@ class AdminAuth(AuthenticationBackend):
                 return False
             if not user.is_admin:
                 return False
-            request.session.update({"user_id": user.user_id})
+            request.session.update({"user_id": str(user.user_id)})
             return True
         finally:
             session.close()
@@ -40,7 +42,7 @@ class AdminAuth(AuthenticationBackend):
 
         session = self.session_factory()
         try:
-            user = session.query(User).filter(User.user_id == user_id).first()
+            user = session.query(User).filter(User.user_id == uuid_mod.UUID(user_id)).first()
             if not user or not user.is_admin:
                 return False
             return True

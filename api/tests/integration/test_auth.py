@@ -196,7 +196,7 @@ class TestLogin:
         )
         token = response.json()["access_token"]
         payload = jwt.decode(token, settings.JWT_SECRET_KEY, algorithms=[ALGORITHM])
-        assert payload["sub"] == test_user.user_id
+        assert payload["sub"] == str(test_user.user_id)
 
     def test_login_wrong_password(self, client, test_user, test_user_data):
         """Login with wrong password should return 401."""

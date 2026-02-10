@@ -21,7 +21,7 @@ class TestGetSubmissions:
         assert response.status_code == 200
         data = response.json()
         assert len(data) == 1
-        assert data[0]["submission_id"] == test_submission.submission_id
+        assert data[0]["submission_id"] == str(test_submission.submission_id)
         assert data[0]["username"] == "testuser"
 
     def test_get_submissions_includes_all_users(
@@ -61,8 +61,8 @@ class TestGetSubmissions:
         assert len(data) == 2
 
         user_ids = {sub["user_id"] for sub in data}
-        assert test_user.user_id in user_ids
-        assert other_user.user_id in user_ids
+        assert str(test_user.user_id) in user_ids
+        assert str(other_user.user_id) in user_ids
 
         usernames = {sub["username"] for sub in data}
         assert "testuser" in usernames
@@ -95,7 +95,7 @@ class TestCreateSubmission:
         assert response.status_code == 201
         data = response.json()
         assert data["bike_qr_id"] == "NEW-BIKE-001"
-        assert data["user_id"] == test_user.user_id
+        assert data["user_id"] == str(test_user.user_id)
         assert data["image_url_original"] == submission_data["image_url_original"]
         assert data["user_caption"] == submission_data["user_caption"]
         assert data["username"] == "testuser"

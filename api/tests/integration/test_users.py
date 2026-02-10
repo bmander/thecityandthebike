@@ -12,7 +12,7 @@ class TestGetProfile:
         response = client.get("/users/me", headers=auth_headers)
         assert response.status_code == 200
         data = response.json()
-        assert data["user_id"] == test_user.user_id
+        assert data["user_id"] == str(test_user.user_id)
         assert data["username"] == test_user.username
         assert data["email"] == test_user.email
 
@@ -55,8 +55,8 @@ class TestGetMySubmissions:
         assert response.status_code == 200
         data = response.json()
         assert len(data) == 1
-        assert data[0]["submission_id"] == test_submission.submission_id
-        assert data[0]["user_id"] == test_user.user_id
+        assert data[0]["submission_id"] == str(test_submission.submission_id)
+        assert data[0]["user_id"] == str(test_user.user_id)
 
     def test_get_my_submissions_excludes_other_users(
         self, client, auth_headers, test_submission, test_user, db_session
@@ -93,8 +93,8 @@ class TestGetMySubmissions:
         assert response.status_code == 200
         data = response.json()
         assert len(data) == 1
-        assert data[0]["user_id"] == test_user.user_id
-        assert data[0]["submission_id"] == test_submission.submission_id
+        assert data[0]["user_id"] == str(test_user.user_id)
+        assert data[0]["submission_id"] == str(test_submission.submission_id)
 
     def test_get_my_submissions_no_auth(self, client):
         """Request without auth should return 401."""
