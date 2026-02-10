@@ -21,7 +21,7 @@
     <!-- Onboarding: page 3 -->
     <string name="onboarding_privacy_copyright_title">Privacidad y derechos de autor</string>
     <string name="onboarding_privacy_subtitle">Privacidad</string>
-    <string name="onboarding_privacy_body">Esta aplicación intenta no recopilar mucha información sobre ti. No pedimos tu nombre ni tu correo electrónico. No rastreamos dónde estás. Cuando subes una foto, eliminamos los detalles adicionales que podrían revelar quién eres, como la fecha y hora exacta en que se tomó la foto. Solo conservamos la fecha en que la subiste. Sin embargo, alguien que se esfuerce mucho podría deducir quién eres mirando la ubicación de las bicicletas y el contenido de tus fotos. Tenlo en cuenta.</string>
+    <string name="onboarding_privacy_body">Esta aplicación recoge la mínima información posible. No pedimos tu nombre ni tu correo electrónico. No rastreamos tu ubicación. Al subir una foto, eliminamos los datos ocultos (como la hora de la captura) y solo guardamos la fecha de publicación. Sin embargo, alguien podría identificarte por la ubicación de la bicicleta o los detalles de la imagen. Ten esto en cuenta.</string>
     <string name="onboarding_copyright_subtitle">Derechos de autor</string>
     <string name="onboarding_copyright_body">Los derechos de autor de todas las fotos que subas te pertenecen. Al subir el archivo aceptas licenciar la imagen bajo Creative Commons BY-NC 4.0. Esta licencia requiere que quienes la reutilicen den crédito al creador. Permite a los reutilizadores distribuir, remezclar, adaptar y construir sobre el material en cualquier medio o formato, solo con fines no comerciales.</string>
     <string name="onboarding_cc_link">Más información sobre CC BY-NC 4.0</string>

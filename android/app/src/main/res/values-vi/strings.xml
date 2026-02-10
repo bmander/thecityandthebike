@@ -21,7 +21,7 @@
     <!-- Onboarding: page 3 -->
     <string name="onboarding_privacy_copyright_title">Quyền riêng tư &amp; Bản quyền</string>
     <string name="onboarding_privacy_subtitle">Quyền riêng tư</string>
-    <string name="onboarding_privacy_body">Ứng dụng này cố gắng không thu thập nhiều thông tin về bạn. Chúng tôi không yêu cầu tên hay email của bạn. Chúng tôi không theo dõi vị trí của bạn. Khi bạn tải ảnh lên, chúng tôi xóa các chi tiết có thể tiết lộ danh tính của bạn, chẳng hạn như thời gian và ngày chính xác chụp ảnh. Chúng tôi chỉ giữ lại ngày bạn tải lên. Tuy nhiên, ai đó thật sự cố gắng vẫn có thể suy ra bạn là ai bằng cách xem vị trí xe đạp và nội dung trong ảnh của bạn. Hãy lưu ý điều này.</string>
+    <string name="onboarding_privacy_body">Ứng dụng này thu thập ít thông tin nhất có thể. Chúng tôi không yêu cầu tên, email hay theo dõi vị trí của bạn. Khi bạn tải ảnh lên, chúng tôi sẽ xóa các thông tin ẩn (như giờ chụp) và chỉ giữ lại ngày đăng. Tuy nhiên, người khác vẫn có thể nhận ra bạn qua vị trí chiếc xe đạp hoặc các chi tiết trong ảnh. Xin hãy lưu ý.</string>
     <string name="onboarding_copyright_subtitle">Bản quyền</string>
     <string name="onboarding_copyright_body">Bản quyền của tất cả ảnh bạn tải lên thuộc về bạn. Khi tải tệp lên, bạn đồng ý cấp phép hình ảnh theo Creative Commons BY-NC 4.0. Giấy phép này yêu cầu người sử dụng lại phải ghi nhận tác giả. Giấy phép cho phép người sử dụng lại phân phối, phối lại, chỉnh sửa và xây dựng dựa trên tài liệu ở bất kỳ phương tiện hay định dạng nào, chỉ dành cho mục đích phi thương mại.</string>
     <string name="onboarding_cc_link">Tìm hiểu thêm về CC BY-NC 4.0</string>
