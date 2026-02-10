@@ -93,7 +93,7 @@ jobs:
         run: ./gradlew testLocalDebugUnitTest
 
       - name: Upload test results
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: android-unit-test-results
           path: android/app/build/reports/tests/
@@ -137,7 +137,7 @@ jobs:
           emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim
 
       - name: Upload test results
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: android-instrumented-test-results
           path: android/app/build/reports/androidTests/
@@ -180,7 +180,7 @@ jobs:
         run: ./gradlew lint
 
       - name: Upload lint results
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: lint-results
           path: |
