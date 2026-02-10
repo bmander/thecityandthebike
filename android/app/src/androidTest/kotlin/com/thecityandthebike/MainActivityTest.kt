@@ -3,6 +3,7 @@ package com.thecityandthebike
 import android.content.Context
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
+import androidx.compose.ui.test.onAllNodesWithContentDescription
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.test.core.app.ApplicationProvider
@@ -44,14 +45,19 @@ class MainActivityTest {
     @Test
     fun mainActivity_launchesSuccessfully() {
         // Activity should launch without crashing
+        composeTestRule.mainClock.advanceTimeBy(3000)
         composeTestRule.waitForIdle()
     }
 
     @Test
     fun mainActivity_mainFeedVisibleAfterLaunch() {
-        composeTestRule.waitForIdle()
+        // Advance past splash screen delay and wait for navigation to settle
+        composeTestRule.mainClock.advanceTimeBy(3000)
+        composeTestRule.waitUntil(timeoutMillis = 5000) {
+            composeTestRule.onAllNodesWithContentDescription("Login")
+                .fetchSemanticsNodes().isNotEmpty()
+        }
 
-        // App should show main feed with login button when not authenticated
         composeTestRule
             .onNodeWithContentDescription("Login")
             .assertIsDisplayed()
@@ -59,6 +65,7 @@ class MainActivityTest {
 
     @Test
     fun mainActivity_logoutButtonNotVisibleWhenNotLoggedIn() {
+        composeTestRule.mainClock.advanceTimeBy(3000)
         composeTestRule.waitForIdle()
 
         // Logout button should not be visible when not authenticated

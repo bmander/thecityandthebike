@@ -33,10 +33,8 @@ class OnboardingScreenTest {
         }
 
         composeTestRule.onNodeWithTag("onboarding_next").performClick()
-        composeTestRule.waitUntil(timeoutMillis = 5000) {
-            composeTestRule.onAllNodesWithText("How do I do it?")
-                .fetchSemanticsNodes().isNotEmpty()
-        }
+        composeTestRule.mainClock.advanceTimeBy(1000)
+        composeTestRule.waitForIdle()
 
         composeTestRule.onNodeWithText("How do I do it?").assertIsDisplayed()
         composeTestRule.onNodeWithText("Scan the bike QR code").assertIsDisplayed()
