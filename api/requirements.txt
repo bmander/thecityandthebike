@@ -3,7 +3,7 @@ uvicorn[standard]>=0.27.0
 sqlalchemy>=2.0.0
 psycopg2-binary
 python-dotenv
-python-jose[cryptography]
+PyJWT>=2.8.0
 bcrypt
 pydantic>=2.0.0
 pydantic-settings
@@ -11,7 +11,6 @@ python-multipart
 google-cloud-storage>=2.14.0
 Pillow>=10.0.0
 alembic>=1.13.0
-Pillow>=10.0.0
 sqladmin>=0.19.0
 itsdangerous>=2.1.0
 slowapi>=0.1.9
