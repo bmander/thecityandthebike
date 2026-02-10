@@ -1,6 +1,7 @@
 package com.thecityandthebike.data.repository
 
 import com.thecityandthebike.data.api.ApiService
+import com.thecityandthebike.data.model.dto.PaginatedSubmissions
 import com.thecityandthebike.data.model.dto.SubmissionCreate
 import com.thecityandthebike.data.model.dto.SubmissionResponse
 import com.thecityandthebike.data.model.dto.UploadResponse
@@ -20,13 +21,13 @@ sealed class SubmissionResult<out T> {
 class SubmissionRepository @Inject constructor(
     private val apiService: ApiService
 ) {
-    suspend fun getSubmissions(): SubmissionResult<List<SubmissionResponse>> {
+    suspend fun getSubmissions(limit: Int = 20, offset: Int = 0): SubmissionResult<PaginatedSubmissions> {
         return try {
-            val response = apiService.getSubmissions()
+            val response = apiService.getSubmissions(limit = limit, offset = offset)
             if (response.isSuccessful) {
-                response.body()?.let { submissions ->
-                    SubmissionResult.Success(submissions)
-                } ?: SubmissionResult.Success(emptyList())
+                response.body()?.let { paginated ->
+                    SubmissionResult.Success(paginated)
+                } ?: SubmissionResult.Success(PaginatedSubmissions(items = emptyList(), total = 0, limit = limit, offset = offset))
             } else {
                 SubmissionResult.Error("Failed to fetch submissions")
             }
@@ -35,13 +36,13 @@ class SubmissionRepository @Inject constructor(
         }
     }
 
-    suspend fun getMySubmissions(): SubmissionResult<List<SubmissionResponse>> {
+    suspend fun getMySubmissions(limit: Int = 20, offset: Int = 0): SubmissionResult<PaginatedSubmissions> {
         return try {
-            val response = apiService.getMySubmissions()
+            val response = apiService.getMySubmissions(limit = limit, offset = offset)
             if (response.isSuccessful) {
-                response.body()?.let { submissions ->
-                    SubmissionResult.Success(submissions)
-                } ?: SubmissionResult.Success(emptyList())
+                response.body()?.let { paginated ->
+                    SubmissionResult.Success(paginated)
+                } ?: SubmissionResult.Success(PaginatedSubmissions(items = emptyList(), total = 0, limit = limit, offset = offset))
             } else {
                 SubmissionResult.Error("Failed to fetch submissions")
             }

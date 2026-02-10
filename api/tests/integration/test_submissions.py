@@ -8,21 +8,26 @@ class TestGetSubmissions:
     """Tests for GET /submissions endpoint."""
 
     def test_get_submissions_empty(self, client, auth_headers):
-        """Empty database should return empty list."""
+        """Empty database should return paginated response with no items."""
         response = client.get("/submissions", headers=auth_headers)
         assert response.status_code == 200
-        assert response.json() == []
+        data = response.json()
+        assert data["items"] == []
+        assert data["total"] == 0
+        assert data["limit"] == 20
+        assert data["offset"] == 0
 
     def test_get_submissions_with_data(
         self, client, auth_headers, test_submission
     ):
-        """Should return all submissions."""
+        """Should return all submissions in paginated wrapper."""
         response = client.get("/submissions", headers=auth_headers)
         assert response.status_code == 200
         data = response.json()
-        assert len(data) == 1
-        assert data[0]["submission_id"] == test_submission.submission_id
-        assert data[0]["username"] == "testuser"
+        assert data["total"] == 1
+        assert len(data["items"]) == 1
+        assert data["items"][0]["submission_id"] == test_submission.submission_id
+        assert data["items"][0]["username"] == "testuser"
 
     def test_get_submissions_includes_all_users(
         self, client, auth_headers, test_submission, test_user, db_session
@@ -58,13 +63,14 @@ class TestGetSubmissions:
         response = client.get("/submissions", headers=auth_headers)
         assert response.status_code == 200
         data = response.json()
-        assert len(data) == 2
+        assert data["total"] == 2
+        assert len(data["items"]) == 2
 
-        user_ids = {sub["user_id"] for sub in data}
+        user_ids = {sub["user_id"] for sub in data["items"]}
         assert test_user.user_id in user_ids
         assert other_user.user_id in user_ids
 
-        usernames = {sub["username"] for sub in data}
+        usernames = {sub["username"] for sub in data["items"]}
         assert "testuser" in usernames
         assert "otheruser" in usernames
 
@@ -72,6 +78,64 @@ class TestGetSubmissions:
         """Request without auth should return 200 (public endpoint)."""
         response = client.get("/submissions")
         assert response.status_code == 200
+
+    def test_get_submissions_custom_limit_offset(
+        self, client, auth_headers, test_user, test_bike, db_session
+    ):
+        """Should respect custom limit and offset parameters."""
+        # Create 5 submissions
+        for i in range(5):
+            sub = FenderSubmission(
+                user_id=test_user.user_id,
+                bike_id=test_bike.id,
+                image_url_original=f"https://example.com/img{i}.jpg",
+                image_url_processed=f"https://example.com/img{i}-proc.jpg",
+                captured_date=date.today(),
+            )
+            db_session.add(sub)
+        db_session.commit()
+
+        # Get first 2
+        response = client.get("/submissions?limit=2&offset=0", headers=auth_headers)
+        assert response.status_code == 200
+        data = response.json()
+        assert data["total"] == 5
+        assert len(data["items"]) == 2
+        assert data["limit"] == 2
+        assert data["offset"] == 0
+
+        # Get next 2
+        response = client.get("/submissions?limit=2&offset=2", headers=auth_headers)
+        data = response.json()
+        assert data["total"] == 5
+        assert len(data["items"]) == 2
+        assert data["offset"] == 2
+
+    def test_get_submissions_offset_beyond_total(
+        self, client, auth_headers, test_submission
+    ):
+        """Offset beyond total should return empty items with correct total."""
+        response = client.get("/submissions?offset=100", headers=auth_headers)
+        assert response.status_code == 200
+        data = response.json()
+        assert data["total"] == 1
+        assert len(data["items"]) == 0
+        assert data["offset"] == 100
+
+    def test_get_submissions_invalid_limit_zero(self, client, auth_headers):
+        """Limit of 0 should return 422."""
+        response = client.get("/submissions?limit=0", headers=auth_headers)
+        assert response.status_code == 422
+
+    def test_get_submissions_invalid_limit_too_large(self, client, auth_headers):
+        """Limit greater than 100 should return 422."""
+        response = client.get("/submissions?limit=101", headers=auth_headers)
+        assert response.status_code == 422
+
+    def test_get_submissions_invalid_negative_offset(self, client, auth_headers):
+        """Negative offset should return 422."""
+        response = client.get("/submissions?offset=-1", headers=auth_headers)
+        assert response.status_code == 422
 
 
 class TestCreateSubmission:

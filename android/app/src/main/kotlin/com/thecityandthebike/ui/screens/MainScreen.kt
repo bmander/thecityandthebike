@@ -3,6 +3,7 @@ package com.thecityandthebike.ui.screens
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -60,7 +61,8 @@ fun MainScreen(
                         callback(submissionId)
                     }
                 }
-            }
+            },
+            onLoadMore = { viewModel.loadMoreSubmissions() }
         )
 
         // Hamburger menu (top left) - always visible
@@ -117,6 +119,17 @@ fun MainScreen(
         if (state.isLoading) {
             CircularProgressIndicator(
                 modifier = Modifier.align(Alignment.Center)
+            )
+        }
+
+        // Loading-more indicator (pagination)
+        if (state.isLoadingMore) {
+            CircularProgressIndicator(
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .padding(16.dp)
+                    .size(24.dp),
+                strokeWidth = 2.dp
             )
         }
 

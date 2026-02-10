@@ -149,28 +149,33 @@ class MockWebServerTest {
     @Test
     fun getSubmissions_success_returnsListOfSubmissions() = runBlocking {
         val responseJson = """
-            [
-                {
-                    "submission_id": "sub1",
-                    "user_id": "user1",
-                    "bike_qr_id": "bike1",
-                    "image_url_original": "http://example.com/image1.jpg",
-                    "image_url_processed": "http://example.com/image1_processed.jpg",
-                    "captured_date": "2024-01-15",
-                    "uploaded_at": "2024-01-15T10:31:00Z",
-                    "user_caption": "Nice bike!"
-                },
-                {
-                    "submission_id": "sub2",
-                    "user_id": "user1",
-                    "bike_qr_id": "bike2",
-                    "image_url_original": "http://example.com/image2.jpg",
-                    "image_url_processed": null,
-                    "captured_date": "2024-01-16",
-                    "uploaded_at": "2024-01-16T14:01:00Z",
-                    "user_caption": null
-                }
-            ]
+            {
+                "items": [
+                    {
+                        "submission_id": "sub1",
+                        "user_id": "user1",
+                        "bike_qr_id": "bike1",
+                        "image_url_original": "http://example.com/image1.jpg",
+                        "image_url_processed": "http://example.com/image1_processed.jpg",
+                        "captured_date": "2024-01-15",
+                        "uploaded_at": "2024-01-15T10:31:00Z",
+                        "user_caption": "Nice bike!"
+                    },
+                    {
+                        "submission_id": "sub2",
+                        "user_id": "user1",
+                        "bike_qr_id": "bike2",
+                        "image_url_original": "http://example.com/image2.jpg",
+                        "image_url_processed": null,
+                        "captured_date": "2024-01-16",
+                        "uploaded_at": "2024-01-16T14:01:00Z",
+                        "user_caption": null
+                    }
+                ],
+                "total": 2,
+                "limit": 20,
+                "offset": 0
+            }
         """.trimIndent()
 
         mockWebServer.enqueue(
@@ -183,7 +188,7 @@ class MockWebServerTest {
         val response = apiService.getSubmissions()
 
         assertTrue(response.isSuccessful)
-        val submissions = response.body()
+        val submissions = response.body()?.items
         assertNotNull(submissions)
         assertEquals(2, submissions?.size)
         assertEquals("sub1", submissions?.get(0)?.submissionId)

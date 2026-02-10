@@ -28,7 +28,10 @@ data class MainState(
     val submissions: List<SubmissionResponse> = emptyList(),
     val localImages: List<Uri> = emptyList(),
     val error: String? = null,
-    val isUploading: Boolean = false
+    val isUploading: Boolean = false,
+    val isLoadingMore: Boolean = false,
+    val hasMorePages: Boolean = true,
+    val totalSubmissions: Int = 0
 )
 
 @HiltViewModel
@@ -50,12 +53,41 @@ class MainViewModel @Inject constructor(
                 is SubmissionResult.Success -> {
                     _state.value = _state.value.copy(
                         isLoading = false,
-                        submissions = result.data
+                        submissions = result.data.items,
+                        totalSubmissions = result.data.total,
+                        hasMorePages = result.data.items.size + result.data.offset < result.data.total
                     )
                 }
                 is SubmissionResult.Error -> {
                     _state.value = _state.value.copy(
                         isLoading = false,
+                        error = result.message
+                    )
+                }
+            }
+        }
+    }
+
+    fun loadMoreSubmissions() {
+        val currentState = _state.value
+        if (currentState.isLoadingMore || !currentState.hasMorePages) return
+
+        viewModelScope.launch {
+            _state.value = _state.value.copy(isLoadingMore = true)
+            val offset = _state.value.submissions.size
+            when (val result = submissionRepository.getSubmissions(offset = offset)) {
+                is SubmissionResult.Success -> {
+                    val newSubmissions = _state.value.submissions + result.data.items
+                    _state.value = _state.value.copy(
+                        isLoadingMore = false,
+                        submissions = newSubmissions,
+                        totalSubmissions = result.data.total,
+                        hasMorePages = newSubmissions.size < result.data.total
+                    )
+                }
+                is SubmissionResult.Error -> {
+                    _state.value = _state.value.copy(
+                        isLoadingMore = false,
                         error = result.message
                     )
                 }
