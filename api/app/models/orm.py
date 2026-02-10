@@ -1,7 +1,7 @@
 from datetime import datetime, timezone
 import uuid
 
-from sqlalchemy import Boolean, Column, Integer, String, Date, DateTime, Text, ForeignKey, Uuid
+from sqlalchemy import Boolean, Column, Index, Integer, String, Date, DateTime, Text, ForeignKey, Uuid
 from sqlalchemy.orm import relationship
 
 from ..database import Base
@@ -59,15 +59,18 @@ class Bike(Base):
 
 class FenderSubmission(Base):
     __tablename__ = "fender_submissions"
+    __table_args__ = (
+        Index("ix_fender_submissions_user_id_uploaded_at", "user_id", "uploaded_at"),
+    )
 
     submission_id = Column(Uuid, primary_key=True, default=uuid.uuid4)
-    user_id = Column(Uuid, ForeignKey("users.user_id"), nullable=False)
-    bike_id = Column(Integer, ForeignKey("bikes.id"), nullable=False)
+    user_id = Column(Uuid, ForeignKey("users.user_id"), nullable=False, index=True)
+    bike_id = Column(Integer, ForeignKey("bikes.id"), nullable=False, index=True)
     image_url_original = Column(Text)
     image_url_thumbnail = Column(Text)
     image_url_processed = Column(Text)
     captured_date = Column(Date, nullable=False)
-    uploaded_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
+    uploaded_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), index=True)
     user_caption = Column(Text)
 
     user = relationship("User", back_populates="submissions")
