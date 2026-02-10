@@ -106,3 +106,70 @@ class TestGetMySubmissions:
         """Request without auth should return 401."""
         response = client.get("/users/me/submissions")
         assert response.status_code == 401
+
+    def test_get_my_submissions_custom_limit_offset(
+        self, client, auth_headers, test_user, test_bike, db_session
+    ):
+        """Should respect custom limit and offset parameters."""
+        for i in range(5):
+            sub = FenderSubmission(
+                user_id=test_user.user_id,
+                bike_id=test_bike.id,
+                image_url_original=f"https://example.com/img{i}.jpg",
+                image_url_processed=f"https://example.com/img{i}-proc.jpg",
+                captured_date=date.today(),
+            )
+            db_session.add(sub)
+        db_session.commit()
+
+        response = client.get(
+            "/users/me/submissions?limit=2&offset=0", headers=auth_headers
+        )
+        assert response.status_code == 200
+        data = response.json()
+        assert data["total"] == 5
+        assert len(data["items"]) == 2
+        assert data["limit"] == 2
+        assert data["offset"] == 0
+
+        response = client.get(
+            "/users/me/submissions?limit=2&offset=2", headers=auth_headers
+        )
+        data = response.json()
+        assert data["total"] == 5
+        assert len(data["items"]) == 2
+        assert data["offset"] == 2
+
+    def test_get_my_submissions_offset_beyond_total(
+        self, client, auth_headers, test_submission
+    ):
+        """Offset beyond total should return empty items with correct total."""
+        response = client.get(
+            "/users/me/submissions?offset=100", headers=auth_headers
+        )
+        assert response.status_code == 200
+        data = response.json()
+        assert data["total"] == 1
+        assert len(data["items"]) == 0
+        assert data["offset"] == 100
+
+    def test_get_my_submissions_invalid_limit_zero(self, client, auth_headers):
+        """Limit of 0 should return 422."""
+        response = client.get(
+            "/users/me/submissions?limit=0", headers=auth_headers
+        )
+        assert response.status_code == 422
+
+    def test_get_my_submissions_invalid_limit_too_large(self, client, auth_headers):
+        """Limit greater than 100 should return 422."""
+        response = client.get(
+            "/users/me/submissions?limit=101", headers=auth_headers
+        )
+        assert response.status_code == 422
+
+    def test_get_my_submissions_invalid_negative_offset(self, client, auth_headers):
+        """Negative offset should return 422."""
+        response = client.get(
+            "/users/me/submissions?offset=-1", headers=auth_headers
+        )
+        assert response.status_code == 422

@@ -174,4 +174,29 @@ class MainViewModelTest {
 
         assertEquals(1, viewModel.state.value.submissions.size)
     }
+
+    @Test
+    fun `loadMoreSubmissions error should set error and keep existing submissions`() = runTest {
+        val firstPage = listOf(
+            SubmissionResponse(submissionId = "1", userId = "user1", bikeQrId = "bike1"),
+            SubmissionResponse(submissionId = "2", userId = "user1", bikeQrId = "bike2")
+        )
+        val firstPaginated = PaginatedSubmissions(items = firstPage, total = 4, limit = 2, offset = 0)
+        coEvery { submissionRepository.getSubmissions(limit = any(), offset = 0) } returns SubmissionResult.Success(firstPaginated)
+
+        viewModel = MainViewModel(submissionRepository)
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        assertEquals(2, viewModel.state.value.submissions.size)
+        assertTrue(viewModel.state.value.hasMorePages)
+
+        coEvery { submissionRepository.getSubmissions(limit = any(), offset = 2) } returns SubmissionResult.Error("Network error")
+
+        viewModel.loadMoreSubmissions()
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        assertEquals(2, viewModel.state.value.submissions.size)
+        assertEquals("Network error", viewModel.state.value.error)
+        assertFalse(viewModel.state.value.isLoadingMore)
+    }
 }
