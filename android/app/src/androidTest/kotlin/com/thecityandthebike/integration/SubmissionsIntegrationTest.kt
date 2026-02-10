@@ -134,7 +134,7 @@ class SubmissionsIntegrationTest {
         val mySubmissionsResponse = authenticatedService.getMySubmissions()
         assertTrue("Get my submissions should succeed", mySubmissionsResponse.isSuccessful)
 
-        val submissions = mySubmissionsResponse.body()
+        val submissions = mySubmissionsResponse.body()?.items
         assertNotNull("Response body should not be null", submissions)
         assertTrue(
             "My submissions should contain the created submission",

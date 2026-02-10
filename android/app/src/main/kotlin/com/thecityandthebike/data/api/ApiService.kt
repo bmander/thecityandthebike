@@ -25,11 +25,17 @@ interface ApiService {
     suspend fun getCurrentUser(): Response<UserResponse>
 
     @GET("users/me/submissions")
-    suspend fun getMySubmissions(): Response<List<SubmissionResponse>>
+    suspend fun getMySubmissions(
+        @Query("limit") limit: Int = 20,
+        @Query("offset") offset: Int = 0
+    ): Response<PaginatedSubmissions>
 
     // Submission endpoints
     @GET("submissions")
-    suspend fun getSubmissions(): Response<List<SubmissionResponse>>
+    suspend fun getSubmissions(
+        @Query("limit") limit: Int = 20,
+        @Query("offset") offset: Int = 0
+    ): Response<PaginatedSubmissions>
 
     @POST("submissions")
     suspend fun createSubmission(@Body submission: SubmissionCreate): Response<SubmissionResponse>

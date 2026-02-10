@@ -1,6 +1,5 @@
 package com.thecityandthebike.ui.viewmodel
 
-import android.content.ContentResolver
 import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -8,16 +7,12 @@ import com.thecityandthebike.data.model.dto.SubmissionCreate
 import com.thecityandthebike.data.model.dto.SubmissionResponse
 import com.thecityandthebike.data.repository.SubmissionRepository
 import com.thecityandthebike.data.repository.SubmissionResult
-import com.thecityandthebike.util.stripMetadata
-import com.thecityandthebike.util.uriToFile
+import com.thecityandthebike.util.ImagePreparer
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
-import java.io.File
 import java.time.LocalDate
 import java.time.ZoneId
 import java.util.UUID
@@ -28,12 +23,16 @@ data class MainState(
     val submissions: List<SubmissionResponse> = emptyList(),
     val localImages: List<Uri> = emptyList(),
     val error: String? = null,
-    val isUploading: Boolean = false
+    val isUploading: Boolean = false,
+    val isLoadingMore: Boolean = false,
+    val hasMorePages: Boolean = true,
+    val totalSubmissions: Int = 0
 )
 
 @HiltViewModel
 class MainViewModel @Inject constructor(
-    private val submissionRepository: SubmissionRepository
+    private val submissionRepository: SubmissionRepository,
+    private val imagePreparer: ImagePreparer
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(MainState())
@@ -50,12 +49,41 @@ class MainViewModel @Inject constructor(
                 is SubmissionResult.Success -> {
                     _state.value = _state.value.copy(
                         isLoading = false,
-                        submissions = result.data
+                        submissions = result.data.items,
+                        totalSubmissions = result.data.total,
+                        hasMorePages = result.data.items.size + result.data.offset < result.data.total
                     )
                 }
                 is SubmissionResult.Error -> {
                     _state.value = _state.value.copy(
                         isLoading = false,
+                        error = result.message
+                    )
+                }
+            }
+        }
+    }
+
+    fun loadMoreSubmissions() {
+        val currentState = _state.value
+        if (currentState.isLoadingMore || !currentState.hasMorePages) return
+
+        viewModelScope.launch {
+            _state.value = _state.value.copy(isLoadingMore = true)
+            val offset = _state.value.submissions.size
+            when (val result = submissionRepository.getSubmissions(offset = offset)) {
+                is SubmissionResult.Success -> {
+                    val newSubmissions = _state.value.submissions + result.data.items
+                    _state.value = _state.value.copy(
+                        isLoadingMore = false,
+                        submissions = newSubmissions,
+                        totalSubmissions = result.data.total,
+                        hasMorePages = newSubmissions.size < result.data.total
+                    )
+                }
+                is SubmissionResult.Error -> {
+                    _state.value = _state.value.copy(
+                        isLoadingMore = false,
                         error = result.message
                     )
                 }
@@ -69,14 +97,11 @@ class MainViewModel @Inject constructor(
         )
     }
 
-    fun uploadAndCreateSubmission(contentResolver: ContentResolver, cacheDir: File, localUri: Uri, bikeQrId: String? = null) {
+    fun uploadAndCreateSubmission(localUri: Uri, bikeQrId: String? = null) {
         viewModelScope.launch {
             _state.value = _state.value.copy(isUploading = true, error = null)
 
-            // Convert URI to file off the main thread
-            val imageFile = withContext(Dispatchers.IO) {
-                uriToFile(contentResolver, cacheDir, localUri)
-            }
+            val imageFile = imagePreparer.prepareImageFile(localUri)
 
             if (imageFile == null) {
                 _state.value = _state.value.copy(
@@ -85,13 +110,6 @@ class MainViewModel @Inject constructor(
                     error = "Could not read image file"
                 )
                 return@launch
-            }
-
-            // Defense-in-depth: strip metadata right before upload
-            try {
-                stripMetadata(imageFile)
-            } catch (e: Exception) {
-                // Best-effort; proceed with upload even if stripping fails
             }
 
             try {

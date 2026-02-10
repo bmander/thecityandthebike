@@ -1,30 +1,38 @@
 from datetime import datetime, timezone
 from typing import Annotated, List, Optional
 
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, Query, status
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session, joinedload
 
 from ..bike_url_parser import parse_bike_url
 from ..database import get_db
 from ..dependencies import get_current_user, get_current_user_optional
 from ..models import User, Bike, FenderSubmission
-from ..schemas import SubmissionCreate, SubmissionResponse
+from ..schemas import PaginatedResponse, SubmissionCreate, SubmissionResponse
 
 router = APIRouter(prefix="/submissions", tags=["submissions"])
 
 
-@router.get("", response_model=List[SubmissionResponse])
+@router.get("", response_model=PaginatedResponse[SubmissionResponse])
 def get_global_submissions(
     db: Annotated[Session, Depends(get_db)],
     current_user: Annotated[Optional[User], Depends(get_current_user_optional)] = None,
+    limit: int = Query(default=20, ge=1, le=100),
+    offset: int = Query(default=0, ge=0),
 ):
+    total = db.execute(
+        select(func.count()).select_from(FenderSubmission)
+    ).scalar()
     submissions = (
         db.query(FenderSubmission)
         .options(joinedload(FenderSubmission.user), joinedload(FenderSubmission.bike))
         .order_by(FenderSubmission.uploaded_at.desc())
+        .offset(offset)
+        .limit(limit)
         .all()
     )
-    return submissions
+    return PaginatedResponse(items=submissions, total=total, limit=limit, offset=offset)
 
 
 @router.post("", response_model=SubmissionResponse, status_code=status.HTTP_201_CREATED)
