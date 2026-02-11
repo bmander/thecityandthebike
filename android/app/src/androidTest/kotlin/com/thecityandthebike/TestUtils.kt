@@ -1,9 +1,9 @@
 package com.thecityandthebike
 
 import android.net.Uri
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.test.junit4.ComposeContentTestRule
+import com.thecityandthebike.ui.theme.TheCityAndTheBikeTheme
 
 /**
  * Creates a test URI for use in instrumented tests.
@@ -24,7 +24,7 @@ fun createTestUriList(count: Int): List<Uri> {
  */
 fun ComposeContentTestRule.setContentWithTheme(content: @Composable () -> Unit) {
     setContent {
-        MaterialTheme {
+        TheCityAndTheBikeTheme {
             content()
         }
     }

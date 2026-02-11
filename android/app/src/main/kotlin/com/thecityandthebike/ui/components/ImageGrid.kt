@@ -18,6 +18,7 @@ import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
@@ -60,7 +61,7 @@ fun ImageGrid(
             Box(
                 modifier = Modifier
                     .aspectRatio(1f)
-                    .background(Color.LightGray)
+                    .background(MaterialTheme.colorScheme.surfaceVariant)
                     .then(
                         if (!isUploading && onImageClick != null) {
                             Modifier.clickable(onClickLabel = "View photo") { onImageClick(index) }

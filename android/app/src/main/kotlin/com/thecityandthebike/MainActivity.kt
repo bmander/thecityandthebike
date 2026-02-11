@@ -3,6 +3,7 @@ package com.thecityandthebike
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.activity.enableEdgeToEdge
 import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.ExitTransition
 import androidx.compose.foundation.layout.Box
@@ -55,6 +56,7 @@ import com.thecityandthebike.ui.viewmodel.ImageDetailViewModel
 import com.thecityandthebike.ui.viewmodel.MainViewModel
 import com.thecityandthebike.ui.viewmodel.PhotoPreviewViewModel
 import com.thecityandthebike.ui.viewmodel.UserViewModel
+import com.thecityandthebike.ui.theme.TheCityAndTheBikeTheme
 import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
 
@@ -65,9 +67,10 @@ class MainActivity : ComponentActivity() {
     @OptIn(ExperimentalComposeUiApi::class)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        enableEdgeToEdge()
         ComposeUiFlags.isSemanticAutofillEnabled = true
         setContent {
-            MaterialTheme {
+            TheCityAndTheBikeTheme {
                 Surface(
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
