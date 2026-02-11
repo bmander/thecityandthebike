@@ -1,6 +1,5 @@
 package com.thecityandthebike
 
-import android.net.Uri
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -23,7 +22,22 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.toRoute
 import com.thecityandthebike.data.local.OnboardingPrefs
+import com.thecityandthebike.navigation.Bike
+import com.thecityandthebike.navigation.BikeImageDetail
+import com.thecityandthebike.navigation.ImageDetail
+import com.thecityandthebike.navigation.Login
+import com.thecityandthebike.navigation.Main
+import com.thecityandthebike.navigation.Onboarding
+import com.thecityandthebike.navigation.PhotoCapture
+import com.thecityandthebike.navigation.PhotoPreview
+import com.thecityandthebike.navigation.PrivacyCopyright
+import com.thecityandthebike.navigation.Register
+import com.thecityandthebike.navigation.Scanner
+import com.thecityandthebike.navigation.Splash
+import com.thecityandthebike.navigation.User
+import com.thecityandthebike.navigation.UserImageDetail
 import com.thecityandthebike.ui.screens.BikeScreen
 import com.thecityandthebike.ui.screens.ImageDetailScreen
 import com.thecityandthebike.ui.screens.LoginScreen
@@ -63,38 +77,38 @@ class MainActivity : ComponentActivity() {
 
                     NavHost(
                         navController = navController,
-                        startDestination = "splash"
+                        startDestination = Splash
                     ) {
-                        composable("splash") {
+                        composable<Splash> {
                             SplashScreen(
                                 onTimeout = {
-                                    val destination = if (onboardingPrefs.isOnboardingCompleted()) "main" else "onboarding"
+                                    val destination: Any = if (onboardingPrefs.isOnboardingCompleted()) Main else Onboarding
                                     navController.navigate(destination) {
-                                        popUpTo("splash") { inclusive = true }
+                                        popUpTo<Splash> { inclusive = true }
                                     }
                                 }
                             )
                         }
 
-                        composable("onboarding") {
+                        composable<Onboarding> {
                             OnboardingScreen(
                                 onFinished = {
                                     onboardingPrefs.setOnboardingCompleted()
-                                    navController.navigate("main") {
-                                        popUpTo("onboarding") { inclusive = true }
+                                    navController.navigate(Main) {
+                                        popUpTo<Onboarding> { inclusive = true }
                                     }
                                 }
                             )
                         }
 
-                        composable("login") {
+                        composable<Login> {
                             LoginScreen(
                                 state = authState,
                                 onLogin = { username, password ->
                                     authViewModel.login(username, password)
                                 },
                                 onNavigateToRegister = {
-                                    navController.navigate("register")
+                                    navController.navigate(Register)
                                 },
                                 onClearError = { authViewModel.clearError() }
                             )
@@ -102,14 +116,14 @@ class MainActivity : ComponentActivity() {
                             // Navigate to main when logged in
                             LaunchedEffect(authState.isLoggedIn) {
                                 if (authState.isLoggedIn) {
-                                    navController.navigate("main") {
-                                        popUpTo("login") { inclusive = true }
+                                    navController.navigate(Main) {
+                                        popUpTo<Login> { inclusive = true }
                                     }
                                 }
                             }
                         }
 
-                        composable("register") {
+                        composable<Register> {
                             RegisterScreen(
                                 state = authState,
                                 onRegister = { username, email, password ->
@@ -123,7 +137,7 @@ class MainActivity : ComponentActivity() {
                             )
                         }
 
-                        composable("main") {
+                        composable<Main> {
                             val mainViewModel: MainViewModel = hiltViewModel()
                             MainScreen(
                                 viewModel = mainViewModel,
@@ -132,40 +146,39 @@ class MainActivity : ComponentActivity() {
                                     authViewModel.logout()
                                 },
                                 onLoginClick = {
-                                    navController.navigate("login")
+                                    navController.navigate(Login)
                                 },
                                 onScanQrCode = {
-                                    navController.navigate("scanner")
+                                    navController.navigate(Scanner)
                                 },
                                 onShowPrivacyCopyright = {
-                                    navController.navigate("privacy_copyright")
+                                    navController.navigate(PrivacyCopyright)
                                 },
                                 onImageClick = { submissionId ->
-                                    navController.navigate("image_detail/${Uri.encode(submissionId)}")
+                                    navController.navigate(ImageDetail(submissionId))
                                 }
                             )
                         }
 
-                        composable("privacy_copyright") {
+                        composable<PrivacyCopyright> {
                             PrivacyCopyrightScreen(
                                 onBack = { navController.popBackStack() }
                             )
                         }
 
-                        composable(
-                            "image_detail/{submissionId}",
+                        composable<ImageDetail>(
                             enterTransition = { EnterTransition.None },
                             exitTransition = { ExitTransition.None },
                             popEnterTransition = { EnterTransition.None },
                             popExitTransition = { ExitTransition.None }
                         ) { backStackEntry ->
-                            val submissionId = backStackEntry.arguments?.getString("submissionId") ?: ""
-                            if (submissionId.isEmpty()) {
+                            val route = backStackEntry.toRoute<ImageDetail>()
+                            if (route.submissionId.isEmpty()) {
                                 LaunchedEffect(Unit) { navController.popBackStack() }
                                 return@composable
                             }
                             val mainEntry = remember(backStackEntry) {
-                                navController.getBackStackEntry("main")
+                                navController.getBackStackEntry<Main>()
                             }
                             val mainViewModel: MainViewModel = hiltViewModel(mainEntry)
                             val mainState by mainViewModel.state.collectAsState()
@@ -175,16 +188,16 @@ class MainActivity : ComponentActivity() {
                                 }
                                 return@composable
                             }
-                            val submission = mainState.submissions.find { it.submissionId == submissionId }
+                            val submission = mainState.submissions.find { it.submissionId == route.submissionId }
                             if (submission != null) {
                                 ImageDetailScreen(
                                     submission = submission,
                                     onBack = { navController.popBackStack() },
                                     onBikeClick = { bikeQrId ->
-                                        navController.navigate("bike/${Uri.encode(bikeQrId)}")
+                                        navController.navigate(Bike(bikeQrId))
                                     },
                                     onUserClick = { userId ->
-                                        navController.navigate("user/${Uri.encode(userId)}")
+                                        navController.navigate(User(userId))
                                     }
                                 )
                             } else {
@@ -192,31 +205,30 @@ class MainActivity : ComponentActivity() {
                             }
                         }
 
-                        composable("bike/{bikeQrId}") { backStackEntry ->
+                        composable<Bike> { backStackEntry ->
                             val bikeViewModel: BikeViewModel = hiltViewModel()
                             BikeScreen(
                                 viewModel = bikeViewModel,
                                 onBack = { navController.popBackStack() },
                                 onImageClick = { submissionId ->
-                                    navController.navigate("bike_image_detail/${Uri.encode(submissionId)}")
+                                    navController.navigate(BikeImageDetail(submissionId))
                                 }
                             )
                         }
 
-                        composable(
-                            "bike_image_detail/{submissionId}",
+                        composable<BikeImageDetail>(
                             enterTransition = { EnterTransition.None },
                             exitTransition = { ExitTransition.None },
                             popEnterTransition = { EnterTransition.None },
                             popExitTransition = { ExitTransition.None }
                         ) { backStackEntry ->
-                            val submissionId = backStackEntry.arguments?.getString("submissionId") ?: ""
-                            if (submissionId.isEmpty()) {
+                            val route = backStackEntry.toRoute<BikeImageDetail>()
+                            if (route.submissionId.isEmpty()) {
                                 LaunchedEffect(Unit) { navController.popBackStack() }
                                 return@composable
                             }
                             val bikeEntry = remember(backStackEntry) {
-                                navController.getBackStackEntry("bike/{bikeQrId}")
+                                navController.getBackStackEntry<Bike>()
                             }
                             val bikeViewModel: BikeViewModel = hiltViewModel(bikeEntry)
                             val bikeState by bikeViewModel.state.collectAsState()
@@ -226,13 +238,13 @@ class MainActivity : ComponentActivity() {
                                 }
                                 return@composable
                             }
-                            val submission = bikeState.submissions.find { it.submissionId == submissionId }
+                            val submission = bikeState.submissions.find { it.submissionId == route.submissionId }
                             if (submission != null) {
                                 ImageDetailScreen(
                                     submission = submission,
                                     onBack = { navController.popBackStack() },
                                     onUserClick = { userId ->
-                                        navController.navigate("user/${Uri.encode(userId)}")
+                                        navController.navigate(User(userId))
                                     }
                                 )
                             } else {
@@ -240,31 +252,30 @@ class MainActivity : ComponentActivity() {
                             }
                         }
 
-                        composable("user/{userId}") { backStackEntry ->
+                        composable<User> { backStackEntry ->
                             val userViewModel: UserViewModel = hiltViewModel()
                             UserScreen(
                                 viewModel = userViewModel,
                                 onBack = { navController.popBackStack() },
                                 onImageClick = { submissionId ->
-                                    navController.navigate("user_image_detail/${Uri.encode(submissionId)}")
+                                    navController.navigate(UserImageDetail(submissionId))
                                 }
                             )
                         }
 
-                        composable(
-                            "user_image_detail/{submissionId}",
+                        composable<UserImageDetail>(
                             enterTransition = { EnterTransition.None },
                             exitTransition = { ExitTransition.None },
                             popEnterTransition = { EnterTransition.None },
                             popExitTransition = { ExitTransition.None }
                         ) { backStackEntry ->
-                            val submissionId = backStackEntry.arguments?.getString("submissionId") ?: ""
-                            if (submissionId.isEmpty()) {
+                            val route = backStackEntry.toRoute<UserImageDetail>()
+                            if (route.submissionId.isEmpty()) {
                                 LaunchedEffect(Unit) { navController.popBackStack() }
                                 return@composable
                             }
                             val userEntry = remember(backStackEntry) {
-                                navController.getBackStackEntry("user/{userId}")
+                                navController.getBackStackEntry<User>()
                             }
                             val userViewModel: UserViewModel = hiltViewModel(userEntry)
                             val userState by userViewModel.state.collectAsState()
@@ -274,13 +285,13 @@ class MainActivity : ComponentActivity() {
                                 }
                                 return@composable
                             }
-                            val submission = userState.submissions.find { it.submissionId == submissionId }
+                            val submission = userState.submissions.find { it.submissionId == route.submissionId }
                             if (submission != null) {
                                 ImageDetailScreen(
                                     submission = submission,
                                     onBack = { navController.popBackStack() },
                                     onBikeClick = { bikeQrId ->
-                                        navController.navigate("bike/${Uri.encode(bikeQrId)}")
+                                        navController.navigate(Bike(bikeQrId))
                                     }
                                 )
                             } else {
@@ -288,11 +299,11 @@ class MainActivity : ComponentActivity() {
                             }
                         }
 
-                        composable("scanner") {
+                        composable<Scanner> {
                             QrScannerScreen(
                                 onQrCodeScanned = { qrId ->
-                                    navController.navigate("photo_capture/${Uri.encode(qrId)}") {
-                                        popUpTo("scanner") { inclusive = true }
+                                    navController.navigate(PhotoCapture(qrId)) {
+                                        popUpTo<Scanner> { inclusive = true }
                                     }
                                 },
                                 onBack = {
@@ -301,16 +312,16 @@ class MainActivity : ComponentActivity() {
                             )
                         }
 
-                        composable("photo_capture/{qrId}") { backStackEntry ->
-                            val qrId = backStackEntry.arguments?.getString("qrId") ?: ""
-                            if (qrId.isEmpty()) {
+                        composable<PhotoCapture> { backStackEntry ->
+                            val route = backStackEntry.toRoute<PhotoCapture>()
+                            if (route.qrId.isEmpty()) {
                                 navController.popBackStack()
                                 return@composable
                             }
                             PhotoCaptureScreen(
                                 onPhotoCaptured = { uri ->
-                                    navController.navigate("photo_preview/${Uri.encode(qrId)}/${Uri.encode(uri.toString())}") {
-                                        popUpTo("photo_capture/{qrId}") { inclusive = true }
+                                    navController.navigate(PhotoPreview(route.qrId, uri.toString())) {
+                                        popUpTo<PhotoCapture> { inclusive = true }
                                     }
                                 },
                                 onBack = {
@@ -319,28 +330,27 @@ class MainActivity : ComponentActivity() {
                             )
                         }
 
-                        composable("photo_preview/{qrId}/{photoUri}") { backStackEntry ->
-                            val qrId = backStackEntry.arguments?.getString("qrId") ?: ""
-                            val photoUriString = backStackEntry.arguments?.getString("photoUri") ?: ""
-                            if (qrId.isEmpty() || photoUriString.isEmpty()) {
+                        composable<PhotoPreview> { backStackEntry ->
+                            val route = backStackEntry.toRoute<PhotoPreview>()
+                            if (route.qrId.isEmpty() || route.photoUri.isEmpty()) {
                                 navController.popBackStack()
                                 return@composable
                             }
-                            val photoUri = Uri.parse(photoUriString)
+                            val photoUri = android.net.Uri.parse(route.photoUri)
                             val mainEntry = remember(backStackEntry) {
-                                navController.getBackStackEntry("main")
+                                navController.getBackStackEntry<Main>()
                             }
                             val mainViewModel: MainViewModel = hiltViewModel(mainEntry)
                             PhotoPreviewScreen(
                                 photoUri = photoUri,
                                 onConfirm = {
                                     mainViewModel.addLocalImage(photoUri)
-                                    mainViewModel.uploadAndCreateSubmission(photoUri, qrId)
-                                    navController.popBackStack("main", inclusive = false)
+                                    mainViewModel.uploadAndCreateSubmission(photoUri, route.qrId)
+                                    navController.popBackStack<Main>(inclusive = false)
                                 },
                                 onRetake = {
-                                    navController.navigate("photo_capture/${Uri.encode(qrId)}") {
-                                        popUpTo("photo_preview/{qrId}/{photoUri}") { inclusive = true }
+                                    navController.navigate(PhotoCapture(route.qrId)) {
+                                        popUpTo<PhotoPreview> { inclusive = true }
                                     }
                                 }
                             )

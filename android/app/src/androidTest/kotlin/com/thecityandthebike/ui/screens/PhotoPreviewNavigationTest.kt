@@ -12,8 +12,13 @@ import androidx.navigation.compose.ComposeNavigator
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.testing.TestNavHostController
+import androidx.navigation.toRoute
+import com.thecityandthebike.navigation.Main
+import com.thecityandthebike.navigation.PhotoCapture
+import com.thecityandthebike.navigation.PhotoPreview
 import com.thecityandthebike.setContentWithTheme
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNotNull
 import org.junit.Rule
 import org.junit.Test
 
@@ -34,36 +39,35 @@ class PhotoPreviewNavigationTest {
 
             NavHost(
                 navController = navController,
-                startDestination = "main"
+                startDestination = Main
             ) {
-                composable("main") {
+                composable<Main> {
                     Text("Main Screen")
                 }
-                composable("photo_capture/{qrId}") { backStackEntry ->
-                    val qrId = backStackEntry.arguments?.getString("qrId") ?: ""
+                composable<PhotoCapture> { backStackEntry ->
+                    val route = backStackEntry.toRoute<PhotoCapture>()
                     Text("Capture Screen")
                     PhotoCaptureScreen(
                         onPhotoCaptured = { uri ->
-                            navController.navigate("photo_preview/${Uri.encode(qrId)}/${Uri.encode(uri.toString())}") {
-                                popUpTo("photo_capture/{qrId}") { inclusive = true }
+                            navController.navigate(PhotoPreview(route.qrId, uri.toString())) {
+                                popUpTo<PhotoCapture> { inclusive = true }
                             }
                         },
                         onBack = { navController.popBackStack() }
                     )
                 }
-                composable("photo_preview/{qrId}/{photoUri}") { backStackEntry ->
-                    val qrId = backStackEntry.arguments?.getString("qrId") ?: ""
-                    val photoUriString = backStackEntry.arguments?.getString("photoUri") ?: ""
-                    val photoUri = Uri.parse(photoUriString)
+                composable<PhotoPreview> { backStackEntry ->
+                    val route = backStackEntry.toRoute<PhotoPreview>()
+                    val photoUri = Uri.parse(route.photoUri)
                     PhotoPreviewScreen(
                         photoUri = photoUri,
                         onConfirm = {
                             onConfirm()
-                            navController.popBackStack("main", inclusive = false)
+                            navController.popBackStack<Main>(inclusive = false)
                         },
                         onRetake = {
-                            navController.navigate("photo_capture/${Uri.encode(qrId)}") {
-                                popUpTo("photo_preview/{qrId}/{photoUri}") { inclusive = true }
+                            navController.navigate(PhotoCapture(route.qrId)) {
+                                popUpTo<PhotoPreview> { inclusive = true }
                             }
                         }
                     )
@@ -79,7 +83,7 @@ class PhotoPreviewNavigationTest {
         setupNavGraph { navController = it }
 
         composeTestRule.runOnUiThread {
-            navController.navigate("photo_preview/test-qr-123/content%3A%2F%2Ftest%2Fphoto.jpg")
+            navController.navigate(PhotoPreview(qrId = "test-qr-123", photoUri = "content://test/photo.jpg"))
         }
         composeTestRule.waitForIdle()
 
@@ -101,7 +105,7 @@ class PhotoPreviewNavigationTest {
         setupNavGraph { navController = it }
 
         composeTestRule.runOnUiThread {
-            navController.navigate("photo_preview/test-qr-123/content%3A%2F%2Ftest%2Fphoto.jpg")
+            navController.navigate(PhotoPreview(qrId = "test-qr-123", photoUri = "content://test/photo.jpg"))
         }
         composeTestRule.waitForIdle()
 
@@ -113,7 +117,7 @@ class PhotoPreviewNavigationTest {
         composeTestRule
             .onNodeWithText("Main Screen")
             .assertIsDisplayed()
-        assertEquals("main", navController.currentDestination?.route)
+        assertNotNull(navController.currentBackStackEntry?.toRoute<Main>())
     }
 
     @Test
@@ -124,7 +128,7 @@ class PhotoPreviewNavigationTest {
         setupNavGraph(onConfirm = { confirmCalled = true }) { navController = it }
 
         composeTestRule.runOnUiThread {
-            navController.navigate("photo_preview/test-qr-123/content%3A%2F%2Ftest%2Fphoto.jpg")
+            navController.navigate(PhotoPreview(qrId = "test-qr-123", photoUri = "content://test/photo.jpg"))
         }
         composeTestRule.waitForIdle()
 
@@ -143,7 +147,7 @@ class PhotoPreviewNavigationTest {
         setupNavGraph { navController = it }
 
         composeTestRule.runOnUiThread {
-            navController.navigate("photo_preview/test-qr-123/content%3A%2F%2Ftest%2Fphoto.jpg")
+            navController.navigate(PhotoPreview(qrId = "test-qr-123", photoUri = "content://test/photo.jpg"))
         }
         composeTestRule.waitForIdle()
 
@@ -152,7 +156,7 @@ class PhotoPreviewNavigationTest {
             .performClick()
         composeTestRule.waitForIdle()
 
-        assertEquals("photo_capture/{qrId}", navController.currentDestination?.route)
+        assertNotNull(navController.currentBackStackEntry?.toRoute<PhotoCapture>())
     }
 
     @Test
@@ -163,7 +167,7 @@ class PhotoPreviewNavigationTest {
         setupNavGraph { navController = it }
 
         composeTestRule.runOnUiThread {
-            navController.navigate("photo_preview/$testQrId/content%3A%2F%2Ftest%2Fphoto.jpg")
+            navController.navigate(PhotoPreview(qrId = testQrId, photoUri = "content://test/photo.jpg"))
         }
         composeTestRule.waitForIdle()
 
@@ -172,24 +176,23 @@ class PhotoPreviewNavigationTest {
             .performClick()
         composeTestRule.waitForIdle()
 
-        val currentArgs = navController.currentBackStackEntry?.arguments
-        assertEquals(testQrId, currentArgs?.getString("qrId"))
+        val route = navController.currentBackStackEntry?.toRoute<PhotoCapture>()
+        assertEquals(testQrId, route?.qrId)
     }
 
     @Test
     fun uriSurvivesEncodingThroughNavArgs() {
         lateinit var navController: TestNavHostController
         val originalUri = "content://com.thecityandthebike/photos/test.jpg"
-        val encodedUri = Uri.encode(originalUri)
 
         setupNavGraph { navController = it }
 
         composeTestRule.runOnUiThread {
-            navController.navigate("photo_preview/test-qr/$encodedUri")
+            navController.navigate(PhotoPreview(qrId = "test-qr", photoUri = originalUri))
         }
         composeTestRule.waitForIdle()
 
-        val photoUriArg = navController.currentBackStackEntry?.arguments?.getString("photoUri")
-        assertEquals(originalUri, photoUriArg)
+        val route = navController.currentBackStackEntry?.toRoute<PhotoPreview>()
+        assertEquals(originalUri, route?.photoUri)
     }
 }
