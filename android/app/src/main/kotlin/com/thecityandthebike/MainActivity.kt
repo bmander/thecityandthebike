@@ -11,7 +11,7 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -73,7 +73,7 @@ class MainActivity : ComponentActivity() {
                 ) {
                     val navController = rememberNavController()
                     val authViewModel: AuthViewModel = hiltViewModel()
-                    val authState by authViewModel.state.collectAsState()
+                    val authState by authViewModel.state.collectAsStateWithLifecycle()
 
                     NavHost(
                         navController = navController,
@@ -181,7 +181,7 @@ class MainActivity : ComponentActivity() {
                                 navController.getBackStackEntry<Main>()
                             }
                             val mainViewModel: MainViewModel = hiltViewModel(mainEntry)
-                            val mainState by mainViewModel.state.collectAsState()
+                            val mainState by mainViewModel.state.collectAsStateWithLifecycle()
                             if (mainState.isLoading) {
                                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                                     CircularProgressIndicator()
@@ -231,7 +231,7 @@ class MainActivity : ComponentActivity() {
                                 navController.getBackStackEntry<Bike>()
                             }
                             val bikeViewModel: BikeViewModel = hiltViewModel(bikeEntry)
-                            val bikeState by bikeViewModel.state.collectAsState()
+                            val bikeState by bikeViewModel.state.collectAsStateWithLifecycle()
                             if (bikeState.isLoading) {
                                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                                     CircularProgressIndicator()
@@ -278,7 +278,7 @@ class MainActivity : ComponentActivity() {
                                 navController.getBackStackEntry<User>()
                             }
                             val userViewModel: UserViewModel = hiltViewModel(userEntry)
-                            val userState by userViewModel.state.collectAsState()
+                            val userState by userViewModel.state.collectAsStateWithLifecycle()
                             if (userState.isLoading) {
                                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                                     CircularProgressIndicator()
