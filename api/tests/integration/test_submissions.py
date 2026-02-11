@@ -460,6 +460,26 @@ class TestCreateSubmission:
         assert response.status_code == 201
         assert response.json()["bike_qr_id"] == "RACE-BIKE"
 
+    def test_create_submission_saves_thumbnail_url(
+        self, client, auth_headers, test_user
+    ):
+        """Thumbnail URL should be saved to the submission."""
+        submission_data = {
+            "bike_qr_id": "THUMB-BIKE",
+            "image_url": "https://example.com/original.jpg",
+            "image_url_thumbnail": "https://example.com/thumb.jpg",
+            "captured_date": date.today().isoformat(),
+        }
+
+        response = client.post(
+            "/submissions",
+            json=submission_data,
+            headers=auth_headers,
+        )
+        assert response.status_code == 201
+        data = response.json()
+        assert data["image_url_thumbnail"] == "https://example.com/thumb.jpg"
+
     def test_create_submission_no_auth(self, client):
         """Request without auth should return 401."""
         submission_data = {
