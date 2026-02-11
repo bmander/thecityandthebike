@@ -66,11 +66,15 @@ def delete_submission(
         raise HTTPException(status_code=404, detail="Submission not found")
     if submission.user_id != current_user.user_id:
         raise HTTPException(status_code=403, detail="Not authorized to delete this submission")
-    delete_stored_image(submission.image_url_original)
-    delete_stored_image(submission.image_url_thumbnail)
-    delete_stored_image(submission.image_url_processed)
+    image_urls = [
+        submission.image_url_original,
+        submission.image_url_thumbnail,
+        submission.image_url_processed,
+    ]
     db.delete(submission)
     db.commit()
+    for url in image_urls:
+        delete_stored_image(url)
     return MessageResponse(msg="Submission deleted")
 
 
