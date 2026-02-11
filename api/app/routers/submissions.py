@@ -13,6 +13,7 @@ from ..dependencies import get_current_user, get_current_user_optional
 from ..models import User, Bike, FenderSubmission
 from ..schemas import PaginatedResponse, SubmissionCreate, SubmissionResponse
 from ..schemas.auth import MessageResponse
+from .uploads import delete_stored_image
 
 router = APIRouter(prefix="/submissions", tags=["submissions"])
 
@@ -66,8 +67,15 @@ def delete_submission(
         raise HTTPException(status_code=404, detail="Submission not found")
     if submission.user_id != current_user.user_id:
         raise HTTPException(status_code=403, detail="Not authorized to delete this submission")
+    image_urls = [
+        submission.image_url_original,
+        submission.image_url_thumbnail,
+        submission.image_url_processed,
+    ]
     db.delete(submission)
     db.commit()
+    for url in image_urls:
+        delete_stored_image(url)
     return MessageResponse(msg="Submission deleted")
 
 

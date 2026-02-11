@@ -50,6 +50,32 @@ def _generate_thumbnail(contents: bytes) -> Optional[bytes]:
         return None
 
 
+def delete_stored_image(url: Optional[str]) -> None:
+    """Delete an image file from storage given its URL path (e.g. /uploads/images/abc.jpg).
+
+    Logs warnings on failure but does not raise — file deletion should not block DB deletion.
+    """
+    if url is None:
+        return
+
+    filename = url.rsplit("/", 1)[-1]
+
+    if settings.STORAGE_BUCKET:
+        try:
+            bucket = _get_gcs_bucket()
+            blob = bucket.blob(f"images/{filename}")
+            blob.delete()
+        except Exception:
+            logger.warning("Failed to delete GCS blob images/%s", filename, exc_info=True)
+    else:
+        try:
+            file_path = os.path.join(UPLOAD_DIR, "images", filename)
+            if os.path.isfile(file_path):
+                os.remove(file_path)
+        except Exception:
+            logger.warning("Failed to delete local file images/%s", filename, exc_info=True)
+
+
 class UploadResponse(BaseModel):
     url: str
     filename: str
