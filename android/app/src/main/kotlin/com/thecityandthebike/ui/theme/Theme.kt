@@ -8,7 +8,35 @@ import androidx.compose.material3.dynamicDarkColorScheme
 import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.Immutable
+import androidx.compose.runtime.staticCompositionLocalOf
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+
+@Immutable
+data class ExtendedColorScheme(
+    val destructiveAction: Color = Color.Unspecified,
+    val onDestructiveAction: Color = Color.Unspecified,
+)
+
+val LocalExtendedColorScheme = staticCompositionLocalOf { ExtendedColorScheme() }
+
+object ExtendedTheme {
+    val colorScheme: ExtendedColorScheme
+        @Composable
+        get() = LocalExtendedColorScheme.current
+}
+
+private val LightExtendedColorScheme = ExtendedColorScheme(
+    destructiveAction = md_theme_light_destructiveAction,
+    onDestructiveAction = md_theme_light_onDestructiveAction,
+)
+
+private val DarkExtendedColorScheme = ExtendedColorScheme(
+    destructiveAction = md_theme_dark_destructiveAction,
+    onDestructiveAction = md_theme_dark_onDestructiveAction,
+)
 
 private val LightColorScheme = lightColorScheme(
     primary = md_theme_light_primary,
@@ -83,8 +111,12 @@ fun TheCityAndTheBikeTheme(
         else -> LightColorScheme
     }
 
-    MaterialTheme(
-        colorScheme = colorScheme,
-        content = content
-    )
+    val extendedColorScheme = if (darkTheme) DarkExtendedColorScheme else LightExtendedColorScheme
+
+    CompositionLocalProvider(LocalExtendedColorScheme provides extendedColorScheme) {
+        MaterialTheme(
+            colorScheme = colorScheme,
+            content = content
+        )
+    }
 }

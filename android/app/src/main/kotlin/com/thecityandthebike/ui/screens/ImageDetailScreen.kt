@@ -1,5 +1,6 @@
 package com.thecityandthebike.ui.screens
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -26,9 +27,9 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.IconButtonDefaults
+import androidx.compose.material3.FilledIconButton
 import androidx.compose.material3.OutlinedIconButton
-import androidx.compose.foundation.BorderStroke
+import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -43,10 +44,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.thecityandthebike.data.model.dto.SubmissionResponse
+import com.thecityandthebike.ui.theme.ExtendedTheme
 import com.thecityandthebike.ui.components.BikeIdBadge
 import com.thecityandthebike.ui.components.InfoRow
 import com.thecityandthebike.ui.components.ZoomableImage
 import com.thecityandthebike.util.imageUrlToUri
+import androidx.compose.ui.tooling.preview.Preview
+import com.thecityandthebike.ui.theme.TheCityAndTheBikeTheme
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 
@@ -149,12 +153,12 @@ fun ImageDetailScreen(
                                 )
                             }
                             Spacer(modifier = Modifier.width(8.dp))
-                            OutlinedIconButton(
+                            FilledIconButton(
                                 onClick = { showDeleteDialog = true },
                                 shape = RoundedCornerShape(8.dp),
-                                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
-                                colors = IconButtonDefaults.outlinedIconButtonColors(
-                                    contentColor = MaterialTheme.colorScheme.error
+                                colors = IconButtonDefaults.filledIconButtonColors(
+                                    containerColor = ExtendedTheme.colorScheme.destructiveAction,
+                                    contentColor = ExtendedTheme.colorScheme.onDestructiveAction
                                 )
                             ) {
                                 Icon(
@@ -210,5 +214,25 @@ fun ImageDetailScreen(
                 }
             }
         }
+    }
+}
+
+@Preview(showBackground = true, name = "Light")
+@Preview(showBackground = true, name = "Dark", uiMode = android.content.res.Configuration.UI_MODE_NIGHT_YES)
+@Composable
+private fun ImageDetailScreenPreview() {
+    TheCityAndTheBikeTheme {
+        ImageDetailScreen(
+            submission = SubmissionResponse(
+                submissionId = "preview-1",
+                userId = "user-1",
+                bikeQrId = "BIKE-42",
+                capturedDate = "2026-02-11",
+                username = "bmander",
+                provider = "citibike"
+            ),
+            onBack = {},
+            isOwner = true
+        )
     }
 }
