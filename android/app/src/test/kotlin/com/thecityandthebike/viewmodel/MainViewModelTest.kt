@@ -207,6 +207,61 @@ class MainViewModelTest {
     }
 
     @Test
+    fun `refreshSubmissions success should replace submissions list`() = runTest {
+        val initialPage = listOf(
+            SubmissionResponse(submissionId = "1", userId = "user1", bikeQrId = "bike1")
+        )
+        val initialPaginated = PaginatedSubmissions(items = initialPage, total = 1, limit = 20, offset = 0)
+        coEvery { submissionRepository.getSubmissions(limit = any(), offset = 0) } returns SubmissionResult.Success(initialPaginated)
+
+        viewModel = createViewModel()
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        assertEquals(1, viewModel.state.value.submissions.size)
+        assertEquals("1", viewModel.state.value.submissions[0].submissionId)
+
+        val refreshedPage = listOf(
+            SubmissionResponse(submissionId = "new-1", userId = "user1", bikeQrId = "bike1"),
+            SubmissionResponse(submissionId = "new-2", userId = "user1", bikeQrId = "bike2")
+        )
+        val refreshedPaginated = PaginatedSubmissions(items = refreshedPage, total = 2, limit = 20, offset = 0)
+        coEvery { submissionRepository.getSubmissions(limit = any(), offset = 0) } returns SubmissionResult.Success(refreshedPaginated)
+
+        viewModel.refreshSubmissions()
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        assertEquals(2, viewModel.state.value.submissions.size)
+        assertEquals("new-1", viewModel.state.value.submissions[0].submissionId)
+        assertEquals("new-2", viewModel.state.value.submissions[1].submissionId)
+        assertFalse(viewModel.state.value.isRefreshing)
+        assertNull(viewModel.state.value.error)
+    }
+
+    @Test
+    fun `refreshSubmissions failure should set error and keep existing submissions`() = runTest {
+        val initialPage = listOf(
+            SubmissionResponse(submissionId = "1", userId = "user1", bikeQrId = "bike1")
+        )
+        val initialPaginated = PaginatedSubmissions(items = initialPage, total = 1, limit = 20, offset = 0)
+        coEvery { submissionRepository.getSubmissions(limit = any(), offset = 0) } returns SubmissionResult.Success(initialPaginated)
+
+        viewModel = createViewModel()
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        assertEquals(1, viewModel.state.value.submissions.size)
+
+        coEvery { submissionRepository.getSubmissions(limit = any(), offset = 0) } returns SubmissionResult.Error("Refresh failed")
+
+        viewModel.refreshSubmissions()
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        assertEquals(1, viewModel.state.value.submissions.size)
+        assertEquals("1", viewModel.state.value.submissions[0].submissionId)
+        assertEquals("Refresh failed", viewModel.state.value.error)
+        assertFalse(viewModel.state.value.isRefreshing)
+    }
+
+    @Test
     fun `upload success should add submission to state`() = runTest {
         val paginated = PaginatedSubmissions(items = emptyList(), total = 0, limit = 20, offset = 0)
         coEvery { submissionRepository.getSubmissions(any(), any()) } returns SubmissionResult.Success(paginated)

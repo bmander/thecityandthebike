@@ -7,10 +7,12 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Snackbar
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -27,6 +29,7 @@ import com.thecityandthebike.ui.components.MenuButton
 import com.thecityandthebike.ui.viewmodel.MainViewModel
 import com.thecityandthebike.util.imageUrlToUri
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MainScreen(
     viewModel: MainViewModel,
@@ -47,7 +50,11 @@ fun MainScreen(
     }
     val allImageUris = state.localImages + serverImageUris
 
-    Box(modifier = Modifier.fillMaxSize()) {
+    PullToRefreshBox(
+        isRefreshing = state.isRefreshing,
+        onRefresh = { viewModel.refreshSubmissions() },
+        modifier = Modifier.fillMaxSize()
+    ) {
         ImageGrid(
             imageUris = allImageUris,
             modifier = Modifier.fillMaxSize(),

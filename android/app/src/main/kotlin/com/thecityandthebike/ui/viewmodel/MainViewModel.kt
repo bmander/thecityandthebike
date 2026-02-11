@@ -20,6 +20,7 @@ import javax.inject.Inject
 
 data class MainState(
     val isLoading: Boolean = false,
+    val isRefreshing: Boolean = false,
     val submissions: List<SubmissionResponse> = emptyList(),
     val localImages: List<Uri> = emptyList(),
     val error: String? = null,
@@ -57,6 +58,28 @@ class MainViewModel @Inject constructor(
                 is SubmissionResult.Error -> {
                     _state.value = _state.value.copy(
                         isLoading = false,
+                        error = result.message
+                    )
+                }
+            }
+        }
+    }
+
+    fun refreshSubmissions() {
+        viewModelScope.launch {
+            _state.value = _state.value.copy(isRefreshing = true, error = null)
+            when (val result = submissionRepository.getSubmissions()) {
+                is SubmissionResult.Success -> {
+                    _state.value = _state.value.copy(
+                        isRefreshing = false,
+                        submissions = result.data.items,
+                        totalSubmissions = result.data.total,
+                        hasMorePages = result.data.items.size + result.data.offset < result.data.total
+                    )
+                }
+                is SubmissionResult.Error -> {
+                    _state.value = _state.value.copy(
+                        isRefreshing = false,
                         error = result.message
                     )
                 }
