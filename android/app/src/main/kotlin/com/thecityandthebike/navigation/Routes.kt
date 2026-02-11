@@ -1,0 +1,18 @@
+package com.thecityandthebike.navigation
+
+import kotlinx.serialization.Serializable
+
+@Serializable object Splash
+@Serializable object Onboarding
+@Serializable object Login
+@Serializable object Register
+@Serializable object Main
+@Serializable object PrivacyCopyright
+@Serializable data class ImageDetail(val submissionId: String)
+@Serializable data class Bike(val bikeQrId: String)
+@Serializable data class BikeImageDetail(val submissionId: String)
+@Serializable data class User(val userId: String)
+@Serializable data class UserImageDetail(val submissionId: String)
+@Serializable object Scanner
+@Serializable data class PhotoCapture(val qrId: String)
+@Serializable data class PhotoPreview(val qrId: String, val photoUri: String)
