@@ -43,6 +43,9 @@ interface ApiService {
     @GET("submissions/{submissionId}")
     suspend fun getSubmission(@Path("submissionId") submissionId: String): Response<SubmissionResponse>
 
+    @DELETE("submissions/{submissionId}")
+    suspend fun deleteSubmission(@Path("submissionId") submissionId: String): Response<MessageResponse>
+
     // User detail endpoints
     @GET("users/{userId}")
     suspend fun getUserDetail(@Path("userId") userId: String): Response<UserDetailResponse>

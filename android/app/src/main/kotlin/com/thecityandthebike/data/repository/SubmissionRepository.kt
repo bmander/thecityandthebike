@@ -3,6 +3,7 @@ package com.thecityandthebike.data.repository
 import com.thecityandthebike.data.api.ApiService
 import com.thecityandthebike.data.model.ApiResult
 import com.thecityandthebike.data.model.AppError
+import com.thecityandthebike.data.model.dto.MessageResponse
 import com.thecityandthebike.data.model.dto.PaginatedSubmissions
 import com.thecityandthebike.data.model.dto.SubmissionCreate
 import com.thecityandthebike.data.model.dto.SubmissionResponse
@@ -60,6 +61,10 @@ class SubmissionRepository @Inject constructor(
 
     suspend fun getSubmission(submissionId: String): ApiResult<SubmissionResponse> {
         return safeApiCall { apiService.getSubmission(submissionId) }
+    }
+
+    suspend fun deleteSubmission(submissionId: String): ApiResult<MessageResponse> {
+        return safeApiCall { apiService.deleteSubmission(submissionId) }
     }
 
     suspend fun uploadImage(file: File): ApiResult<UploadResponse> {

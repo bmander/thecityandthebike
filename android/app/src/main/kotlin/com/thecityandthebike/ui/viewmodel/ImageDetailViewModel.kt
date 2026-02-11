@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.thecityandthebike.data.model.ApiResult
 import com.thecityandthebike.data.model.dto.SubmissionResponse
+import com.thecityandthebike.data.repository.AuthRepository
 import com.thecityandthebike.data.repository.SubmissionRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -16,12 +17,16 @@ import javax.inject.Inject
 data class ImageDetailState(
     val isLoading: Boolean = false,
     val submission: SubmissionResponse? = null,
-    val error: String? = null
+    val error: String? = null,
+    val isOwner: Boolean = false,
+    val isDeleting: Boolean = false,
+    val isDeleted: Boolean = false
 )
 
 @HiltViewModel
 class ImageDetailViewModel @Inject constructor(
     private val submissionRepository: SubmissionRepository,
+    private val authRepository: AuthRepository,
     savedStateHandle: SavedStateHandle
 ) : ViewModel() {
 
@@ -39,15 +44,42 @@ class ImageDetailViewModel @Inject constructor(
             _state.value = _state.value.copy(isLoading = true, error = null)
             when (val result = submissionRepository.getSubmission(submissionId)) {
                 is ApiResult.Success -> {
+                    val submission = result.data
+                    val isOwner = checkOwnership(submission.userId)
                     _state.value = _state.value.copy(
                         isLoading = false,
-                        submission = result.data
+                        submission = submission,
+                        isOwner = isOwner
                     )
                 }
                 is ApiResult.Error -> {
                     _state.value = _state.value.copy(
                         isLoading = false,
                         error = result.error.displayMessage
+                    )
+                }
+            }
+        }
+    }
+
+    private suspend fun checkOwnership(submissionUserId: String): Boolean {
+        return when (val result = authRepository.getCurrentUser()) {
+            is ApiResult.Success -> result.data.userId == submissionUserId
+            is ApiResult.Error -> false
+        }
+    }
+
+    fun deleteSubmission() {
+        viewModelScope.launch {
+            _state.value = _state.value.copy(isDeleting = true)
+            when (submissionRepository.deleteSubmission(submissionId)) {
+                is ApiResult.Success -> {
+                    _state.value = _state.value.copy(isDeleting = false, isDeleted = true)
+                }
+                is ApiResult.Error -> {
+                    _state.value = _state.value.copy(
+                        isDeleting = false,
+                        error = "Failed to delete submission"
                     )
                 }
             }
