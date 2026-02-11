@@ -12,6 +12,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 
 @Composable
@@ -19,27 +20,29 @@ fun BikeIdBadge(provider: String?, bikeQrId: String) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier
+            .clip(RoundedCornerShape(8.dp))
             .border(
                 width = 1.dp,
                 color = MaterialTheme.colorScheme.outline,
                 shape = RoundedCornerShape(8.dp)
             )
-            .clip(RoundedCornerShape(8.dp))
     ) {
         if (provider != null) {
             Text(
-                text = provider.replaceFirstChar { it.uppercase() },
+                text = provider.uppercase(),
                 style = MaterialTheme.typography.labelLarge,
                 color = MaterialTheme.colorScheme.onPrimary,
                 modifier = Modifier
-                    .background(MaterialTheme.colorScheme.primary)
-                    .padding(horizontal = 10.dp, vertical = 6.dp)
+                    .padding(3.dp)
+                    .background(MaterialTheme.colorScheme.primary, RoundedCornerShape(4.dp))
+                    .padding(horizontal = 4.dp, vertical = 1.dp)
             )
         }
         Text(
             text = bikeQrId,
             style = MaterialTheme.typography.headlineSmall,
             fontFamily = FontFamily.Monospace,
+            fontWeight = FontWeight.Bold,
             modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
         )
     }
