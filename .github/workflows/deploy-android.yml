@@ -57,3 +57,4 @@ jobs:
           serviceCredentialsFileContent: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
           file: android/app/build/outputs/apk/staging/release/app-staging-release.apk
           groups: internal-testers
+          notifyTesters: false
