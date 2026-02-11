@@ -11,7 +11,7 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ComposeUiFlags
@@ -74,7 +74,7 @@ class MainActivity : ComponentActivity() {
                 ) {
                     val navController = rememberNavController()
                     val authViewModel: AuthViewModel = hiltViewModel()
-                    val authState by authViewModel.state.collectAsState()
+                    val authState by authViewModel.state.collectAsStateWithLifecycle()
 
                     NavHost(
                         navController = navController,
@@ -174,7 +174,7 @@ class MainActivity : ComponentActivity() {
                             popExitTransition = { ExitTransition.None }
                         ) {
                             val viewModel: ImageDetailViewModel = hiltViewModel()
-                            val detailState by viewModel.state.collectAsState()
+                            val detailState by viewModel.state.collectAsStateWithLifecycle()
                             when {
                                 detailState.isLoading -> {
                                     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -217,7 +217,7 @@ class MainActivity : ComponentActivity() {
                             popExitTransition = { ExitTransition.None }
                         ) {
                             val viewModel: ImageDetailViewModel = hiltViewModel()
-                            val detailState by viewModel.state.collectAsState()
+                            val detailState by viewModel.state.collectAsStateWithLifecycle()
                             when {
                                 detailState.isLoading -> {
                                     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -257,7 +257,7 @@ class MainActivity : ComponentActivity() {
                             popExitTransition = { ExitTransition.None }
                         ) {
                             val viewModel: ImageDetailViewModel = hiltViewModel()
-                            val detailState by viewModel.state.collectAsState()
+                            val detailState by viewModel.state.collectAsStateWithLifecycle()
                             when {
                                 detailState.isLoading -> {
                                     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
