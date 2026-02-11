@@ -54,28 +54,22 @@ def get_user_detail(
             detail={"msg": "User not found"},
         )
 
-    submission_count = db.execute(
-        select(func.count())
+    stats = db.execute(
+        select(
+            func.count(),
+            func.min(FenderSubmission.uploaded_at),
+            func.max(FenderSubmission.uploaded_at),
+        )
         .select_from(FenderSubmission)
         .where(FenderSubmission.user_id == user.user_id)
-    ).scalar()
-
-    first_seen = db.execute(
-        select(func.min(FenderSubmission.uploaded_at))
-        .where(FenderSubmission.user_id == user.user_id)
-    ).scalar()
-
-    last_seen = db.execute(
-        select(func.max(FenderSubmission.uploaded_at))
-        .where(FenderSubmission.user_id == user.user_id)
-    ).scalar()
+    ).one()
 
     return UserDetailResponse(
         user_id=user.user_id,
         username=user.username,
-        submission_count=submission_count,
-        first_seen_at=first_seen,
-        last_seen_at=last_seen,
+        submission_count=stats[0],
+        first_seen_at=stats[1],
+        last_seen_at=stats[2],
     )
 
 
