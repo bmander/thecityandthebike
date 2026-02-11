@@ -1,13 +1,14 @@
 package com.thecityandthebike.viewmodel
 
 import androidx.lifecycle.SavedStateHandle
+import com.thecityandthebike.data.local.TokenManager
 import com.thecityandthebike.data.model.ApiResult
 import com.thecityandthebike.data.model.AppError
 import com.thecityandthebike.data.model.dto.SubmissionResponse
-import com.thecityandthebike.data.repository.AuthRepository
 import com.thecityandthebike.data.repository.SubmissionRepository
 import com.thecityandthebike.ui.viewmodel.ImageDetailViewModel
 import io.mockk.coEvery
+import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -25,7 +26,7 @@ class ImageDetailViewModelTest {
 
     private val testDispatcher = StandardTestDispatcher()
     private lateinit var submissionRepository: SubmissionRepository
-    private lateinit var authRepository: AuthRepository
+    private lateinit var tokenManager: TokenManager
     private lateinit var savedStateHandle: SavedStateHandle
 
     private val testSubmissionId = "test-submission-001"
@@ -42,8 +43,7 @@ class ImageDetailViewModelTest {
     fun setup() {
         Dispatchers.setMain(testDispatcher)
         submissionRepository = mockk()
-        authRepository = mockk()
-        coEvery { authRepository.getCurrentUser() } returns ApiResult.Error(AppError.Network(java.io.IOException("Not logged in")))
+        tokenManager = mockk()
         savedStateHandle = SavedStateHandle(mapOf("submissionId" to testSubmissionId))
     }
 
@@ -53,12 +53,13 @@ class ImageDetailViewModelTest {
     }
 
     private fun createViewModel(): ImageDetailViewModel {
-        return ImageDetailViewModel(submissionRepository, authRepository, savedStateHandle)
+        return ImageDetailViewModel(submissionRepository, tokenManager, savedStateHandle)
     }
 
     @Test
     fun `loadSubmission success should update state with submission`() = runTest {
         coEvery { submissionRepository.getSubmission(testSubmissionId) } returns ApiResult.Success(testSubmission)
+        every { tokenManager.getUserId() } returns null
 
         val viewModel = createViewModel()
         testDispatcher.scheduler.advanceUntilIdle()
@@ -73,6 +74,7 @@ class ImageDetailViewModelTest {
     @Test
     fun `loadSubmission failure should set error state`() = runTest {
         coEvery { submissionRepository.getSubmission(testSubmissionId) } returns ApiResult.Error(AppError.Server(404, "Not found"))
+        every { tokenManager.getUserId() } returns null
 
         val viewModel = createViewModel()
         testDispatcher.scheduler.advanceUntilIdle()
@@ -86,6 +88,7 @@ class ImageDetailViewModelTest {
     @Test
     fun `loadSubmission network error should set error state`() = runTest {
         coEvery { submissionRepository.getSubmission(testSubmissionId) } returns ApiResult.Error(AppError.Network(java.io.IOException("Network error")))
+        every { tokenManager.getUserId() } returns null
 
         val viewModel = createViewModel()
         testDispatcher.scheduler.advanceUntilIdle()
@@ -99,6 +102,7 @@ class ImageDetailViewModelTest {
     @Test
     fun `clearError should reset error state`() = runTest {
         coEvery { submissionRepository.getSubmission(testSubmissionId) } returns ApiResult.Error(AppError.Server(500, "Error"))
+        every { tokenManager.getUserId() } returns null
 
         val viewModel = createViewModel()
         testDispatcher.scheduler.advanceUntilIdle()
@@ -111,8 +115,42 @@ class ImageDetailViewModelTest {
     @Test
     fun `submissionId should come from SavedStateHandle`() = runTest {
         coEvery { submissionRepository.getSubmission(testSubmissionId) } returns ApiResult.Success(testSubmission)
+        every { tokenManager.getUserId() } returns null
 
         val viewModel = createViewModel()
         assertEquals(testSubmissionId, viewModel.submissionId)
+    }
+
+    @Test
+    fun `isOwner should be true when logged-in user matches submission user`() = runTest {
+        coEvery { submissionRepository.getSubmission(testSubmissionId) } returns ApiResult.Success(testSubmission)
+        every { tokenManager.getUserId() } returns "user1"
+
+        val viewModel = createViewModel()
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        assertTrue(viewModel.state.value.isOwner)
+    }
+
+    @Test
+    fun `isOwner should be false when logged-in user differs from submission user`() = runTest {
+        coEvery { submissionRepository.getSubmission(testSubmissionId) } returns ApiResult.Success(testSubmission)
+        every { tokenManager.getUserId() } returns "other-user"
+
+        val viewModel = createViewModel()
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        assertFalse(viewModel.state.value.isOwner)
+    }
+
+    @Test
+    fun `isOwner should be false when no user is logged in`() = runTest {
+        coEvery { submissionRepository.getSubmission(testSubmissionId) } returns ApiResult.Success(testSubmission)
+        every { tokenManager.getUserId() } returns null
+
+        val viewModel = createViewModel()
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        assertFalse(viewModel.state.value.isOwner)
     }
 }
