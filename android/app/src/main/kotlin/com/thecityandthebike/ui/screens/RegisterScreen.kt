@@ -1,8 +1,10 @@
 package com.thecityandthebike.ui.screens
 
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.*
@@ -12,12 +14,21 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.autofill.ContentType
 import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.contentType
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.LinkAnnotation
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.TextLinkStyles
+import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
+import com.thecityandthebike.R
 import com.thecityandthebike.ui.viewmodel.AuthState
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -33,6 +44,8 @@ fun RegisterScreen(
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var confirmPassword by remember { mutableStateOf("") }
+    var readUnderstood by remember { mutableStateOf(false) }
+    var agreedToLicense by remember { mutableStateOf(false) }
     val focusManager = LocalFocusManager.current
 
     LaunchedEffect(state.registrationSuccess) {
@@ -57,16 +70,121 @@ fun RegisterScreen(
             )
         }
     ) { paddingValues ->
-        Box(
+        Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(paddingValues),
-            contentAlignment = Alignment.Center
+                .padding(paddingValues)
+                .verticalScroll(rememberScrollState())
+                .padding(horizontal = 16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Card(
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // Privacy & Copyright title
+            Text(
+                text = stringResource(R.string.onboarding_privacy_copyright_title),
+                style = MaterialTheme.typography.headlineMedium,
+                fontWeight = FontWeight.Bold
+            )
+            Spacer(modifier = Modifier.height(24.dp))
+
+            // Privacy section
+            Text(
+                text = stringResource(R.string.onboarding_privacy_subtitle),
+                style = MaterialTheme.typography.titleSmall,
+                fontWeight = FontWeight.SemiBold,
+                modifier = Modifier.fillMaxWidth()
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(
+                text = stringResource(R.string.onboarding_privacy_body),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.fillMaxWidth()
+            )
+            Spacer(modifier = Modifier.height(20.dp))
+
+            // Copyright section
+            Text(
+                text = stringResource(R.string.onboarding_copyright_subtitle),
+                style = MaterialTheme.typography.titleSmall,
+                fontWeight = FontWeight.SemiBold,
+                modifier = Modifier.fillMaxWidth()
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(
+                text = stringResource(R.string.onboarding_copyright_body),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.fillMaxWidth()
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+
+            // CC link
+            val linkColor = MaterialTheme.colorScheme.primary
+            val ccLinkLabel = stringResource(R.string.onboarding_cc_link)
+            val ccLinkA11y = stringResource(R.string.onboarding_cc_link_a11y)
+            val linkText = buildAnnotatedString {
+                val linkStyle = TextLinkStyles(
+                    style = SpanStyle(
+                        color = linkColor,
+                        textDecoration = TextDecoration.Underline
+                    )
+                )
+                pushLink(LinkAnnotation.Url(
+                    url = "https://creativecommons.org/licenses/by-nc/4.0/",
+                    styles = linkStyle
+                ))
+                append(ccLinkLabel)
+                pop()
+            }
+            Text(
+                text = linkText,
+                style = MaterialTheme.typography.bodyMedium,
                 modifier = Modifier
-                    .padding(16.dp)
-                    .widthIn(max = 400.dp)
+                    .fillMaxWidth()
+                    .semantics {
+                        contentDescription = ccLinkA11y
+                    }
+            )
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // Checkbox: read and understood
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Checkbox(
+                    checked = readUnderstood,
+                    onCheckedChange = { readUnderstood = it }
+                )
+                Text(
+                    text = stringResource(R.string.register_checkbox_read_understood),
+                    style = MaterialTheme.typography.bodyMedium,
+                    modifier = Modifier.padding(start = 8.dp)
+                )
+            }
+
+            // Checkbox: agree to license
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Checkbox(
+                    checked = agreedToLicense,
+                    onCheckedChange = { agreedToLicense = it }
+                )
+                Text(
+                    text = stringResource(R.string.register_checkbox_agree_license),
+                    style = MaterialTheme.typography.bodyMedium,
+                    modifier = Modifier.padding(start = 8.dp)
+                )
+            }
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // Form card
+            Card(
+                modifier = Modifier.widthIn(max = 400.dp)
             ) {
                 Column(
                     modifier = Modifier
@@ -155,7 +273,7 @@ fun RegisterScreen(
                         keyboardActions = KeyboardActions(
                             onDone = {
                                 focusManager.clearFocus()
-                                if (isFormValid(username, email, password, confirmPassword)) {
+                                if (isFormValid(username, email, password, confirmPassword, readUnderstood, agreedToLicense)) {
                                     onRegister(username, email, password)
                                 }
                             }
@@ -178,7 +296,7 @@ fun RegisterScreen(
                     Button(
                         onClick = { onRegister(username, email, password) },
                         modifier = Modifier.fillMaxWidth(),
-                        enabled = !state.isLoading && isFormValid(username, email, password, confirmPassword)
+                        enabled = !state.isLoading && isFormValid(username, email, password, confirmPassword, readUnderstood, agreedToLicense)
                     ) {
                         if (state.isLoading) {
                             CircularProgressIndicator(
@@ -191,6 +309,7 @@ fun RegisterScreen(
                     }
                 }
             }
+            Spacer(modifier = Modifier.height(16.dp))
         }
     }
 }
@@ -199,12 +318,16 @@ private fun isFormValid(
     username: String,
     email: String,
     password: String,
-    confirmPassword: String
+    confirmPassword: String,
+    readUnderstood: Boolean,
+    agreedToLicense: Boolean
 ): Boolean {
     return username.isNotBlank() &&
             email.isNotBlank() &&
             email.contains("@") &&
             password.isNotBlank() &&
             password.length >= 6 &&
-            password == confirmPassword
+            password == confirmPassword &&
+            readUnderstood &&
+            agreedToLicense
 }

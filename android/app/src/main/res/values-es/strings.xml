@@ -26,4 +26,8 @@
     <string name="onboarding_copyright_body">Los derechos de autor de todas las fotos que subas te pertenecen. Al subir el archivo aceptas licenciar la imagen bajo Creative Commons BY-NC 4.0. Esta licencia requiere que quienes la reutilicen den crédito al creador. Permite a los reutilizadores distribuir, remezclar, adaptar y construir sobre el material en cualquier medio o formato, solo con fines no comerciales.</string>
     <string name="onboarding_cc_link">Más información sobre CC BY-NC 4.0</string>
     <string name="onboarding_cc_link_a11y">Más información sobre CC BY-NC 4.0, se abre en el navegador</string>
+
+    <!-- Registration checkboxes -->
+    <string name="register_checkbox_read_understood">He leído esto y lo entiendo</string>
+    <string name="register_checkbox_agree_license">Acepto licenciar mis fotos bajo CC BY-NC 4.0</string>
 </resources>

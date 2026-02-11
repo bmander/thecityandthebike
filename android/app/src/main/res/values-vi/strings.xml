@@ -26,4 +26,8 @@
     <string name="onboarding_copyright_body">Bản quyền của tất cả ảnh bạn tải lên thuộc về bạn. Khi tải tệp lên, bạn đồng ý cấp phép hình ảnh theo Creative Commons BY-NC 4.0. Giấy phép này yêu cầu người sử dụng lại phải ghi nhận tác giả. Giấy phép cho phép người sử dụng lại phân phối, phối lại, chỉnh sửa và xây dựng dựa trên tài liệu ở bất kỳ phương tiện hay định dạng nào, chỉ dành cho mục đích phi thương mại.</string>
     <string name="onboarding_cc_link">Tìm hiểu thêm về CC BY-NC 4.0</string>
     <string name="onboarding_cc_link_a11y">Tìm hiểu thêm về CC BY-NC 4.0, mở trong trình duyệt</string>
+
+    <!-- Registration checkboxes -->
+    <string name="register_checkbox_read_understood">Tôi đã đọc và hiểu nội dung này</string>
+    <string name="register_checkbox_agree_license">Tôi đồng ý cấp phép ảnh theo CC BY-NC 4.0</string>
 </resources>
