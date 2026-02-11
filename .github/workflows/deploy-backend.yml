@@ -20,6 +20,7 @@ jobs:
     permissions:
       contents: read
       id-token: write
+      variables: write
 
     steps:
       - uses: actions/checkout@v4
@@ -31,6 +32,7 @@ jobs:
           echo "STORAGE_BUCKET=tcatb-staging-uploads" >> $GITHUB_ENV
           echo "JWT_SECRET=jwt-secret-staging" >> $GITHUB_ENV
           echo "DB_PASSWORD_SECRET=db-password-staging" >> $GITHUB_ENV
+          echo "CORS_ORIGINS=https://bmander.github.io" >> $GITHUB_ENV
 
       - name: Authenticate to Google Cloud
         uses: google-github-actions/auth@v3
@@ -98,6 +100,7 @@ jobs:
             --set-env-vars="PGUSER=tcatb" \
             --set-env-vars="PGDATABASE=tcatb" \
             --set-env-vars="STORAGE_BUCKET=${{ env.STORAGE_BUCKET }}" \
+            --set-env-vars="CORS_ORIGINS=${{ env.CORS_ORIGINS }}" \
             --set-secrets="JWT_SECRET_KEY=${{ env.JWT_SECRET }}:latest" \
             --set-secrets="PGPASSWORD=${{ env.DB_PASSWORD_SECRET }}:latest" \
             --add-cloudsql-instances=${{ env.SQL_INSTANCE }} \
@@ -115,3 +118,9 @@ jobs:
             --format='value(status.url)')
           echo "Deployed to: $SERVICE_URL"
           curl -f "$SERVICE_URL/health" || exit 1
+          echo "SERVICE_URL=$SERVICE_URL" >> $GITHUB_ENV
+
+      - name: Update API_BASE_URL variable
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh variable set API_BASE_URL --body "${{ env.SERVICE_URL }}"

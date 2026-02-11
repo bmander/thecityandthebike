@@ -1,6 +1,7 @@
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Request
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from slowapi.errors import RateLimitExceeded
 from starlette.middleware.base import BaseHTTPMiddleware
@@ -34,6 +35,13 @@ async def lifespan(app: FastAPI):
 app = FastAPI(title="The City and the Bike API", lifespan=lifespan)
 app.state.limiter = limiter
 app.add_middleware(SecurityHeadersMiddleware)
+if settings.cors_origins_list:
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=settings.cors_origins_list,
+        allow_methods=["GET"],
+        allow_headers=["*"],
+    )
 
 app.add_exception_handler(RateLimitExceeded, rate_limit_exceeded_handler)
 
