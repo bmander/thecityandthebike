@@ -1,6 +1,7 @@
 package com.thecityandthebike.ui.viewmodel
 
 import android.net.Uri
+import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.thecityandthebike.data.model.ApiResult
@@ -33,10 +34,16 @@ data class MainState(
 @HiltViewModel
 class MainViewModel @Inject constructor(
     private val submissionRepository: SubmissionRepository,
-    private val imagePreparer: ImagePreparer
+    private val imagePreparer: ImagePreparer,
+    private val savedStateHandle: SavedStateHandle
 ) : ViewModel() {
 
-    private val _state = MutableStateFlow(MainState())
+    private val _state = MutableStateFlow(
+        MainState(
+            localImages = savedStateHandle.get<List<String>>(LOCAL_IMAGES_KEY)
+                ?.map { Uri.parse(it) } ?: emptyList()
+        )
+    )
     val state: StateFlow<MainState> = _state.asStateFlow()
 
     init {
@@ -108,9 +115,9 @@ class MainViewModel @Inject constructor(
     }
 
     fun addLocalImage(uri: Uri) {
-        _state.value = _state.value.copy(
-            localImages = listOf(uri) + _state.value.localImages
-        )
+        val newImages = listOf(uri) + _state.value.localImages
+        _state.value = _state.value.copy(localImages = newImages)
+        saveLocalImages(newImages)
     }
 
     fun uploadAndCreateSubmission(localUri: Uri, bikeQrId: String? = null) {
@@ -120,11 +127,13 @@ class MainViewModel @Inject constructor(
             val imageFile = imagePreparer.prepareImageFile(localUri)
 
             if (imageFile == null) {
+                val newImages = _state.value.localImages.filter { it != localUri }
                 _state.value = _state.value.copy(
                     isUploading = false,
-                    localImages = _state.value.localImages.filter { it != localUri },
+                    localImages = newImages,
                     error = "Could not read image file"
                 )
+                saveLocalImages(newImages)
                 return@launch
             }
 
@@ -145,27 +154,33 @@ class MainViewModel @Inject constructor(
 
                         when (val createResult = submissionRepository.createSubmission(submission)) {
                             is ApiResult.Success -> {
+                                val newImages = _state.value.localImages.filter { it != localUri }
                                 _state.value = _state.value.copy(
                                     isUploading = false,
                                     submissions = listOf(createResult.data) + _state.value.submissions,
-                                    localImages = _state.value.localImages.filter { it != localUri }
+                                    localImages = newImages
                                 )
+                                saveLocalImages(newImages)
                             }
                             is ApiResult.Error -> {
+                                val newImages = _state.value.localImages.filter { it != localUri }
                                 _state.value = _state.value.copy(
                                     isUploading = false,
-                                    localImages = _state.value.localImages.filter { it != localUri },
+                                    localImages = newImages,
                                     error = createResult.error.displayMessage
                                 )
+                                saveLocalImages(newImages)
                             }
                         }
                     }
                     is ApiResult.Error -> {
+                        val newImages = _state.value.localImages.filter { it != localUri }
                         _state.value = _state.value.copy(
                             isUploading = false,
-                            localImages = _state.value.localImages.filter { it != localUri },
+                            localImages = newImages,
                             error = uploadResult.error.displayMessage
                         )
+                        saveLocalImages(newImages)
                     }
                 }
             } finally {
@@ -176,5 +191,13 @@ class MainViewModel @Inject constructor(
 
     fun clearError() {
         _state.value = _state.value.copy(error = null)
+    }
+
+    private fun saveLocalImages(images: List<Uri>) {
+        savedStateHandle[LOCAL_IMAGES_KEY] = images.map { it.toString() }
+    }
+
+    companion object {
+        private const val LOCAL_IMAGES_KEY = "localImages"
     }
 }

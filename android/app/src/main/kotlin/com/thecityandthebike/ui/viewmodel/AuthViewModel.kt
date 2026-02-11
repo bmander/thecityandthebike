@@ -1,5 +1,6 @@
 package com.thecityandthebike.ui.viewmodel
 
+import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.thecityandthebike.data.model.ApiResult
@@ -20,10 +21,16 @@ data class AuthState(
 
 @HiltViewModel
 class AuthViewModel @Inject constructor(
-    private val authRepository: AuthRepository
+    private val authRepository: AuthRepository,
+    private val savedStateHandle: SavedStateHandle
 ) : ViewModel() {
 
-    private val _state = MutableStateFlow(AuthState(isLoggedIn = authRepository.isLoggedIn.value))
+    private val _state = MutableStateFlow(
+        AuthState(
+            isLoggedIn = authRepository.isLoggedIn.value,
+            registrationSuccess = savedStateHandle.get<Boolean>(REGISTRATION_SUCCESS_KEY) ?: false
+        )
+    )
     val state: StateFlow<AuthState> = _state.asStateFlow()
 
     init {
@@ -56,9 +63,11 @@ class AuthViewModel @Inject constructor(
     fun register(username: String, email: String, password: String) {
         viewModelScope.launch {
             _state.value = _state.value.copy(isLoading = true, error = null, registrationSuccess = false)
+            savedStateHandle[REGISTRATION_SUCCESS_KEY] = false
             when (val result = authRepository.register(username, email, password)) {
                 is ApiResult.Success -> {
                     _state.value = _state.value.copy(isLoading = false, registrationSuccess = true)
+                    savedStateHandle[REGISTRATION_SUCCESS_KEY] = true
                 }
                 is ApiResult.Error -> {
                     _state.value = _state.value.copy(isLoading = false, error = result.error.displayMessage)
@@ -80,5 +89,10 @@ class AuthViewModel @Inject constructor(
 
     fun clearRegistrationSuccess() {
         _state.value = _state.value.copy(registrationSuccess = false)
+        savedStateHandle[REGISTRATION_SUCCESS_KEY] = false
+    }
+
+    companion object {
+        private const val REGISTRATION_SUCCESS_KEY = "registrationSuccess"
     }
 }
