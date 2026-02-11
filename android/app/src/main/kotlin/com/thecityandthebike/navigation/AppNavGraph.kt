@@ -254,6 +254,13 @@ private fun ImageDetailRoute(
 ) {
     val viewModel: ImageDetailViewModel = hiltViewModel()
     val detailState by viewModel.state.collectAsStateWithLifecycle()
+
+    LaunchedEffect(detailState.isDeleted) {
+        if (detailState.isDeleted) {
+            onBack()
+        }
+    }
+
     when {
         detailState.isLoading -> {
             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -265,7 +272,10 @@ private fun ImageDetailRoute(
                 submission = detailState.submission!!,
                 onBack = onBack,
                 onBikeClick = onBikeClick,
-                onUserClick = onUserClick
+                onUserClick = onUserClick,
+                isOwner = detailState.isOwner,
+                isDeleting = detailState.isDeleting,
+                onDelete = { viewModel.deleteSubmission() }
             )
         }
         else -> {

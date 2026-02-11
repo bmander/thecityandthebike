@@ -1,6 +1,6 @@
 from datetime import date, datetime, timezone
 
-from app.dependencies import get_password_hash
+from app.dependencies import create_access_token, get_password_hash
 from app.models import User, Bike, FenderSubmission
 
 
@@ -155,6 +155,61 @@ class TestGetSubmission:
     def test_get_submission_invalid_id(self, client):
         response = client.get("/submissions/not-a-uuid")
         assert response.status_code == 422
+
+
+class TestDeleteSubmission:
+    """Tests for DELETE /submissions/{submission_id} endpoint."""
+
+    def test_delete_own_submission(
+        self, client, auth_headers, test_submission, db_session
+    ):
+        """Owner should be able to delete their own submission."""
+        response = client.delete(
+            f"/submissions/{test_submission.submission_id}",
+            headers=auth_headers,
+        )
+        assert response.status_code == 200
+        assert response.json()["msg"] == "Submission deleted"
+
+        # Verify submission is gone
+        get_response = client.get(f"/submissions/{test_submission.submission_id}")
+        assert get_response.status_code == 404
+
+    def test_delete_other_users_submission(
+        self, client, test_submission, db_session
+    ):
+        """Non-owner should get 403 when trying to delete another user's submission."""
+        other_user = User(
+            username="otheruser",
+            email="other@example.com",
+            password_hash=get_password_hash("password123"),
+        )
+        db_session.add(other_user)
+        db_session.commit()
+
+        other_token = create_access_token(subject=str(other_user.user_id))
+        other_headers = {"Authorization": f"Bearer {other_token}"}
+
+        response = client.delete(
+            f"/submissions/{test_submission.submission_id}",
+            headers=other_headers,
+        )
+        assert response.status_code == 403
+
+    def test_delete_nonexistent_submission(self, client, auth_headers):
+        """Deleting a non-existent submission should return 404."""
+        response = client.delete(
+            "/submissions/00000000-0000-0000-0000-000000000000",
+            headers=auth_headers,
+        )
+        assert response.status_code == 404
+
+    def test_delete_submission_no_auth(self, client, test_submission):
+        """Request without auth should return 401."""
+        response = client.delete(
+            f"/submissions/{test_submission.submission_id}"
+        )
+        assert response.status_code == 401
 
 
 class TestCreateSubmission:

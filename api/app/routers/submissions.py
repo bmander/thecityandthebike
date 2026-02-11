@@ -11,6 +11,7 @@ from ..database import get_db
 from ..dependencies import get_current_user, get_current_user_optional
 from ..models import User, Bike, FenderSubmission
 from ..schemas import PaginatedResponse, SubmissionCreate, SubmissionResponse
+from ..schemas.auth import MessageResponse
 
 router = APIRouter(prefix="/submissions", tags=["submissions"])
 
@@ -47,6 +48,26 @@ def get_submission(submission_id: UUID, db: Annotated[Session, Depends(get_db)])
     if submission is None:
         raise HTTPException(status_code=404, detail="Submission not found")
     return submission
+
+
+@router.delete("/{submission_id}", response_model=MessageResponse)
+def delete_submission(
+    submission_id: UUID,
+    current_user: Annotated[User, Depends(get_current_user)],
+    db: Annotated[Session, Depends(get_db)],
+):
+    submission = (
+        db.query(FenderSubmission)
+        .filter(FenderSubmission.submission_id == submission_id)
+        .first()
+    )
+    if submission is None:
+        raise HTTPException(status_code=404, detail="Submission not found")
+    if submission.user_id != current_user.user_id:
+        raise HTTPException(status_code=403, detail="Not authorized to delete this submission")
+    db.delete(submission)
+    db.commit()
+    return MessageResponse(msg="Submission deleted")
 
 
 @router.post("", response_model=SubmissionResponse, status_code=status.HTTP_201_CREATED)
