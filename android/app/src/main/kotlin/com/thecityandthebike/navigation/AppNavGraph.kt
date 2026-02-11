@@ -1,5 +1,8 @@
 package com.thecityandthebike.navigation
 
+import android.app.DownloadManager
+import android.content.Context
+import android.os.Environment
 import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.ExitTransition
 import androidx.compose.foundation.layout.Box
@@ -10,6 +13,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavBackStackEntry
@@ -31,6 +35,7 @@ import com.thecityandthebike.ui.screens.QrScannerScreen
 import com.thecityandthebike.ui.screens.RegisterScreen
 import com.thecityandthebike.ui.screens.SplashScreen
 import com.thecityandthebike.ui.screens.UserScreen
+import com.thecityandthebike.util.imageUrlToUri
 import com.thecityandthebike.ui.viewmodel.AuthViewModel
 import com.thecityandthebike.ui.viewmodel.BikeViewModel
 import com.thecityandthebike.ui.viewmodel.ImageDetailViewModel
@@ -286,6 +291,7 @@ private fun ImageDetailRoute(
 ) {
     val viewModel: ImageDetailViewModel = hiltViewModel()
     val detailState by viewModel.state.collectAsStateWithLifecycle()
+    val context = LocalContext.current
 
     LaunchedEffect(detailState.isDeleted) {
         if (detailState.isDeleted) {
@@ -307,7 +313,20 @@ private fun ImageDetailRoute(
                 onUserClick = onUserClick,
                 isOwner = detailState.isOwner,
                 isDeleting = detailState.isDeleting,
-                onDelete = { viewModel.deleteSubmission() }
+                onDelete = { viewModel.deleteSubmission() },
+                onDownload = {
+                    detailState.submission?.imageUrl?.let { url ->
+                        val uri = imageUrlToUri(url)
+                        val request = DownloadManager.Request(uri)
+                            .setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
+                            .setDestinationInExternalPublicDir(
+                                Environment.DIRECTORY_DOWNLOADS,
+                                "tcatb_${viewModel.submissionId}.jpg"
+                            )
+                        val dm = context.getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
+                        dm.enqueue(request)
+                    }
+                }
             )
         }
         else -> {
