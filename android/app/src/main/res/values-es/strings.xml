@@ -3,10 +3,7 @@
     <string name="app_name">The City and The Bike</string>
 
     <!-- Onboarding: navigation -->
-    <string name="onboarding_back">Atrás</string>
-    <string name="onboarding_next">Siguiente</string>
     <string name="onboarding_get_started">Comenzar</string>
-    <string name="onboarding_page_indicator">Página %1$d de %2$d</string>
 
     <!-- Onboarding: page 1 -->
     <string name="onboarding_what_is_this_title">¿Qué es esto?</string>

@@ -3,10 +3,7 @@
     <string name="app_name">The City and The Bike</string>
 
     <!-- Onboarding: navigation -->
-    <string name="onboarding_back">Quay lại</string>
-    <string name="onboarding_next">Tiếp theo</string>
     <string name="onboarding_get_started">Bắt đầu</string>
-    <string name="onboarding_page_indicator">Trang %1$d / %2$d</string>
 
     <!-- Onboarding: page 1 -->
     <string name="onboarding_what_is_this_title">Đây là gì?</string>
