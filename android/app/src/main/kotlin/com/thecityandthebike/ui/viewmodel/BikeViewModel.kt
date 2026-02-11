@@ -100,6 +100,12 @@ class BikeViewModel @Inject constructor(
         }
     }
 
+    fun removeSubmission(submissionId: String) {
+        _state.value = _state.value.copy(
+            submissions = _state.value.submissions.filter { it.submissionId != submissionId }
+        )
+    }
+
     fun clearError() {
         _state.value = _state.value.copy(error = null)
     }

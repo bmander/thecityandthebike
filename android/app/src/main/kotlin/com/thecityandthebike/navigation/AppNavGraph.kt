@@ -12,6 +12,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.navigation.NavBackStackEntry
+import androidx.navigation.NavController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
@@ -103,8 +105,9 @@ fun AppNavGraph(onboardingPrefs: OnboardingPrefs) {
             )
         }
 
-        composable<Main> {
+        composable<Main> { backStackEntry ->
             val mainViewModel: MainViewModel = hiltViewModel()
+            ObserveDeletion(backStackEntry) { mainViewModel.removeSubmission(it) }
             MainScreen(
                 viewModel = mainViewModel,
                 isLoggedIn = authState.isLoggedIn,
@@ -140,13 +143,15 @@ fun AppNavGraph(onboardingPrefs: OnboardingPrefs) {
         ) {
             ImageDetailRoute(
                 onBack = { navController.popBackStack() },
+                onDeleted = navController.handleDeletion(),
                 onBikeClick = { bikeQrId -> navController.navigate(Bike(bikeQrId)) },
                 onUserClick = { userId -> navController.navigate(User(userId)) }
             )
         }
 
-        composable<Bike> {
+        composable<Bike> { backStackEntry ->
             val bikeViewModel: BikeViewModel = hiltViewModel()
+            ObserveDeletion(backStackEntry) { bikeViewModel.removeSubmission(it) }
             BikeScreen(
                 viewModel = bikeViewModel,
                 onBack = { navController.popBackStack() },
@@ -164,12 +169,14 @@ fun AppNavGraph(onboardingPrefs: OnboardingPrefs) {
         ) {
             ImageDetailRoute(
                 onBack = { navController.popBackStack() },
+                onDeleted = navController.handleDeletion(),
                 onUserClick = { userId -> navController.navigate(User(userId)) }
             )
         }
 
-        composable<User> {
+        composable<User> { backStackEntry ->
             val userViewModel: UserViewModel = hiltViewModel()
+            ObserveDeletion(backStackEntry) { userViewModel.removeSubmission(it) }
             UserScreen(
                 viewModel = userViewModel,
                 onBack = { navController.popBackStack() },
@@ -187,6 +194,7 @@ fun AppNavGraph(onboardingPrefs: OnboardingPrefs) {
         ) {
             ImageDetailRoute(
                 onBack = { navController.popBackStack() },
+                onDeleted = navController.handleDeletion(),
                 onBikeClick = { bikeQrId -> navController.navigate(Bike(bikeQrId)) }
             )
         }
@@ -246,9 +254,33 @@ fun AppNavGraph(onboardingPrefs: OnboardingPrefs) {
     }
 }
 
+private const val DELETED_SUBMISSION_KEY = "deletedSubmissionId"
+
+@Composable
+private fun ObserveDeletion(
+    backStackEntry: NavBackStackEntry,
+    onDeleted: (String) -> Unit
+) {
+    val deletedSubmissionId by backStackEntry.savedStateHandle
+        .getStateFlow<String?>(DELETED_SUBMISSION_KEY, null)
+        .collectAsStateWithLifecycle()
+    LaunchedEffect(deletedSubmissionId) {
+        deletedSubmissionId?.let { id ->
+            onDeleted(id)
+            backStackEntry.savedStateHandle[DELETED_SUBMISSION_KEY] = null
+        }
+    }
+}
+
+private fun NavController.handleDeletion(): (String) -> Unit = { submissionId ->
+    previousBackStackEntry?.savedStateHandle?.set(DELETED_SUBMISSION_KEY, submissionId)
+    popBackStack()
+}
+
 @Composable
 private fun ImageDetailRoute(
     onBack: () -> Unit,
+    onDeleted: (String) -> Unit,
     onBikeClick: ((String) -> Unit)? = null,
     onUserClick: ((String) -> Unit)? = null
 ) {
@@ -257,7 +289,7 @@ private fun ImageDetailRoute(
 
     LaunchedEffect(detailState.isDeleted) {
         if (detailState.isDeleted) {
-            onBack()
+            onDeleted(viewModel.submissionId)
         }
     }
 
