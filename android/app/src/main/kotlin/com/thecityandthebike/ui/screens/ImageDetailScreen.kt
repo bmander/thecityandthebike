@@ -3,20 +3,30 @@ package com.thecityandthebike.ui.screens
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.spring
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import com.thecityandthebike.ui.gestures.detectPinchGestures
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
+import androidx.compose.material.icons.filled.CalendarToday
+import androidx.compose.material.icons.automirrored.filled.DirectionsBike
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -31,14 +41,18 @@ import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.painter.ColorPainter
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
@@ -169,48 +183,114 @@ fun ImageDetailScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            Column(modifier = Modifier.padding(horizontal = 16.dp)) {
+            Column(
+                modifier = Modifier.padding(horizontal = 32.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
                 submission.username?.let { username ->
-                    Text(
-                        text = username,
-                        style = MaterialTheme.typography.titleMedium,
-                        color = if (onUserClick != null) MaterialTheme.colorScheme.primary
-                            else MaterialTheme.colorScheme.onSurface,
-                        modifier = if (onUserClick != null) {
-                            Modifier.clickable { onUserClick(submission.userId) }
-                        } else {
-                            Modifier
-                        }
-                    )
-                    Spacer(modifier = Modifier.height(4.dp))
+                    InfoRow(
+                        icon = Icons.Default.Person,
+                        iconDescription = "User",
+                        onClick = onUserClick?.let { { it(submission.userId) } }
+                    ) {
+                        Text(
+                            text = username,
+                            style = MaterialTheme.typography.headlineSmall
+                        )
+                    }
                 }
 
-                val bikeLabel = if (submission.provider != null) {
-                    "${submission.provider.replaceFirstChar { it.uppercase() }}: ${submission.bikeQrId}"
-                } else {
-                    "Bike: ${submission.bikeQrId}"
+                InfoRow(
+                    icon = Icons.AutoMirrored.Filled.DirectionsBike,
+                    iconDescription = "Bike",
+                    onClick = onBikeClick?.let { { it(submission.bikeQrId) } }
+                ) {
+                    BikeIdBadge(
+                        provider = submission.provider,
+                        bikeQrId = submission.bikeQrId
+                    )
                 }
-                Text(
-                    text = bikeLabel,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = if (onBikeClick != null) MaterialTheme.colorScheme.primary
-                        else MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = if (onBikeClick != null) {
-                        Modifier.clickable { onBikeClick(submission.bikeQrId) }
-                    } else {
-                        Modifier
-                    }
-                )
 
                 formattedDate?.let { date ->
-                    Spacer(modifier = Modifier.height(4.dp))
-                    Text(
-                        text = date,
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
+                    InfoRow(
+                        icon = Icons.Default.CalendarToday,
+                        iconDescription = "Date"
+                    ) {
+                        Text(
+                            text = date,
+                            style = MaterialTheme.typography.headlineSmall
+                        )
+                    }
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun InfoRow(
+    icon: ImageVector,
+    iconDescription: String,
+    onClick: (() -> Unit)? = null,
+    content: @Composable () -> Unit
+) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = if (onClick != null) {
+            Modifier
+                .fillMaxWidth()
+                .clickable(onClick = onClick)
+        } else {
+            Modifier.fillMaxWidth()
+        }
+    ) {
+        Icon(
+            imageVector = icon,
+            contentDescription = iconDescription,
+            modifier = Modifier.size(28.dp),
+            tint = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+        Spacer(modifier = Modifier.width(16.dp))
+        Box(modifier = Modifier.weight(1f)) {
+            content()
+        }
+        if (onClick != null) {
+            Icon(
+                imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                contentDescription = "Navigate",
+                tint = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+    }
+}
+
+@Composable
+private fun BikeIdBadge(provider: String?, bikeQrId: String) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier
+            .border(
+                width = 1.dp,
+                color = MaterialTheme.colorScheme.outline,
+                shape = RoundedCornerShape(8.dp)
+            )
+            .clip(RoundedCornerShape(8.dp))
+    ) {
+        if (provider != null) {
+            Text(
+                text = provider.replaceFirstChar { it.uppercase() },
+                style = MaterialTheme.typography.labelLarge,
+                color = MaterialTheme.colorScheme.onPrimary,
+                modifier = Modifier
+                    .background(MaterialTheme.colorScheme.primary)
+                    .padding(horizontal = 10.dp, vertical = 6.dp)
+            )
+        }
+        Text(
+            text = bikeQrId,
+            style = MaterialTheme.typography.headlineSmall,
+            fontFamily = FontFamily.Monospace,
+            modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
+        )
     }
 }

@@ -27,7 +27,7 @@ class ImageDetailViewModel @Inject constructor(
 
     val submissionId: String = checkNotNull(savedStateHandle["submissionId"])
 
-    private val _state = MutableStateFlow(ImageDetailState())
+    private val _state = MutableStateFlow(ImageDetailState(isLoading = true))
     val state: StateFlow<ImageDetailState> = _state.asStateFlow()
 
     init {
