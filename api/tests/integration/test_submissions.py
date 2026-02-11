@@ -2,6 +2,7 @@ from datetime import date, datetime, timezone
 
 from app.dependencies import create_access_token, get_password_hash
 from app.models import User, Bike, FenderSubmission
+from tests.conftest import create_test_image
 
 
 class TestGetSubmissions:
@@ -210,6 +211,52 @@ class TestDeleteSubmission:
             f"/submissions/{test_submission.submission_id}"
         )
         assert response.status_code == 401
+
+    def test_delete_submission_removes_stored_images(
+        self, client, auth_headers, test_user, test_bike, db_session
+    ):
+        """Deleting a submission should remove its image files from storage."""
+        # Upload a real image to create files on disk
+        image = create_test_image()
+        upload_resp = client.post(
+            "/uploads/images",
+            files={"image": ("photo.jpg", image, "image/jpeg")},
+            headers=auth_headers,
+        )
+        assert upload_resp.status_code == 201
+        upload_data = upload_resp.json()
+        original_url = upload_data["url"]
+        thumbnail_url = upload_data["thumbnail_url"]
+
+        # Verify the files are accessible
+        assert client.get(original_url).status_code == 200
+        assert client.get(thumbnail_url).status_code == 200
+
+        # Create a submission referencing those uploaded images
+        submission = FenderSubmission(
+            user_id=test_user.user_id,
+            bike_id=test_bike.id,
+            image_url_original=original_url,
+            image_url_thumbnail=thumbnail_url,
+            image_url_processed=None,
+            captured_date=date.today(),
+        )
+        db_session.add(submission)
+        db_session.commit()
+        db_session.refresh(submission)
+        submission_id = submission.submission_id
+        db_session.expunge(submission)
+
+        # Delete the submission
+        delete_resp = client.delete(
+            f"/submissions/{submission_id}",
+            headers=auth_headers,
+        )
+        assert delete_resp.status_code == 200
+
+        # Verify the image files are gone
+        assert client.get(original_url).status_code == 404
+        assert client.get(thumbnail_url).status_code == 404
 
 
 class TestCreateSubmission:
