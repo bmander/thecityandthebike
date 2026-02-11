@@ -15,6 +15,14 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 
+private const val MAX_ID_LENGTH = 16
+
+private fun abbreviateId(id: String): String {
+    if (id.length <= MAX_ID_LENGTH) return id
+    val keep = (MAX_ID_LENGTH - 1) / 2
+    return id.take(keep) + "\u2026" + id.takeLast(keep)
+}
+
 @Composable
 fun BikeIdBadge(provider: String?, bikeQrId: String) {
     Row(
@@ -33,17 +41,18 @@ fun BikeIdBadge(provider: String?, bikeQrId: String) {
                 style = MaterialTheme.typography.labelLarge,
                 color = MaterialTheme.colorScheme.onPrimary,
                 modifier = Modifier
-                    .padding(3.dp)
+                    .padding(start = 5.dp, top = 3.dp, bottom = 3.dp, end = 3.dp)
                     .background(MaterialTheme.colorScheme.primary, RoundedCornerShape(4.dp))
                     .padding(horizontal = 4.dp, vertical = 1.dp)
             )
         }
         Text(
-            text = bikeQrId,
+            text = abbreviateId(bikeQrId),
+            maxLines = 1,
             style = MaterialTheme.typography.headlineSmall,
             fontFamily = FontFamily.Monospace,
             fontWeight = FontWeight.Bold,
-            modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
+            modifier = Modifier.padding(horizontal = 4.dp, vertical = .5.dp)
         )
     }
 }
