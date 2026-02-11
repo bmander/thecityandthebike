@@ -1,8 +1,11 @@
 package com.thecityandthebike.data.repository
 
 import com.thecityandthebike.data.api.ApiService
+import com.thecityandthebike.data.model.ApiResult
+import com.thecityandthebike.data.model.AppError
 import com.thecityandthebike.data.model.dto.BikeDetailResponse
 import com.thecityandthebike.data.model.dto.PaginatedSubmissions
+import java.io.IOException
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -10,18 +13,20 @@ import javax.inject.Singleton
 class BikeRepository @Inject constructor(
     private val apiService: ApiService
 ) {
-    suspend fun getBikeDetail(bikeQrId: String): SubmissionResult<BikeDetailResponse> {
+    suspend fun getBikeDetail(bikeQrId: String): ApiResult<BikeDetailResponse> {
         return try {
             val response = apiService.getBikeDetail(bikeQrId)
             if (response.isSuccessful) {
                 response.body()?.let { detail ->
-                    SubmissionResult.Success(detail)
-                } ?: SubmissionResult.Error("Empty response")
+                    ApiResult.Success(detail)
+                } ?: ApiResult.Error(AppError.Server(response.code(), "Empty response"))
             } else {
-                SubmissionResult.Error("Failed to fetch bike details")
+                ApiResult.Error(AppError.Server(response.code(), "Failed to fetch bike details"))
             }
+        } catch (e: IOException) {
+            ApiResult.Error(AppError.Network(e))
         } catch (e: Exception) {
-            SubmissionResult.Error(e.message ?: "Network error")
+            ApiResult.Error(AppError.Unknown(e))
         }
     }
 
@@ -29,20 +34,22 @@ class BikeRepository @Inject constructor(
         bikeQrId: String,
         limit: Int = 20,
         offset: Int = 0
-    ): SubmissionResult<PaginatedSubmissions> {
+    ): ApiResult<PaginatedSubmissions> {
         return try {
             val response = apiService.getBikeSubmissions(bikeQrId, limit = limit, offset = offset)
             if (response.isSuccessful) {
                 response.body()?.let { paginated ->
-                    SubmissionResult.Success(paginated)
-                } ?: SubmissionResult.Success(
+                    ApiResult.Success(paginated)
+                } ?: ApiResult.Success(
                     PaginatedSubmissions(items = emptyList(), total = 0, limit = limit, offset = offset)
                 )
             } else {
-                SubmissionResult.Error("Failed to fetch bike submissions")
+                ApiResult.Error(AppError.Server(response.code(), "Failed to fetch bike submissions"))
             }
+        } catch (e: IOException) {
+            ApiResult.Error(AppError.Network(e))
         } catch (e: Exception) {
-            SubmissionResult.Error(e.message ?: "Network error")
+            ApiResult.Error(AppError.Unknown(e))
         }
     }
 }

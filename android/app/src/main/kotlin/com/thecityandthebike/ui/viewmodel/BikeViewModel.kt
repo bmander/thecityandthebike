@@ -3,10 +3,10 @@ package com.thecityandthebike.ui.viewmodel
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.thecityandthebike.data.model.ApiResult
 import com.thecityandthebike.data.model.dto.BikeDetailResponse
 import com.thecityandthebike.data.model.dto.SubmissionResponse
 import com.thecityandthebike.data.repository.BikeRepository
-import com.thecityandthebike.data.repository.SubmissionResult
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -43,30 +43,30 @@ class BikeViewModel @Inject constructor(
             _state.value = _state.value.copy(isLoading = true, error = null)
 
             when (val detailResult = bikeRepository.getBikeDetail(bikeQrId)) {
-                is SubmissionResult.Success -> {
+                is ApiResult.Success -> {
                     _state.value = _state.value.copy(bikeDetail = detailResult.data)
                 }
-                is SubmissionResult.Error -> {
+                is ApiResult.Error -> {
                     _state.value = _state.value.copy(
                         isLoading = false,
-                        error = detailResult.message
+                        error = detailResult.error.displayMessage
                     )
                     return@launch
                 }
             }
 
             when (val subsResult = bikeRepository.getBikeSubmissions(bikeQrId)) {
-                is SubmissionResult.Success -> {
+                is ApiResult.Success -> {
                     _state.value = _state.value.copy(
                         isLoading = false,
                         submissions = subsResult.data.items,
                         hasMorePages = subsResult.data.items.size + subsResult.data.offset < subsResult.data.total
                     )
                 }
-                is SubmissionResult.Error -> {
+                is ApiResult.Error -> {
                     _state.value = _state.value.copy(
                         isLoading = false,
-                        error = subsResult.message
+                        error = subsResult.error.displayMessage
                     )
                 }
             }
@@ -82,7 +82,7 @@ class BikeViewModel @Inject constructor(
             val offset = _state.value.submissions.size
 
             when (val result = bikeRepository.getBikeSubmissions(bikeQrId, offset = offset)) {
-                is SubmissionResult.Success -> {
+                is ApiResult.Success -> {
                     val newSubmissions = _state.value.submissions + result.data.items
                     _state.value = _state.value.copy(
                         isLoadingMore = false,
@@ -90,10 +90,10 @@ class BikeViewModel @Inject constructor(
                         hasMorePages = newSubmissions.size < result.data.total
                     )
                 }
-                is SubmissionResult.Error -> {
+                is ApiResult.Error -> {
                     _state.value = _state.value.copy(
                         isLoadingMore = false,
-                        error = result.message
+                        error = result.error.displayMessage
                     )
                 }
             }

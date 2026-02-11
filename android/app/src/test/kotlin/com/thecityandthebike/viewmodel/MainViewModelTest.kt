@@ -1,11 +1,12 @@
 package com.thecityandthebike.viewmodel
 
 import android.net.Uri
+import com.thecityandthebike.data.model.ApiResult
+import com.thecityandthebike.data.model.AppError
 import com.thecityandthebike.data.model.dto.PaginatedSubmissions
 import com.thecityandthebike.data.model.dto.SubmissionResponse
 import com.thecityandthebike.data.model.dto.UploadResponse
 import com.thecityandthebike.data.repository.SubmissionRepository
-import com.thecityandthebike.data.repository.SubmissionResult
 import com.thecityandthebike.ui.viewmodel.MainViewModel
 import com.thecityandthebike.util.ImagePreparer
 import io.mockk.coEvery
@@ -65,7 +66,7 @@ class MainViewModelTest {
             )
         )
         val paginated = PaginatedSubmissions(items = submissions, total = 2, limit = 20, offset = 0)
-        coEvery { submissionRepository.getSubmissions(any(), any()) } returns SubmissionResult.Success(paginated)
+        coEvery { submissionRepository.getSubmissions(any(), any()) } returns ApiResult.Success(paginated)
 
         viewModel = createViewModel()
         testDispatcher.scheduler.advanceUntilIdle()
@@ -79,20 +80,20 @@ class MainViewModelTest {
 
     @Test
     fun `loadSubmissions failure should set error state`() = runTest {
-        coEvery { submissionRepository.getSubmissions(any(), any()) } returns SubmissionResult.Error("Network error")
+        coEvery { submissionRepository.getSubmissions(any(), any()) } returns ApiResult.Error(AppError.Network(java.io.IOException("Network error")))
 
         viewModel = createViewModel()
         testDispatcher.scheduler.advanceUntilIdle()
 
         assertTrue(viewModel.state.value.submissions.isEmpty())
         assertFalse(viewModel.state.value.isLoading)
-        assertEquals("Network error", viewModel.state.value.error)
+        assertEquals("Network error. Check your connection and try again.", viewModel.state.value.error)
     }
 
     @Test
     fun `addLocalImage should prepend image to local images list`() = runTest {
         val paginated = PaginatedSubmissions(items = emptyList(), total = 0, limit = 20, offset = 0)
-        coEvery { submissionRepository.getSubmissions(any(), any()) } returns SubmissionResult.Success(paginated)
+        coEvery { submissionRepository.getSubmissions(any(), any()) } returns ApiResult.Success(paginated)
 
         mockkStatic(Uri::class)
         val uri1 = mockk<Uri>()
@@ -113,7 +114,7 @@ class MainViewModelTest {
 
     @Test
     fun `clearError should reset error state`() = runTest {
-        coEvery { submissionRepository.getSubmissions(any(), any()) } returns SubmissionResult.Error("Error")
+        coEvery { submissionRepository.getSubmissions(any(), any()) } returns ApiResult.Error(AppError.Server(500, "Error"))
 
         viewModel = createViewModel()
         testDispatcher.scheduler.advanceUntilIdle()
@@ -130,7 +131,7 @@ class MainViewModelTest {
             SubmissionResponse(submissionId = "2", userId = "user1", bikeQrId = "bike2")
         )
         val firstPaginated = PaginatedSubmissions(items = firstPage, total = 4, limit = 2, offset = 0)
-        coEvery { submissionRepository.getSubmissions(limit = any(), offset = 0) } returns SubmissionResult.Success(firstPaginated)
+        coEvery { submissionRepository.getSubmissions(limit = any(), offset = 0) } returns ApiResult.Success(firstPaginated)
 
         viewModel = createViewModel()
         testDispatcher.scheduler.advanceUntilIdle()
@@ -143,7 +144,7 @@ class MainViewModelTest {
             SubmissionResponse(submissionId = "4", userId = "user1", bikeQrId = "bike4")
         )
         val secondPaginated = PaginatedSubmissions(items = secondPage, total = 4, limit = 2, offset = 2)
-        coEvery { submissionRepository.getSubmissions(limit = any(), offset = 2) } returns SubmissionResult.Success(secondPaginated)
+        coEvery { submissionRepository.getSubmissions(limit = any(), offset = 2) } returns ApiResult.Success(secondPaginated)
 
         viewModel.loadMoreSubmissions()
         testDispatcher.scheduler.advanceUntilIdle()
@@ -158,7 +159,7 @@ class MainViewModelTest {
     @Test
     fun `loadMoreSubmissions should not load when already loading`() = runTest {
         val paginated = PaginatedSubmissions(items = emptyList(), total = 10, limit = 20, offset = 0)
-        coEvery { submissionRepository.getSubmissions(any(), any()) } returns SubmissionResult.Success(paginated)
+        coEvery { submissionRepository.getSubmissions(any(), any()) } returns ApiResult.Success(paginated)
 
         viewModel = createViewModel()
         testDispatcher.scheduler.advanceUntilIdle()
@@ -167,7 +168,7 @@ class MainViewModelTest {
             items = listOf(SubmissionResponse(submissionId = "1", userId = "u", bikeQrId = "b")),
             total = 1, limit = 20, offset = 0
         )
-        coEvery { submissionRepository.getSubmissions(any(), any()) } returns SubmissionResult.Success(fullPage)
+        coEvery { submissionRepository.getSubmissions(any(), any()) } returns ApiResult.Success(fullPage)
 
         viewModel.loadSubmissions()
         testDispatcher.scheduler.advanceUntilIdle()
@@ -188,7 +189,7 @@ class MainViewModelTest {
             SubmissionResponse(submissionId = "2", userId = "user1", bikeQrId = "bike2")
         )
         val firstPaginated = PaginatedSubmissions(items = firstPage, total = 4, limit = 2, offset = 0)
-        coEvery { submissionRepository.getSubmissions(limit = any(), offset = 0) } returns SubmissionResult.Success(firstPaginated)
+        coEvery { submissionRepository.getSubmissions(limit = any(), offset = 0) } returns ApiResult.Success(firstPaginated)
 
         viewModel = createViewModel()
         testDispatcher.scheduler.advanceUntilIdle()
@@ -196,13 +197,13 @@ class MainViewModelTest {
         assertEquals(2, viewModel.state.value.submissions.size)
         assertTrue(viewModel.state.value.hasMorePages)
 
-        coEvery { submissionRepository.getSubmissions(limit = any(), offset = 2) } returns SubmissionResult.Error("Network error")
+        coEvery { submissionRepository.getSubmissions(limit = any(), offset = 2) } returns ApiResult.Error(AppError.Network(java.io.IOException("Network error")))
 
         viewModel.loadMoreSubmissions()
         testDispatcher.scheduler.advanceUntilIdle()
 
         assertEquals(2, viewModel.state.value.submissions.size)
-        assertEquals("Network error", viewModel.state.value.error)
+        assertEquals("Network error. Check your connection and try again.", viewModel.state.value.error)
         assertFalse(viewModel.state.value.isLoadingMore)
     }
 
@@ -212,7 +213,7 @@ class MainViewModelTest {
             SubmissionResponse(submissionId = "1", userId = "user1", bikeQrId = "bike1")
         )
         val initialPaginated = PaginatedSubmissions(items = initialPage, total = 1, limit = 20, offset = 0)
-        coEvery { submissionRepository.getSubmissions(limit = any(), offset = 0) } returns SubmissionResult.Success(initialPaginated)
+        coEvery { submissionRepository.getSubmissions(limit = any(), offset = 0) } returns ApiResult.Success(initialPaginated)
 
         viewModel = createViewModel()
         testDispatcher.scheduler.advanceUntilIdle()
@@ -225,7 +226,7 @@ class MainViewModelTest {
             SubmissionResponse(submissionId = "new-2", userId = "user1", bikeQrId = "bike2")
         )
         val refreshedPaginated = PaginatedSubmissions(items = refreshedPage, total = 2, limit = 20, offset = 0)
-        coEvery { submissionRepository.getSubmissions(limit = any(), offset = 0) } returns SubmissionResult.Success(refreshedPaginated)
+        coEvery { submissionRepository.getSubmissions(limit = any(), offset = 0) } returns ApiResult.Success(refreshedPaginated)
 
         viewModel.refreshSubmissions()
         testDispatcher.scheduler.advanceUntilIdle()
@@ -243,28 +244,28 @@ class MainViewModelTest {
             SubmissionResponse(submissionId = "1", userId = "user1", bikeQrId = "bike1")
         )
         val initialPaginated = PaginatedSubmissions(items = initialPage, total = 1, limit = 20, offset = 0)
-        coEvery { submissionRepository.getSubmissions(limit = any(), offset = 0) } returns SubmissionResult.Success(initialPaginated)
+        coEvery { submissionRepository.getSubmissions(limit = any(), offset = 0) } returns ApiResult.Success(initialPaginated)
 
         viewModel = createViewModel()
         testDispatcher.scheduler.advanceUntilIdle()
 
         assertEquals(1, viewModel.state.value.submissions.size)
 
-        coEvery { submissionRepository.getSubmissions(limit = any(), offset = 0) } returns SubmissionResult.Error("Refresh failed")
+        coEvery { submissionRepository.getSubmissions(limit = any(), offset = 0) } returns ApiResult.Error(AppError.Server(500, "Refresh failed"))
 
         viewModel.refreshSubmissions()
         testDispatcher.scheduler.advanceUntilIdle()
 
         assertEquals(1, viewModel.state.value.submissions.size)
         assertEquals("1", viewModel.state.value.submissions[0].submissionId)
-        assertEquals("Refresh failed", viewModel.state.value.error)
+        assertEquals("Server error. Please try again later.", viewModel.state.value.error)
         assertFalse(viewModel.state.value.isRefreshing)
     }
 
     @Test
     fun `upload success should add submission to state`() = runTest {
         val paginated = PaginatedSubmissions(items = emptyList(), total = 0, limit = 20, offset = 0)
-        coEvery { submissionRepository.getSubmissions(any(), any()) } returns SubmissionResult.Success(paginated)
+        coEvery { submissionRepository.getSubmissions(any(), any()) } returns ApiResult.Success(paginated)
 
         val uri = mockk<Uri>()
         val imageFile = mockk<File>(relaxed = true)
@@ -275,7 +276,7 @@ class MainViewModelTest {
             filename = "uploaded.jpg",
             thumbnailUrl = "http://example.com/uploaded_thumb.jpg"
         )
-        coEvery { submissionRepository.uploadImage(imageFile) } returns SubmissionResult.Success(uploadResponse)
+        coEvery { submissionRepository.uploadImage(imageFile) } returns ApiResult.Success(uploadResponse)
 
         val submissionResponse = SubmissionResponse(
             submissionId = "new-1",
@@ -283,7 +284,7 @@ class MainViewModelTest {
             bikeQrId = "bike1",
             imageUrlOriginal = "http://example.com/uploaded.jpg"
         )
-        coEvery { submissionRepository.createSubmission(any()) } returns SubmissionResult.Success(submissionResponse)
+        coEvery { submissionRepository.createSubmission(any()) } returns ApiResult.Success(submissionResponse)
 
         viewModel = createViewModel()
         testDispatcher.scheduler.advanceUntilIdle()
@@ -302,13 +303,13 @@ class MainViewModelTest {
     @Test
     fun `upload failure should set error state`() = runTest {
         val paginated = PaginatedSubmissions(items = emptyList(), total = 0, limit = 20, offset = 0)
-        coEvery { submissionRepository.getSubmissions(any(), any()) } returns SubmissionResult.Success(paginated)
+        coEvery { submissionRepository.getSubmissions(any(), any()) } returns ApiResult.Success(paginated)
 
         val uri = mockk<Uri>()
         val imageFile = mockk<File>(relaxed = true)
         coEvery { imagePreparer.prepareImageFile(uri) } returns imageFile
 
-        coEvery { submissionRepository.uploadImage(imageFile) } returns SubmissionResult.Error("Upload failed")
+        coEvery { submissionRepository.uploadImage(imageFile) } returns ApiResult.Error(AppError.Server(500, "Upload failed"))
 
         viewModel = createViewModel()
         testDispatcher.scheduler.advanceUntilIdle()
@@ -318,14 +319,14 @@ class MainViewModelTest {
         testDispatcher.scheduler.advanceUntilIdle()
 
         assertFalse(viewModel.state.value.isUploading)
-        assertEquals("Upload failed", viewModel.state.value.error)
+        assertEquals("Server error. Please try again later.", viewModel.state.value.error)
         assertTrue(viewModel.state.value.submissions.isEmpty())
     }
 
     @Test
     fun `submission creation failure should set error state`() = runTest {
         val paginated = PaginatedSubmissions(items = emptyList(), total = 0, limit = 20, offset = 0)
-        coEvery { submissionRepository.getSubmissions(any(), any()) } returns SubmissionResult.Success(paginated)
+        coEvery { submissionRepository.getSubmissions(any(), any()) } returns ApiResult.Success(paginated)
 
         val uri = mockk<Uri>()
         val imageFile = mockk<File>(relaxed = true)
@@ -336,8 +337,8 @@ class MainViewModelTest {
             filename = "uploaded.jpg",
             thumbnailUrl = "http://example.com/uploaded_thumb.jpg"
         )
-        coEvery { submissionRepository.uploadImage(imageFile) } returns SubmissionResult.Success(uploadResponse)
-        coEvery { submissionRepository.createSubmission(any()) } returns SubmissionResult.Error("Create failed")
+        coEvery { submissionRepository.uploadImage(imageFile) } returns ApiResult.Success(uploadResponse)
+        coEvery { submissionRepository.createSubmission(any()) } returns ApiResult.Error(AppError.Server(500, "Create failed"))
 
         viewModel = createViewModel()
         testDispatcher.scheduler.advanceUntilIdle()
@@ -347,14 +348,14 @@ class MainViewModelTest {
         testDispatcher.scheduler.advanceUntilIdle()
 
         assertFalse(viewModel.state.value.isUploading)
-        assertEquals("Create failed", viewModel.state.value.error)
+        assertEquals("Server error. Please try again later.", viewModel.state.value.error)
         assertTrue(viewModel.state.value.submissions.isEmpty())
     }
 
     @Test
     fun `file conversion failure should set error and not attempt upload`() = runTest {
         val paginated = PaginatedSubmissions(items = emptyList(), total = 0, limit = 20, offset = 0)
-        coEvery { submissionRepository.getSubmissions(any(), any()) } returns SubmissionResult.Success(paginated)
+        coEvery { submissionRepository.getSubmissions(any(), any()) } returns ApiResult.Success(paginated)
 
         val uri = mockk<Uri>()
         coEvery { imagePreparer.prepareImageFile(uri) } returns null

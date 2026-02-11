@@ -1,10 +1,11 @@
 package com.thecityandthebike.viewmodel
 
 import androidx.lifecycle.SavedStateHandle
+import com.thecityandthebike.data.model.ApiResult
+import com.thecityandthebike.data.model.AppError
 import com.thecityandthebike.data.model.dto.PaginatedSubmissions
 import com.thecityandthebike.data.model.dto.SubmissionResponse
 import com.thecityandthebike.data.model.dto.UserDetailResponse
-import com.thecityandthebike.data.repository.SubmissionResult
 import com.thecityandthebike.data.repository.UserRepository
 import com.thecityandthebike.ui.viewmodel.UserViewModel
 import io.mockk.coEvery
@@ -61,8 +62,8 @@ class UserViewModelTest {
         )
         val paginated = PaginatedSubmissions(items = submissions, total = 2, limit = 20, offset = 0)
 
-        coEvery { userRepository.getUserDetail(testUserId) } returns SubmissionResult.Success(testUserDetail)
-        coEvery { userRepository.getUserSubmissions(testUserId, any(), any()) } returns SubmissionResult.Success(paginated)
+        coEvery { userRepository.getUserDetail(testUserId) } returns ApiResult.Success(testUserDetail)
+        coEvery { userRepository.getUserSubmissions(testUserId, any(), any()) } returns ApiResult.Success(paginated)
 
         val viewModel = createViewModel()
         testDispatcher.scheduler.advanceUntilIdle()
@@ -79,7 +80,7 @@ class UserViewModelTest {
 
     @Test
     fun `loadUser detail failure should set error state`() = runTest {
-        coEvery { userRepository.getUserDetail(testUserId) } returns SubmissionResult.Error("Not found")
+        coEvery { userRepository.getUserDetail(testUserId) } returns ApiResult.Error(AppError.Server(404, "Not found"))
 
         val viewModel = createViewModel()
         testDispatcher.scheduler.advanceUntilIdle()
@@ -87,13 +88,13 @@ class UserViewModelTest {
         val state = viewModel.state.value
         assertFalse(state.isLoading)
         assertNull(state.userDetail)
-        assertEquals("Not found", state.error)
+        assertEquals("Server error. Please try again later.", state.error)
     }
 
     @Test
     fun `loadUser submissions failure should set error but keep detail`() = runTest {
-        coEvery { userRepository.getUserDetail(testUserId) } returns SubmissionResult.Success(testUserDetail)
-        coEvery { userRepository.getUserSubmissions(testUserId, any(), any()) } returns SubmissionResult.Error("Network error")
+        coEvery { userRepository.getUserDetail(testUserId) } returns ApiResult.Success(testUserDetail)
+        coEvery { userRepository.getUserSubmissions(testUserId, any(), any()) } returns ApiResult.Error(AppError.Network(java.io.IOException("Network error")))
 
         val viewModel = createViewModel()
         testDispatcher.scheduler.advanceUntilIdle()
@@ -102,7 +103,7 @@ class UserViewModelTest {
         assertFalse(state.isLoading)
         assertNotNull(state.userDetail)
         assertTrue(state.submissions.isEmpty())
-        assertEquals("Network error", state.error)
+        assertEquals("Network error. Check your connection and try again.", state.error)
     }
 
     @Test
@@ -113,8 +114,8 @@ class UserViewModelTest {
         )
         val firstPaginated = PaginatedSubmissions(items = firstPage, total = 4, limit = 2, offset = 0)
 
-        coEvery { userRepository.getUserDetail(testUserId) } returns SubmissionResult.Success(testUserDetail)
-        coEvery { userRepository.getUserSubmissions(testUserId, limit = any(), offset = 0) } returns SubmissionResult.Success(firstPaginated)
+        coEvery { userRepository.getUserDetail(testUserId) } returns ApiResult.Success(testUserDetail)
+        coEvery { userRepository.getUserSubmissions(testUserId, limit = any(), offset = 0) } returns ApiResult.Success(firstPaginated)
 
         val viewModel = createViewModel()
         testDispatcher.scheduler.advanceUntilIdle()
@@ -127,7 +128,7 @@ class UserViewModelTest {
             SubmissionResponse(submissionId = "4", userId = testUserId, bikeQrId = "BIKE-004")
         )
         val secondPaginated = PaginatedSubmissions(items = secondPage, total = 4, limit = 2, offset = 2)
-        coEvery { userRepository.getUserSubmissions(testUserId, limit = any(), offset = 2) } returns SubmissionResult.Success(secondPaginated)
+        coEvery { userRepository.getUserSubmissions(testUserId, limit = any(), offset = 2) } returns ApiResult.Success(secondPaginated)
 
         viewModel.loadMoreSubmissions()
         testDispatcher.scheduler.advanceUntilIdle()
@@ -144,8 +145,8 @@ class UserViewModelTest {
         )
         val paginated = PaginatedSubmissions(items = submissions, total = 1, limit = 20, offset = 0)
 
-        coEvery { userRepository.getUserDetail(testUserId) } returns SubmissionResult.Success(testUserDetail)
-        coEvery { userRepository.getUserSubmissions(testUserId, any(), any()) } returns SubmissionResult.Success(paginated)
+        coEvery { userRepository.getUserDetail(testUserId) } returns ApiResult.Success(testUserDetail)
+        coEvery { userRepository.getUserSubmissions(testUserId, any(), any()) } returns ApiResult.Success(paginated)
 
         val viewModel = createViewModel()
         testDispatcher.scheduler.advanceUntilIdle()
@@ -166,25 +167,25 @@ class UserViewModelTest {
         )
         val firstPaginated = PaginatedSubmissions(items = firstPage, total = 4, limit = 2, offset = 0)
 
-        coEvery { userRepository.getUserDetail(testUserId) } returns SubmissionResult.Success(testUserDetail)
-        coEvery { userRepository.getUserSubmissions(testUserId, limit = any(), offset = 0) } returns SubmissionResult.Success(firstPaginated)
+        coEvery { userRepository.getUserDetail(testUserId) } returns ApiResult.Success(testUserDetail)
+        coEvery { userRepository.getUserSubmissions(testUserId, limit = any(), offset = 0) } returns ApiResult.Success(firstPaginated)
 
         val viewModel = createViewModel()
         testDispatcher.scheduler.advanceUntilIdle()
 
-        coEvery { userRepository.getUserSubmissions(testUserId, limit = any(), offset = 2) } returns SubmissionResult.Error("Network error")
+        coEvery { userRepository.getUserSubmissions(testUserId, limit = any(), offset = 2) } returns ApiResult.Error(AppError.Network(java.io.IOException("Network error")))
 
         viewModel.loadMoreSubmissions()
         testDispatcher.scheduler.advanceUntilIdle()
 
         assertEquals(2, viewModel.state.value.submissions.size)
-        assertEquals("Network error", viewModel.state.value.error)
+        assertEquals("Network error. Check your connection and try again.", viewModel.state.value.error)
         assertFalse(viewModel.state.value.isLoadingMore)
     }
 
     @Test
     fun `clearError should reset error state`() = runTest {
-        coEvery { userRepository.getUserDetail(testUserId) } returns SubmissionResult.Error("Error")
+        coEvery { userRepository.getUserDetail(testUserId) } returns ApiResult.Error(AppError.Server(500, "Error"))
 
         val viewModel = createViewModel()
         testDispatcher.scheduler.advanceUntilIdle()
@@ -196,9 +197,9 @@ class UserViewModelTest {
 
     @Test
     fun `userId should come from SavedStateHandle`() = runTest {
-        coEvery { userRepository.getUserDetail(testUserId) } returns SubmissionResult.Success(testUserDetail)
+        coEvery { userRepository.getUserDetail(testUserId) } returns ApiResult.Success(testUserDetail)
         coEvery { userRepository.getUserSubmissions(testUserId, any(), any()) } returns
-            SubmissionResult.Success(PaginatedSubmissions(items = emptyList(), total = 0, limit = 20, offset = 0))
+            ApiResult.Success(PaginatedSubmissions(items = emptyList(), total = 0, limit = 20, offset = 0))
 
         val viewModel = createViewModel()
         assertEquals(testUserId, viewModel.userId)

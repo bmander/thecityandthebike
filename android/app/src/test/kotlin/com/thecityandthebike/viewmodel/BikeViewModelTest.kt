@@ -1,11 +1,12 @@
 package com.thecityandthebike.viewmodel
 
 import androidx.lifecycle.SavedStateHandle
+import com.thecityandthebike.data.model.ApiResult
+import com.thecityandthebike.data.model.AppError
 import com.thecityandthebike.data.model.dto.BikeDetailResponse
 import com.thecityandthebike.data.model.dto.PaginatedSubmissions
 import com.thecityandthebike.data.model.dto.SubmissionResponse
 import com.thecityandthebike.data.repository.BikeRepository
-import com.thecityandthebike.data.repository.SubmissionResult
 import com.thecityandthebike.ui.viewmodel.BikeViewModel
 import io.mockk.coEvery
 import io.mockk.mockk
@@ -63,8 +64,8 @@ class BikeViewModelTest {
         )
         val paginated = PaginatedSubmissions(items = submissions, total = 2, limit = 20, offset = 0)
 
-        coEvery { bikeRepository.getBikeDetail(testBikeQrId) } returns SubmissionResult.Success(testBikeDetail)
-        coEvery { bikeRepository.getBikeSubmissions(testBikeQrId, any(), any()) } returns SubmissionResult.Success(paginated)
+        coEvery { bikeRepository.getBikeDetail(testBikeQrId) } returns ApiResult.Success(testBikeDetail)
+        coEvery { bikeRepository.getBikeSubmissions(testBikeQrId, any(), any()) } returns ApiResult.Success(paginated)
 
         val viewModel = createViewModel()
         testDispatcher.scheduler.advanceUntilIdle()
@@ -81,7 +82,7 @@ class BikeViewModelTest {
 
     @Test
     fun `loadBike detail failure should set error state`() = runTest {
-        coEvery { bikeRepository.getBikeDetail(testBikeQrId) } returns SubmissionResult.Error("Not found")
+        coEvery { bikeRepository.getBikeDetail(testBikeQrId) } returns ApiResult.Error(AppError.Server(404, "Not found"))
 
         val viewModel = createViewModel()
         testDispatcher.scheduler.advanceUntilIdle()
@@ -89,13 +90,13 @@ class BikeViewModelTest {
         val state = viewModel.state.value
         assertFalse(state.isLoading)
         assertNull(state.bikeDetail)
-        assertEquals("Not found", state.error)
+        assertEquals("Server error. Please try again later.", state.error)
     }
 
     @Test
     fun `loadBike submissions failure should set error but keep detail`() = runTest {
-        coEvery { bikeRepository.getBikeDetail(testBikeQrId) } returns SubmissionResult.Success(testBikeDetail)
-        coEvery { bikeRepository.getBikeSubmissions(testBikeQrId, any(), any()) } returns SubmissionResult.Error("Network error")
+        coEvery { bikeRepository.getBikeDetail(testBikeQrId) } returns ApiResult.Success(testBikeDetail)
+        coEvery { bikeRepository.getBikeSubmissions(testBikeQrId, any(), any()) } returns ApiResult.Error(AppError.Network(java.io.IOException("Network error")))
 
         val viewModel = createViewModel()
         testDispatcher.scheduler.advanceUntilIdle()
@@ -104,7 +105,7 @@ class BikeViewModelTest {
         assertFalse(state.isLoading)
         assertNotNull(state.bikeDetail)
         assertTrue(state.submissions.isEmpty())
-        assertEquals("Network error", state.error)
+        assertEquals("Network error. Check your connection and try again.", state.error)
     }
 
     @Test
@@ -115,8 +116,8 @@ class BikeViewModelTest {
         )
         val firstPaginated = PaginatedSubmissions(items = firstPage, total = 4, limit = 2, offset = 0)
 
-        coEvery { bikeRepository.getBikeDetail(testBikeQrId) } returns SubmissionResult.Success(testBikeDetail)
-        coEvery { bikeRepository.getBikeSubmissions(testBikeQrId, limit = any(), offset = 0) } returns SubmissionResult.Success(firstPaginated)
+        coEvery { bikeRepository.getBikeDetail(testBikeQrId) } returns ApiResult.Success(testBikeDetail)
+        coEvery { bikeRepository.getBikeSubmissions(testBikeQrId, limit = any(), offset = 0) } returns ApiResult.Success(firstPaginated)
 
         val viewModel = createViewModel()
         testDispatcher.scheduler.advanceUntilIdle()
@@ -129,7 +130,7 @@ class BikeViewModelTest {
             SubmissionResponse(submissionId = "4", userId = "user1", bikeQrId = testBikeQrId)
         )
         val secondPaginated = PaginatedSubmissions(items = secondPage, total = 4, limit = 2, offset = 2)
-        coEvery { bikeRepository.getBikeSubmissions(testBikeQrId, limit = any(), offset = 2) } returns SubmissionResult.Success(secondPaginated)
+        coEvery { bikeRepository.getBikeSubmissions(testBikeQrId, limit = any(), offset = 2) } returns ApiResult.Success(secondPaginated)
 
         viewModel.loadMoreSubmissions()
         testDispatcher.scheduler.advanceUntilIdle()
@@ -146,8 +147,8 @@ class BikeViewModelTest {
         )
         val paginated = PaginatedSubmissions(items = submissions, total = 1, limit = 20, offset = 0)
 
-        coEvery { bikeRepository.getBikeDetail(testBikeQrId) } returns SubmissionResult.Success(testBikeDetail)
-        coEvery { bikeRepository.getBikeSubmissions(testBikeQrId, any(), any()) } returns SubmissionResult.Success(paginated)
+        coEvery { bikeRepository.getBikeDetail(testBikeQrId) } returns ApiResult.Success(testBikeDetail)
+        coEvery { bikeRepository.getBikeSubmissions(testBikeQrId, any(), any()) } returns ApiResult.Success(paginated)
 
         val viewModel = createViewModel()
         testDispatcher.scheduler.advanceUntilIdle()
@@ -168,25 +169,25 @@ class BikeViewModelTest {
         )
         val firstPaginated = PaginatedSubmissions(items = firstPage, total = 4, limit = 2, offset = 0)
 
-        coEvery { bikeRepository.getBikeDetail(testBikeQrId) } returns SubmissionResult.Success(testBikeDetail)
-        coEvery { bikeRepository.getBikeSubmissions(testBikeQrId, limit = any(), offset = 0) } returns SubmissionResult.Success(firstPaginated)
+        coEvery { bikeRepository.getBikeDetail(testBikeQrId) } returns ApiResult.Success(testBikeDetail)
+        coEvery { bikeRepository.getBikeSubmissions(testBikeQrId, limit = any(), offset = 0) } returns ApiResult.Success(firstPaginated)
 
         val viewModel = createViewModel()
         testDispatcher.scheduler.advanceUntilIdle()
 
-        coEvery { bikeRepository.getBikeSubmissions(testBikeQrId, limit = any(), offset = 2) } returns SubmissionResult.Error("Network error")
+        coEvery { bikeRepository.getBikeSubmissions(testBikeQrId, limit = any(), offset = 2) } returns ApiResult.Error(AppError.Network(java.io.IOException("Network error")))
 
         viewModel.loadMoreSubmissions()
         testDispatcher.scheduler.advanceUntilIdle()
 
         assertEquals(2, viewModel.state.value.submissions.size)
-        assertEquals("Network error", viewModel.state.value.error)
+        assertEquals("Network error. Check your connection and try again.", viewModel.state.value.error)
         assertFalse(viewModel.state.value.isLoadingMore)
     }
 
     @Test
     fun `clearError should reset error state`() = runTest {
-        coEvery { bikeRepository.getBikeDetail(testBikeQrId) } returns SubmissionResult.Error("Error")
+        coEvery { bikeRepository.getBikeDetail(testBikeQrId) } returns ApiResult.Error(AppError.Server(500, "Error"))
 
         val viewModel = createViewModel()
         testDispatcher.scheduler.advanceUntilIdle()
@@ -198,9 +199,9 @@ class BikeViewModelTest {
 
     @Test
     fun `bikeQrId should come from SavedStateHandle`() = runTest {
-        coEvery { bikeRepository.getBikeDetail(testBikeQrId) } returns SubmissionResult.Success(testBikeDetail)
+        coEvery { bikeRepository.getBikeDetail(testBikeQrId) } returns ApiResult.Success(testBikeDetail)
         coEvery { bikeRepository.getBikeSubmissions(testBikeQrId, any(), any()) } returns
-            SubmissionResult.Success(PaginatedSubmissions(items = emptyList(), total = 0, limit = 20, offset = 0))
+            ApiResult.Success(PaginatedSubmissions(items = emptyList(), total = 0, limit = 20, offset = 0))
 
         val viewModel = createViewModel()
         assertEquals(testBikeQrId, viewModel.bikeQrId)

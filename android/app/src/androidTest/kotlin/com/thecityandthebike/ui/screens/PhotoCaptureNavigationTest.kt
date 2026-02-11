@@ -12,9 +12,12 @@ import androidx.navigation.compose.ComposeNavigator
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.testing.TestNavHostController
+import androidx.navigation.toRoute
 import androidx.test.rule.GrantPermissionRule
+import com.thecityandthebike.navigation.Main
+import com.thecityandthebike.navigation.PhotoCapture
 import com.thecityandthebike.setContentWithTheme
-import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNotNull
 import org.junit.Rule
 import org.junit.Test
 
@@ -37,13 +40,13 @@ class PhotoCaptureNavigationTest {
 
             NavHost(
                 navController = navController,
-                startDestination = "main"
+                startDestination = Main
             ) {
-                composable("main") {
+                composable<Main> {
                     Text("Main Screen")
                 }
-                composable("photo_capture/{qrId}") { backStackEntry ->
-                    val qrId = backStackEntry.arguments?.getString("qrId") ?: ""
+                composable<PhotoCapture> { backStackEntry ->
+                    val route = backStackEntry.toRoute<PhotoCapture>()
                     PhotoCaptureScreen(
                         onPhotoCaptured = {},
                         onBack = { navController.popBackStack() }
@@ -53,7 +56,7 @@ class PhotoCaptureNavigationTest {
         }
 
         composeTestRule.runOnUiThread {
-            navController.navigate("photo_capture/test-qr-123")
+            navController.navigate(PhotoCapture(qrId = "test-qr-123"))
         }
 
         composeTestRule.waitForIdle()
@@ -73,12 +76,12 @@ class PhotoCaptureNavigationTest {
 
             NavHost(
                 navController = navController,
-                startDestination = "main"
+                startDestination = Main
             ) {
-                composable("main") {
+                composable<Main> {
                     Text("Main Screen")
                 }
-                composable("photo_capture/{qrId}") {
+                composable<PhotoCapture> {
                     PhotoCaptureScreen(
                         onPhotoCaptured = {},
                         onBack = { navController.popBackStack() }
@@ -88,7 +91,7 @@ class PhotoCaptureNavigationTest {
         }
 
         composeTestRule.runOnUiThread {
-            navController.navigate("photo_capture/test-qr-456")
+            navController.navigate(PhotoCapture(qrId = "test-qr-456"))
         }
 
         composeTestRule.waitForIdle()
@@ -108,12 +111,12 @@ class PhotoCaptureNavigationTest {
 
             NavHost(
                 navController = navController,
-                startDestination = "main"
+                startDestination = Main
             ) {
-                composable("main") {
+                composable<Main> {
                     Text("Main Screen")
                 }
-                composable("photo_capture/{qrId}") {
+                composable<PhotoCapture> {
                     PhotoCaptureScreen(
                         onPhotoCaptured = {},
                         onBack = { navController.popBackStack() }
@@ -123,7 +126,7 @@ class PhotoCaptureNavigationTest {
         }
 
         composeTestRule.runOnUiThread {
-            navController.navigate("photo_capture/test-qr-789")
+            navController.navigate(PhotoCapture(qrId = "test-qr-789"))
         }
 
         composeTestRule.waitForIdle()
@@ -143,12 +146,12 @@ class PhotoCaptureNavigationTest {
 
             NavHost(
                 navController = navController,
-                startDestination = "main"
+                startDestination = Main
             ) {
-                composable("main") {
+                composable<Main> {
                     Text("Main Screen")
                 }
-                composable("photo_capture/{qrId}") {
+                composable<PhotoCapture> {
                     PhotoCaptureScreen(
                         onPhotoCaptured = {},
                         onBack = { navController.popBackStack() }
@@ -159,7 +162,7 @@ class PhotoCaptureNavigationTest {
 
         // Navigate with a valid qrId to ensure the route works
         composeTestRule.runOnUiThread {
-            navController.navigate("photo_capture/valid-id")
+            navController.navigate(PhotoCapture(qrId = "valid-id"))
         }
 
         composeTestRule.waitForIdle()
@@ -179,12 +182,12 @@ class PhotoCaptureNavigationTest {
 
             NavHost(
                 navController = navController,
-                startDestination = "main"
+                startDestination = Main
             ) {
-                composable("main") {
+                composable<Main> {
                     Text("Main Screen")
                 }
-                composable("photo_capture/{qrId}") {
+                composable<PhotoCapture> {
                     PhotoCaptureScreen(
                         onPhotoCaptured = {},
                         onBack = { navController.popBackStack() }
@@ -194,7 +197,7 @@ class PhotoCaptureNavigationTest {
         }
 
         composeTestRule.runOnUiThread {
-            navController.navigate("photo_capture/test-qr-back")
+            navController.navigate(PhotoCapture(qrId = "test-qr-back"))
         }
 
         composeTestRule.waitForIdle()
@@ -209,6 +212,6 @@ class PhotoCaptureNavigationTest {
             .onNodeWithText("Main Screen")
             .assertIsDisplayed()
 
-        assertEquals("main", navController.currentDestination?.route)
+        assertNotNull(navController.currentBackStackEntry?.toRoute<Main>())
     }
 }
