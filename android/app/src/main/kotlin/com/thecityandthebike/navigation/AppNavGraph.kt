@@ -103,8 +103,17 @@ fun AppNavGraph(onboardingPrefs: OnboardingPrefs) {
             )
         }
 
-        composable<Main> {
+        composable<Main> { backStackEntry ->
             val mainViewModel: MainViewModel = hiltViewModel()
+            val deletedSubmissionId by backStackEntry.savedStateHandle
+                .getStateFlow<String?>("deletedSubmissionId", null)
+                .collectAsStateWithLifecycle()
+            LaunchedEffect(deletedSubmissionId) {
+                deletedSubmissionId?.let { id ->
+                    mainViewModel.removeSubmission(id)
+                    backStackEntry.savedStateHandle["deletedSubmissionId"] = null
+                }
+            }
             MainScreen(
                 viewModel = mainViewModel,
                 isLoggedIn = authState.isLoggedIn,
@@ -140,13 +149,26 @@ fun AppNavGraph(onboardingPrefs: OnboardingPrefs) {
         ) {
             ImageDetailRoute(
                 onBack = { navController.popBackStack() },
+                onDeleted = { submissionId ->
+                    navController.previousBackStackEntry?.savedStateHandle?.set("deletedSubmissionId", submissionId)
+                    navController.popBackStack()
+                },
                 onBikeClick = { bikeQrId -> navController.navigate(Bike(bikeQrId)) },
                 onUserClick = { userId -> navController.navigate(User(userId)) }
             )
         }
 
-        composable<Bike> {
+        composable<Bike> { backStackEntry ->
             val bikeViewModel: BikeViewModel = hiltViewModel()
+            val deletedSubmissionId by backStackEntry.savedStateHandle
+                .getStateFlow<String?>("deletedSubmissionId", null)
+                .collectAsStateWithLifecycle()
+            LaunchedEffect(deletedSubmissionId) {
+                deletedSubmissionId?.let { id ->
+                    bikeViewModel.removeSubmission(id)
+                    backStackEntry.savedStateHandle["deletedSubmissionId"] = null
+                }
+            }
             BikeScreen(
                 viewModel = bikeViewModel,
                 onBack = { navController.popBackStack() },
@@ -164,12 +186,25 @@ fun AppNavGraph(onboardingPrefs: OnboardingPrefs) {
         ) {
             ImageDetailRoute(
                 onBack = { navController.popBackStack() },
+                onDeleted = { submissionId ->
+                    navController.previousBackStackEntry?.savedStateHandle?.set("deletedSubmissionId", submissionId)
+                    navController.popBackStack()
+                },
                 onUserClick = { userId -> navController.navigate(User(userId)) }
             )
         }
 
-        composable<User> {
+        composable<User> { backStackEntry ->
             val userViewModel: UserViewModel = hiltViewModel()
+            val deletedSubmissionId by backStackEntry.savedStateHandle
+                .getStateFlow<String?>("deletedSubmissionId", null)
+                .collectAsStateWithLifecycle()
+            LaunchedEffect(deletedSubmissionId) {
+                deletedSubmissionId?.let { id ->
+                    userViewModel.removeSubmission(id)
+                    backStackEntry.savedStateHandle["deletedSubmissionId"] = null
+                }
+            }
             UserScreen(
                 viewModel = userViewModel,
                 onBack = { navController.popBackStack() },
@@ -187,6 +222,10 @@ fun AppNavGraph(onboardingPrefs: OnboardingPrefs) {
         ) {
             ImageDetailRoute(
                 onBack = { navController.popBackStack() },
+                onDeleted = { submissionId ->
+                    navController.previousBackStackEntry?.savedStateHandle?.set("deletedSubmissionId", submissionId)
+                    navController.popBackStack()
+                },
                 onBikeClick = { bikeQrId -> navController.navigate(Bike(bikeQrId)) }
             )
         }
@@ -249,6 +288,7 @@ fun AppNavGraph(onboardingPrefs: OnboardingPrefs) {
 @Composable
 private fun ImageDetailRoute(
     onBack: () -> Unit,
+    onDeleted: (String) -> Unit,
     onBikeClick: ((String) -> Unit)? = null,
     onUserClick: ((String) -> Unit)? = null
 ) {
@@ -257,7 +297,7 @@ private fun ImageDetailRoute(
 
     LaunchedEffect(detailState.isDeleted) {
         if (detailState.isDeleted) {
-            onBack()
+            onDeleted(viewModel.submissionId)
         }
     }
 
