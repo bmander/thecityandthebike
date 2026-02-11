@@ -5,6 +5,8 @@
   --text-muted: #999;
   --accent: #64b5f6;
   --gap: 12px;
+  --content-margin: 20%;
+  --text-inset: 1rem;
 }
 
 *,
@@ -27,8 +29,9 @@ body {
 }
 
 header {
-  text-align: center;
-  padding: 2rem 1rem 1rem;
+  text-align: left;
+  padding: 2rem var(--content-margin) 1rem;
+  padding-left: calc(var(--content-margin) + var(--text-inset));
 }
 
 header h1 {
@@ -42,10 +45,9 @@ header h1 {
 }
 
 .about {
-  max-width: 600px;
-  margin: 0 auto;
-  padding: 0 1rem 2rem;
-  text-align: center;
+  padding: 0 var(--content-margin) 2rem;
+  padding-left: calc(var(--content-margin) + var(--text-inset));
+  text-align: left;
 }
 
 .app-link {
@@ -65,7 +67,7 @@ header h1 {
 
 .gallery {
   flex: 1;
-  padding: 0 var(--gap) var(--gap);
+  padding: 0 var(--content-margin) var(--gap);
 }
 
 #photo-grid {
@@ -114,8 +116,9 @@ header h1 {
 }
 
 footer {
-  text-align: center;
-  padding: 2rem 1rem;
+  text-align: left;
+  padding: 2rem var(--content-margin);
+  padding-left: calc(var(--content-margin) + var(--text-inset));
   color: var(--text-muted);
   font-size: 0.8rem;
 }
