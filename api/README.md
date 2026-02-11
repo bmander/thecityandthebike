@@ -88,3 +88,17 @@ Uploads:
 - GET /uploads/images/{filename}
 
 An admin panel is also available at /admin.
+
+## CI/CD Configuration
+
+The Android build needs the staging API URL to be set as a GitHub Actions repository variable. To find the current Cloud Run service URL:
+
+```bash
+gcloud run services describe tcatb-api-staging --region=us-central1 --format='value(status.url)'
+```
+
+Then set it in the repo:
+
+```bash
+gh variable set API_BASE_URL --body "<service-url>"
+```
