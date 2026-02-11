@@ -38,21 +38,21 @@ fun BikeIdBadge(provider: String?, bikeQrId: String) {
         if (provider != null) {
             Text(
                 text = provider.uppercase(),
-                style = MaterialTheme.typography.labelLarge,
+                style = MaterialTheme.typography.labelMedium,
                 color = MaterialTheme.colorScheme.onPrimary,
                 modifier = Modifier
-                    .padding(start = 5.dp, top = 3.dp, bottom = 3.dp, end = 3.dp)
+                    .padding(start = 7.dp, top = 2.dp, bottom = 2.dp, end = 3.dp)
                     .background(MaterialTheme.colorScheme.primary, RoundedCornerShape(4.dp))
-                    .padding(horizontal = 4.dp, vertical = 1.dp)
+                    .padding(horizontal = 3.dp, vertical = 0.dp)
             )
         }
         Text(
             text = abbreviateId(bikeQrId),
             maxLines = 1,
-            style = MaterialTheme.typography.headlineSmall,
+            style = MaterialTheme.typography.titleMedium,
             fontFamily = FontFamily.Monospace,
             fontWeight = FontWeight.Bold,
-            modifier = Modifier.padding(horizontal = 4.dp, vertical = .5.dp)
+            modifier = Modifier.padding(start=2.dp, end = 7.dp, bottom = 2.dp, top=2.dp)
         )
     }
 }

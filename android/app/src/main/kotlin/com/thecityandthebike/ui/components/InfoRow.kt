@@ -37,13 +37,11 @@ fun InfoRow(
         Icon(
             imageVector = icon,
             contentDescription = iconDescription,
-            modifier = Modifier.size(28.dp),
+            modifier = Modifier.size(22.dp),
             tint = MaterialTheme.colorScheme.onSurfaceVariant
         )
         Spacer(modifier = Modifier.width(16.dp))
-        Box(modifier = Modifier.weight(1f)) {
-            content()
-        }
+        content()
         if (onClick != null) {
             Icon(
                 imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,

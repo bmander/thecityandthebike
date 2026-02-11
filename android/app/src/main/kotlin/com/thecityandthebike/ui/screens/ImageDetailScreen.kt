@@ -55,7 +55,7 @@ fun ImageDetailScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Photo") },
+                title = { },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(
@@ -93,7 +93,7 @@ fun ImageDetailScreen(
                     ) {
                         Text(
                             text = username,
-                            style = MaterialTheme.typography.headlineSmall
+                            style = MaterialTheme.typography.titleMedium
                         )
                     }
                 }
@@ -116,7 +116,7 @@ fun ImageDetailScreen(
                     ) {
                         Text(
                             text = date,
-                            style = MaterialTheme.typography.headlineSmall
+                            style = MaterialTheme.typography.titleMedium
                         )
                     }
                 }

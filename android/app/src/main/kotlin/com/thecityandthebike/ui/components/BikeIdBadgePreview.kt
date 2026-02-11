@@ -38,7 +38,7 @@ private fun BadgeSamples() {
     ) {
         BikeIdBadge(provider = "citi", bikeQrId = "48302")
         BikeIdBadge(provider = "divvy", bikeQrId = "C00917")
-        BikeIdBadge(provider = "lyft", bikeQrId = "A1B2C3D4E5")
+        BikeIdBadge(provider = "lyft", bikeQrId = "A1B2C3D4EQ")
         BikeIdBadge(provider = null, bikeQrId = "72419")
         BikeIdBadge(provider = "citi", bikeQrId = "a3f8b2c1-9d4e-4f7a-8c6b-1e2d3f4a5b6c")
     }
