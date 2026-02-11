@@ -4,6 +4,7 @@ import androidx.lifecycle.SavedStateHandle
 import com.thecityandthebike.data.model.ApiResult
 import com.thecityandthebike.data.model.AppError
 import com.thecityandthebike.data.model.dto.SubmissionResponse
+import com.thecityandthebike.data.repository.AuthRepository
 import com.thecityandthebike.data.repository.SubmissionRepository
 import com.thecityandthebike.ui.viewmodel.ImageDetailViewModel
 import io.mockk.coEvery
@@ -24,6 +25,7 @@ class ImageDetailViewModelTest {
 
     private val testDispatcher = StandardTestDispatcher()
     private lateinit var submissionRepository: SubmissionRepository
+    private lateinit var authRepository: AuthRepository
     private lateinit var savedStateHandle: SavedStateHandle
 
     private val testSubmissionId = "test-submission-001"
@@ -40,6 +42,8 @@ class ImageDetailViewModelTest {
     fun setup() {
         Dispatchers.setMain(testDispatcher)
         submissionRepository = mockk()
+        authRepository = mockk()
+        coEvery { authRepository.getCurrentUser() } returns ApiResult.Error(AppError.Network(java.io.IOException("Not logged in")))
         savedStateHandle = SavedStateHandle(mapOf("submissionId" to testSubmissionId))
     }
 
@@ -49,7 +53,7 @@ class ImageDetailViewModelTest {
     }
 
     private fun createViewModel(): ImageDetailViewModel {
-        return ImageDetailViewModel(submissionRepository, savedStateHandle)
+        return ImageDetailViewModel(submissionRepository, authRepository, savedStateHandle)
     }
 
     @Test
