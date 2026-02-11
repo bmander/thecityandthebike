@@ -108,6 +108,7 @@ def create_submission(
         user_id=current_user.user_id,
         bike_id=bike.id,
         image_url=data.image_url,
+        image_url_thumbnail=data.image_url_thumbnail,
         captured_date=data.captured_date,
         user_caption=data.user_caption,
     )
