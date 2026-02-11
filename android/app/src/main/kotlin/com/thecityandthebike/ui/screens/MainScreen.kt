@@ -1,9 +1,12 @@
 package com.thecityandthebike.ui.screens
 
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBars
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -68,6 +71,7 @@ fun MainScreen(
         Box(
             modifier = Modifier
                 .align(Alignment.TopStart)
+                .windowInsetsPadding(WindowInsets.statusBars)
                 .padding(16.dp)
         ) {
             var menuExpanded by remember { mutableStateOf(false) }
@@ -103,6 +107,7 @@ fun MainScreen(
                 onClick = onScanQrCode,
                 modifier = Modifier
                     .align(Alignment.TopEnd)
+                    .windowInsetsPadding(WindowInsets.statusBars)
                     .padding(16.dp)
             )
         } else {
@@ -110,6 +115,7 @@ fun MainScreen(
                 onClick = onLoginClick,
                 modifier = Modifier
                     .align(Alignment.TopEnd)
+                    .windowInsetsPadding(WindowInsets.statusBars)
                     .padding(16.dp)
             )
         }
