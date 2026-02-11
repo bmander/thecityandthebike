@@ -40,6 +40,17 @@ interface ApiService {
     @POST("submissions")
     suspend fun createSubmission(@Body submission: SubmissionCreate): Response<SubmissionResponse>
 
+    // User detail endpoints
+    @GET("users/{userId}")
+    suspend fun getUserDetail(@Path("userId") userId: String): Response<UserDetailResponse>
+
+    @GET("users/{userId}/submissions")
+    suspend fun getUserSubmissions(
+        @Path("userId") userId: String,
+        @Query("limit") limit: Int = 20,
+        @Query("offset") offset: Int = 0
+    ): Response<PaginatedSubmissions>
+
     // Bike endpoints
     @GET("bikes/{bikeQrId}")
     suspend fun getBikeDetail(@Path("bikeQrId") bikeQrId: String): Response<BikeDetailResponse>

@@ -30,13 +30,16 @@ import com.thecityandthebike.ui.screens.LoginScreen
 import com.thecityandthebike.ui.screens.MainScreen
 import com.thecityandthebike.ui.screens.OnboardingScreen
 import com.thecityandthebike.ui.screens.PhotoCaptureScreen
+import com.thecityandthebike.ui.screens.PhotoPreviewScreen
 import com.thecityandthebike.ui.screens.PrivacyCopyrightScreen
 import com.thecityandthebike.ui.screens.QrScannerScreen
 import com.thecityandthebike.ui.screens.RegisterScreen
 import com.thecityandthebike.ui.screens.SplashScreen
+import com.thecityandthebike.ui.screens.UserScreen
 import com.thecityandthebike.ui.viewmodel.AuthViewModel
 import com.thecityandthebike.ui.viewmodel.BikeViewModel
 import com.thecityandthebike.ui.viewmodel.MainViewModel
+import com.thecityandthebike.ui.viewmodel.UserViewModel
 import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
 
@@ -179,6 +182,9 @@ class MainActivity : ComponentActivity() {
                                     onBack = { navController.popBackStack() },
                                     onBikeClick = { bikeQrId ->
                                         navController.navigate("bike/${Uri.encode(bikeQrId)}")
+                                    },
+                                    onUserClick = { userId ->
+                                        navController.navigate("user/${Uri.encode(userId)}")
                                     }
                                 )
                             } else {
@@ -224,7 +230,58 @@ class MainActivity : ComponentActivity() {
                             if (submission != null) {
                                 ImageDetailScreen(
                                     submission = submission,
-                                    onBack = { navController.popBackStack() }
+                                    onBack = { navController.popBackStack() },
+                                    onUserClick = { userId ->
+                                        navController.navigate("user/${Uri.encode(userId)}")
+                                    }
+                                )
+                            } else {
+                                LaunchedEffect(Unit) { navController.popBackStack() }
+                            }
+                        }
+
+                        composable("user/{userId}") { backStackEntry ->
+                            val userViewModel: UserViewModel = hiltViewModel()
+                            UserScreen(
+                                viewModel = userViewModel,
+                                onBack = { navController.popBackStack() },
+                                onImageClick = { submissionId ->
+                                    navController.navigate("user_image_detail/${Uri.encode(submissionId)}")
+                                }
+                            )
+                        }
+
+                        composable(
+                            "user_image_detail/{submissionId}",
+                            enterTransition = { EnterTransition.None },
+                            exitTransition = { ExitTransition.None },
+                            popEnterTransition = { EnterTransition.None },
+                            popExitTransition = { ExitTransition.None }
+                        ) { backStackEntry ->
+                            val submissionId = backStackEntry.arguments?.getString("submissionId") ?: ""
+                            if (submissionId.isEmpty()) {
+                                LaunchedEffect(Unit) { navController.popBackStack() }
+                                return@composable
+                            }
+                            val userEntry = remember(backStackEntry) {
+                                navController.getBackStackEntry("user/{userId}")
+                            }
+                            val userViewModel: UserViewModel = hiltViewModel(userEntry)
+                            val userState by userViewModel.state.collectAsState()
+                            if (userState.isLoading) {
+                                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                                    CircularProgressIndicator()
+                                }
+                                return@composable
+                            }
+                            val submission = userState.submissions.find { it.submissionId == submissionId }
+                            if (submission != null) {
+                                ImageDetailScreen(
+                                    submission = submission,
+                                    onBack = { navController.popBackStack() },
+                                    onBikeClick = { bikeQrId ->
+                                        navController.navigate("bike/${Uri.encode(bikeQrId)}")
+                                    }
                                 )
                             } else {
                                 LaunchedEffect(Unit) { navController.popBackStack() }
@@ -250,18 +307,41 @@ class MainActivity : ComponentActivity() {
                                 navController.popBackStack()
                                 return@composable
                             }
+                            PhotoCaptureScreen(
+                                onPhotoCaptured = { uri ->
+                                    navController.navigate("photo_preview/${Uri.encode(qrId)}/${Uri.encode(uri.toString())}") {
+                                        popUpTo("photo_capture/{qrId}") { inclusive = true }
+                                    }
+                                },
+                                onBack = {
+                                    navController.popBackStack()
+                                }
+                            )
+                        }
+
+                        composable("photo_preview/{qrId}/{photoUri}") { backStackEntry ->
+                            val qrId = backStackEntry.arguments?.getString("qrId") ?: ""
+                            val photoUriString = backStackEntry.arguments?.getString("photoUri") ?: ""
+                            if (qrId.isEmpty() || photoUriString.isEmpty()) {
+                                navController.popBackStack()
+                                return@composable
+                            }
+                            val photoUri = Uri.parse(photoUriString)
                             val mainEntry = remember(backStackEntry) {
                                 navController.getBackStackEntry("main")
                             }
                             val mainViewModel: MainViewModel = hiltViewModel(mainEntry)
-                            PhotoCaptureScreen(
-                                onPhotoCaptured = { uri ->
-                                    mainViewModel.addLocalImage(uri)
-                                    mainViewModel.uploadAndCreateSubmission(uri, qrId)
+                            PhotoPreviewScreen(
+                                photoUri = photoUri,
+                                onConfirm = {
+                                    mainViewModel.addLocalImage(photoUri)
+                                    mainViewModel.uploadAndCreateSubmission(photoUri, qrId)
                                     navController.popBackStack("main", inclusive = false)
                                 },
-                                onBack = {
-                                    navController.popBackStack()
+                                onRetake = {
+                                    navController.navigate("photo_capture/${Uri.encode(qrId)}") {
+                                        popUpTo("photo_preview/{qrId}/{photoUri}") { inclusive = true }
+                                    }
                                 }
                             )
                         }
