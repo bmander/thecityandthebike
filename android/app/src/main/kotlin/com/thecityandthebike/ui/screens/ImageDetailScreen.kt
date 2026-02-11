@@ -38,7 +38,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import com.thecityandthebike.data.model.dto.SubmissionResponse
 import com.thecityandthebike.ui.components.BikeIdBadge
@@ -86,7 +85,7 @@ fun ImageDetailScreen(
                         onDelete()
                     }
                 ) {
-                    Text("Delete", color = Color.Red)
+                    Text("Delete", color = MaterialTheme.colorScheme.error)
                 }
             },
             dismissButton = {
@@ -139,7 +138,7 @@ fun ImageDetailScreen(
                             shape = RoundedCornerShape(8.dp),
                             border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
                             colors = IconButtonDefaults.outlinedIconButtonColors(
-                                contentColor = Color.Red
+                                contentColor = MaterialTheme.colorScheme.error
                             )
                         ) {
                             Icon(
