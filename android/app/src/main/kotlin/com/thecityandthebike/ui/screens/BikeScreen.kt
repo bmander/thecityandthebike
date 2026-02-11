@@ -1,12 +1,11 @@
 package com.thecityandthebike.ui.screens
 
-import android.net.Uri
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.CircularProgressIndicator
@@ -18,16 +17,20 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.derivedStateOf
+import androidx.compose.runtime.remember
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.thecityandthebike.ui.components.BikeIdBadge
-import com.thecityandthebike.ui.components.ImageGrid
+import com.thecityandthebike.ui.components.CalendarEntry
+import com.thecityandthebike.ui.components.CalendarPhoto
 import com.thecityandthebike.ui.viewmodel.BikeViewModel
 import com.thecityandthebike.util.imageUrlToUri
-import java.time.ZonedDateTime
+import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -82,62 +85,89 @@ fun BikeScreen(
                 }
             }
             else -> {
-                Column(
+                data class DateGroup(
+                    val dateLabel: String,
+                    val yearLabel: String?,
+                    val photos: List<CalendarPhoto>
+                )
+
+                val dateGroups = remember(state.submissions) {
+                    val dayFormat = DateTimeFormatter.ofPattern("MMM d")
+                    val yearFormat = DateTimeFormatter.ofPattern("yyyy")
+                    state.submissions
+                        .groupBy { submission ->
+                            submission.capturedDate?.let { dateStr ->
+                                try {
+                                    LocalDate.parse(dateStr)
+                                } catch (_: Exception) {
+                                    null
+                                }
+                            }
+                        }
+                        .entries
+                        .sortedByDescending { it.key }
+                        .map { (date, submissions) ->
+                            val photos = submissions.mapNotNull { submission ->
+                                val uri = (submission.imageUrlThumbnail ?: submission.imageUrl)
+                                    ?.let { imageUrlToUri(it) }
+                                    ?: return@mapNotNull null
+                                CalendarPhoto(
+                                    submissionId = submission.submissionId,
+                                    imageUri = uri
+                                )
+                            }
+                            DateGroup(
+                                dateLabel = date?.format(dayFormat) ?: "Unknown date",
+                                yearLabel = date?.format(yearFormat),
+                                photos = photos
+                            )
+                        }
+                        .filter { it.photos.isNotEmpty() }
+                }
+
+                val listState = rememberLazyListState()
+
+                val shouldLoadMore = remember {
+                    derivedStateOf {
+                        val layoutInfo = listState.layoutInfo
+                        val lastVisibleIndex = layoutInfo.visibleItemsInfo.lastOrNull()?.index ?: 0
+                        val totalItems = layoutInfo.totalItemsCount
+                        totalItems > 0 && lastVisibleIndex >= totalItems - 3
+                    }
+                }
+
+                LaunchedEffect(shouldLoadMore.value) {
+                    if (shouldLoadMore.value) {
+                        viewModel.loadMoreSubmissions()
+                    }
+                }
+
+                LazyColumn(
+                    state = listState,
                     modifier = Modifier
                         .fillMaxSize()
                         .padding(paddingValues)
                 ) {
                     state.bikeDetail?.let { detail ->
-                        Column(modifier = Modifier.padding(16.dp)) {
+                        item {
                             Text(
                                 text = "${detail.submissionCount} photo${if (detail.submissionCount != 1) "s" else ""}",
-                                style = MaterialTheme.typography.titleMedium
+                                style = MaterialTheme.typography.titleMedium,
+                                modifier = Modifier.padding(16.dp)
                             )
-                            detail.firstSeenAt?.let { firstSeen ->
-                                Spacer(modifier = Modifier.height(4.dp))
-                                Text(
-                                    text = "First seen: ${formatDateTime(firstSeen)}",
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                            }
-                            detail.lastSeenAt?.let { lastSeen ->
-                                Spacer(modifier = Modifier.height(4.dp))
-                                Text(
-                                    text = "Last seen: ${formatDateTime(lastSeen)}",
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                            }
                         }
                     }
 
-                    val imageUris = state.submissions.mapNotNull { submission ->
-                        (submission.imageUrlThumbnail ?: submission.imageUrl)
-                            ?.let { imageUrlToUri(it) }
+                    items(dateGroups, key = { it.dateLabel }) { group ->
+                        CalendarEntry(
+                            dateLabel = group.dateLabel,
+                            yearLabel = group.yearLabel,
+                            photos = group.photos,
+                            onImageClick = onImageClick
+                        )
                     }
-
-                    ImageGrid(
-                        imageUris = imageUris,
-                        modifier = Modifier.fillMaxSize(),
-                        onImageClick = { index ->
-                            state.submissions.getOrNull(index)?.submissionId?.let { id ->
-                                onImageClick(id)
-                            }
-                        },
-                        onLoadMore = { viewModel.loadMoreSubmissions() }
-                    )
                 }
             }
         }
-    }
-}
-
-private fun formatDateTime(isoString: String): String {
-    return try {
-        val zonedDateTime = ZonedDateTime.parse(isoString)
-        DateTimeFormatter.ofPattern("MMM d, yyyy").format(zonedDateTime)
-    } catch (_: Exception) {
-        isoString
     }
 }
