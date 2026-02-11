@@ -1,4 +1,7 @@
 from datetime import date, datetime, timezone
+from unittest.mock import patch
+
+from sqlalchemy.exc import IntegrityError
 
 from app.dependencies import create_access_token, get_password_hash
 from app.models import User, Bike, FenderSubmission
@@ -385,6 +388,56 @@ class TestCreateSubmission:
         data = response.json()
         assert data["bike_qr_id"] == "PLAIN-BIKE-ID"
         assert data["provider"] is None
+
+    def test_create_submission_concurrent_bike_creation(
+        self, client, auth_headers, test_user, db_session
+    ):
+        """Concurrent submissions for the same new bike should not cause 500 errors.
+
+        Simulates a race condition where the initial query misses a bike that
+        was concurrently created by another request, causing an IntegrityError
+        on insert. The handler should catch this and reuse the existing bike.
+        """
+        # Pre-create the bike (simulates another request winning the race)
+        bike = Bike(
+            bike_qr_id="RACE-BIKE",
+            first_seen_at=datetime.now(timezone.utc),
+            last_seen_at=datetime.now(timezone.utc),
+        )
+        db_session.add(bike)
+        db_session.commit()
+
+        # Make the first Bike query return None to simulate the race window
+        from sqlalchemy.orm import Query
+
+        original_first = Query.first
+        bike_query_count = {"n": 0}
+
+        def first_override(self):
+            entities = [d.get("entity") for d in self.column_descriptions]
+            if Bike in entities:
+                bike_query_count["n"] += 1
+                if bike_query_count["n"] == 1:
+                    return None  # Simulate: bike not yet visible
+            return original_first(self)
+
+        submission_data = {
+            "bike_qr_id": "RACE-BIKE",
+            "image_url_original": "https://example.com/original.jpg",
+            "image_url_processed": "https://example.com/processed.jpg",
+            "captured_date": date.today().isoformat(),
+        }
+
+        with patch.object(Query, "first", first_override):
+            response = client.post(
+                "/submissions",
+                json=submission_data,
+                headers=auth_headers,
+            )
+
+        assert response.status_code == 201
+        data = response.json()
+        assert data["bike_qr_id"] == "RACE-BIKE"
 
     def test_create_submission_no_auth(self, client):
         """Request without auth should return 401."""
