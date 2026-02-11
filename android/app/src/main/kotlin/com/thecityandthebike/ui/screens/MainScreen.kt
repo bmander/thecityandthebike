@@ -44,9 +44,9 @@ fun MainScreen(
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
 
-    val submissionsWithImages = state.submissions.filter { it.imageUrlOriginal != null }
+    val submissionsWithImages = state.submissions.filter { it.imageUrl != null }
     val imageUris = submissionsWithImages.map { submission ->
-        val url = submission.imageUrlThumbnail ?: submission.imageUrlOriginal!!
+        val url = submission.imageUrlThumbnail ?: submission.imageUrl!!
         imageUrlToUri(url)
     }
 

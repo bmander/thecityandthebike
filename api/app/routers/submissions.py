@@ -68,9 +68,8 @@ def delete_submission(
     if submission.user_id != current_user.user_id:
         raise HTTPException(status_code=403, detail="Not authorized to delete this submission")
     image_urls = [
-        submission.image_url_original,
+        submission.image_url,
         submission.image_url_thumbnail,
-        submission.image_url_processed,
     ]
     db.delete(submission)
     db.commit()
@@ -108,8 +107,7 @@ def create_submission(
     submission = FenderSubmission(
         user_id=current_user.user_id,
         bike_id=bike.id,
-        image_url_original=data.image_url_original,
-        image_url_processed=data.image_url_processed,
+        image_url=data.image_url,
         captured_date=data.captured_date,
         user_caption=data.user_caption,
     )

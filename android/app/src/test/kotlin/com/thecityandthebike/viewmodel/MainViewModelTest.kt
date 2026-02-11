@@ -56,13 +56,13 @@ class MainViewModelTest {
                 submissionId = "1",
                 userId = "user1",
                 bikeQrId = "bike1",
-                imageUrlOriginal = "http://example.com/image1.jpg"
+                imageUrl = "http://example.com/image1.jpg"
             ),
             SubmissionResponse(
                 submissionId = "2",
                 userId = "user1",
                 bikeQrId = "bike2",
-                imageUrlOriginal = "http://example.com/image2.jpg"
+                imageUrl = "http://example.com/image2.jpg"
             )
         )
         val paginated = PaginatedSubmissions(items = submissions, total = 2, limit = 20, offset = 0)

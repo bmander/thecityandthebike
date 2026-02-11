@@ -35,7 +35,7 @@ class ImageDetailViewModelTest {
         submissionId = testSubmissionId,
         userId = "user1",
         bikeQrId = "BIKE-001",
-        imageUrlOriginal = "https://example.com/image.jpg",
+        imageUrl = "https://example.com/image.jpg",
         username = "testuser"
     )
 

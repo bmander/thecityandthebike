@@ -188,9 +188,8 @@ def test_submission(db_session, test_user, test_bike):
     submission = FenderSubmission(
         user_id=test_user.user_id,
         bike_id=test_bike.id,
-        image_url_original="https://example.com/original.jpg",
+        image_url="https://example.com/original.jpg",
         image_url_thumbnail="https://example.com/thumbnail.jpg",
-        image_url_processed="https://example.com/processed.jpg",
         captured_date=date.today(),
         user_caption="Test caption",
     )
@@ -202,9 +201,8 @@ def test_submission(db_session, test_user, test_bike):
         "submission_id": submission.submission_id,
         "user_id": submission.user_id,
         "bike_qr_id": submission.bike_qr_id,
-        "image_url_original": submission.image_url_original,
+        "image_url": submission.image_url,
         "image_url_thumbnail": submission.image_url_thumbnail,
-        "image_url_processed": submission.image_url_processed,
         "captured_date": submission.captured_date,
         "user_caption": submission.user_caption,
     })()

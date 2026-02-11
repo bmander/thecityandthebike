@@ -58,7 +58,7 @@ fun ImageDetailScreen(
     isDeleting: Boolean = false,
     onDelete: () -> Unit = {}
 ) {
-    val imageUri = submission.imageUrlOriginal?.let { imageUrlToUri(it) }
+    val imageUri = submission.imageUrl?.let { imageUrlToUri(it) }
     val thumbnailUri = submission.imageUrlThumbnail?.let { imageUrlToUri(it) }
 
     val formattedDate = submission.capturedDate?.let {

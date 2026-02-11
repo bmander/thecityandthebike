@@ -56,7 +56,7 @@ class UploadManagerTest {
             submissionId = "new-1",
             userId = "user1",
             bikeQrId = "bike1",
-            imageUrlOriginal = "http://example.com/uploaded.jpg"
+            imageUrl = "http://example.com/uploaded.jpg"
         )
         coEvery { submissionRepository.createSubmission(any()) } returns ApiResult.Success(submissionResponse)
 

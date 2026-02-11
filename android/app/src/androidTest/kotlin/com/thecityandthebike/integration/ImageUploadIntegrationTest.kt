@@ -90,8 +90,7 @@ class ImageUploadIntegrationTest {
         // Create submission with uploaded image URL
         val submission = SubmissionCreate(
             bikeQrId = "BIKE_${UUID.randomUUID().toString().take(8)}",
-            imageUrlOriginal = uploadResult!!.url,
-            imageUrlProcessed = uploadResult.url,
+            imageUrl = uploadResult!!.url,
             capturedDate = LocalDate.now(ZoneId.of("America/Los_Angeles")).toString(),
             userCaption = "Test submission with uploaded image"
         )
@@ -102,7 +101,7 @@ class ImageUploadIntegrationTest {
 
         val createdSubmission = submissionResponse.body()
         assertNotNull("Created submission should not be null", createdSubmission)
-        assertEquals(uploadResult.url, createdSubmission?.imageUrlOriginal)
+        assertEquals(uploadResult.url, createdSubmission?.imageUrl)
     }
 
     @Test

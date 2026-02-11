@@ -51,9 +51,8 @@ class UploadManager @Inject constructor(
 
                         val submission = SubmissionCreate(
                             bikeQrId = bikeQrId,
-                            imageUrlOriginal = imageUrl,
+                            imageUrl = imageUrl,
                             imageUrlThumbnail = uploadResult.data.thumbnailUrl,
-                            imageUrlProcessed = imageUrl,
                             capturedDate = LocalDate.now(ZoneId.of("America/Los_Angeles")).toString()
                         )
 

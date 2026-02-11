@@ -56,8 +56,7 @@ class TestGetSubmissions:
         other_submission = FenderSubmission(
             user_id=other_user.user_id,
             bike_id=other_bike.id,
-            image_url_original="https://example.com/other.jpg",
-            image_url_processed="https://example.com/other-processed.jpg",
+            image_url="https://example.com/other.jpg",
             captured_date=date.today(),
         )
         db_session.add(other_submission)
@@ -92,8 +91,7 @@ class TestGetSubmissions:
             sub = FenderSubmission(
                 user_id=test_user.user_id,
                 bike_id=test_bike.id,
-                image_url_original=f"https://example.com/img{i}.jpg",
-                image_url_processed=f"https://example.com/img{i}-proc.jpg",
+                image_url=f"https://example.com/img{i}.jpg",
                 captured_date=date.today(),
             )
             db_session.add(sub)
@@ -239,9 +237,8 @@ class TestDeleteSubmission:
         submission = FenderSubmission(
             user_id=test_user.user_id,
             bike_id=test_bike.id,
-            image_url_original=original_url,
+            image_url=original_url,
             image_url_thumbnail=thumbnail_url,
-            image_url_processed=None,
             captured_date=date.today(),
         )
         db_session.add(submission)
@@ -269,8 +266,7 @@ class TestCreateSubmission:
         """Creating submission for new bike should create the bike."""
         submission_data = {
             "bike_qr_id": "NEW-BIKE-001",
-            "image_url_original": "https://example.com/original.jpg",
-            "image_url_processed": "https://example.com/processed.jpg",
+            "image_url": "https://example.com/original.jpg",
             "captured_date": date.today().isoformat(),
             "user_caption": "My new bike submission",
         }
@@ -284,7 +280,7 @@ class TestCreateSubmission:
         data = response.json()
         assert data["bike_qr_id"] == "NEW-BIKE-001"
         assert data["user_id"] == str(test_user.user_id)
-        assert data["image_url_original"] == submission_data["image_url_original"]
+        assert data["image_url"] == submission_data["image_url"]
         assert data["user_caption"] == submission_data["user_caption"]
         assert data["username"] == "testuser"
 
@@ -302,8 +298,7 @@ class TestCreateSubmission:
 
         submission_data = {
             "bike_qr_id": test_bike.bike_qr_id,
-            "image_url_original": "https://example.com/new.jpg",
-            "image_url_processed": "https://example.com/new-processed.jpg",
+            "image_url": "https://example.com/new.jpg",
             "captured_date": date.today().isoformat(),
         }
 
@@ -326,8 +321,7 @@ class TestCreateSubmission:
         """Submission with only required fields should succeed."""
         submission_data = {
             "bike_qr_id": "MINIMAL-BIKE",
-            "image_url_original": "https://example.com/original.jpg",
-            "image_url_processed": "https://example.com/processed.jpg",
+            "image_url": "https://example.com/original.jpg",
             "captured_date": date.today().isoformat(),
         }
 
@@ -343,8 +337,7 @@ class TestCreateSubmission:
     def test_create_submission_missing_bike_qr_id(self, client, auth_headers):
         """Submission without bike_qr_id should return 422."""
         submission_data = {
-            "image_url_original": "https://example.com/original.jpg",
-            "image_url_processed": "https://example.com/processed.jpg",
+            "image_url": "https://example.com/original.jpg",
             "captured_date": date.today().isoformat(),
         }
 
@@ -359,8 +352,7 @@ class TestCreateSubmission:
         """Submission without captured_date should return 422."""
         submission_data = {
             "bike_qr_id": "TEST-BIKE",
-            "image_url_original": "https://example.com/original.jpg",
-            "image_url_processed": "https://example.com/processed.jpg",
+            "image_url": "https://example.com/original.jpg",
         }
 
         response = client.post(
@@ -374,8 +366,7 @@ class TestCreateSubmission:
         """Submitting a Lime URL should parse provider and bike ID."""
         submission_data = {
             "bike_qr_id": "https://lime.bike/bc/v1/G5EZAYI=",
-            "image_url_original": "https://example.com/original.jpg",
-            "image_url_processed": "https://example.com/processed.jpg",
+            "image_url": "https://example.com/original.jpg",
             "captured_date": date.today().isoformat(),
         }
 
@@ -393,8 +384,7 @@ class TestCreateSubmission:
         """Submitting a Bird URL should parse provider and bike ID."""
         submission_data = {
             "bike_qr_id": "https://ride.bird.co/bc/v1/abc123",
-            "image_url_original": "https://example.com/original.jpg",
-            "image_url_processed": "https://example.com/processed.jpg",
+            "image_url": "https://example.com/original.jpg",
             "captured_date": date.today().isoformat(),
         }
 
@@ -408,8 +398,7 @@ class TestCreateSubmission:
         """Submitting an unknown URL should store it as-is with no provider."""
         submission_data = {
             "bike_qr_id": "https://unknown.com/bikes/XYZ",
-            "image_url_original": "https://example.com/original.jpg",
-            "image_url_processed": "https://example.com/processed.jpg",
+            "image_url": "https://example.com/original.jpg",
             "captured_date": date.today().isoformat(),
         }
 
@@ -425,8 +414,7 @@ class TestCreateSubmission:
         """Submitting a plain string should have provider=None."""
         submission_data = {
             "bike_qr_id": "PLAIN-BIKE-ID",
-            "image_url_original": "https://example.com/original.jpg",
-            "image_url_processed": "https://example.com/processed.jpg",
+            "image_url": "https://example.com/original.jpg",
             "captured_date": date.today().isoformat(),
         }
 
@@ -463,9 +451,8 @@ class TestCreateSubmission:
                 "/submissions",
                 json={
                     "bike_qr_id": "RACE-BIKE",
-                    "image_url_original": "https://example.com/original.jpg",
-                    "image_url_processed": "https://example.com/processed.jpg",
-                    "captured_date": date.today().isoformat(),
+                    "image_url": "https://example.com/original.jpg",
+                            "captured_date": date.today().isoformat(),
                 },
                 headers=auth_headers,
             )
@@ -477,8 +464,7 @@ class TestCreateSubmission:
         """Request without auth should return 401."""
         submission_data = {
             "bike_qr_id": "TEST-BIKE",
-            "image_url_original": "https://example.com/original.jpg",
-            "image_url_processed": "https://example.com/processed.jpg",
+            "image_url": "https://example.com/original.jpg",
             "captured_date": date.today().isoformat(),
         }
 
