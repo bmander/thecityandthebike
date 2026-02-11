@@ -2,12 +2,13 @@ package com.thecityandthebike.repository
 
 import com.thecityandthebike.data.api.ApiService
 import com.thecityandthebike.data.local.TokenManager
+import com.thecityandthebike.data.model.ApiResult
+import com.thecityandthebike.data.model.AppError
 import com.thecityandthebike.data.model.dto.LoginRequest
 import com.thecityandthebike.data.model.dto.RegisterRequest
 import com.thecityandthebike.data.model.dto.TokenResponse
 import com.thecityandthebike.data.model.dto.MessageResponse
 import com.thecityandthebike.data.repository.AuthRepository
-import com.thecityandthebike.data.repository.AuthResult
 import io.mockk.*
 import kotlinx.coroutines.test.runTest
 import okhttp3.ResponseBody.Companion.toResponseBody
@@ -36,12 +37,12 @@ class AuthRepositoryTest {
 
         val result = repository.login("user", "pass")
 
-        assertTrue(result is AuthResult.Success)
+        assertTrue(result is ApiResult.Success)
         verify { tokenManager.saveTokens("test_token", "test_refresh") }
     }
 
     @Test
-    fun `login failure should return error`() = runTest {
+    fun `login failure should return auth error`() = runTest {
         coEvery { apiService.login(LoginRequest("user", "wrong")) } returns Response.error(
             401,
             "{}".toResponseBody()
@@ -49,18 +50,21 @@ class AuthRepositoryTest {
 
         val result = repository.login("user", "wrong")
 
-        assertTrue(result is AuthResult.Error)
-        assertEquals("Invalid credentials", (result as AuthResult.Error).message)
+        assertTrue(result is ApiResult.Error)
+        val error = (result as ApiResult.Error).error
+        assertTrue(error is AppError.Auth)
+        assertEquals("Invalid credentials", (error as AppError.Auth).message)
     }
 
     @Test
-    fun `login network error should return error`() = runTest {
-        coEvery { apiService.login(any()) } throws Exception("Network error")
+    fun `login network error should return network error`() = runTest {
+        coEvery { apiService.login(any()) } throws java.io.IOException("Connection refused")
 
         val result = repository.login("user", "pass")
 
-        assertTrue(result is AuthResult.Error)
-        assertEquals("Network error", (result as AuthResult.Error).message)
+        assertTrue(result is ApiResult.Error)
+        val error = (result as ApiResult.Error).error
+        assertTrue(error is AppError.Network)
     }
 
     @Test
@@ -72,19 +76,21 @@ class AuthRepositoryTest {
 
         val result = repository.register("user", "email@test.com", "pass")
 
-        assertTrue(result is AuthResult.Success)
+        assertTrue(result is ApiResult.Success)
     }
 
     @Test
-    fun `register conflict should return user exists error`() = runTest {
+    fun `register conflict should return server error with user exists message`() = runTest {
         coEvery {
             apiService.register(RegisterRequest("user", "email@test.com", "pass"))
         } returns Response.error(409, "{}".toResponseBody())
 
         val result = repository.register("user", "email@test.com", "pass")
 
-        assertTrue(result is AuthResult.Error)
-        assertEquals("User already exists", (result as AuthResult.Error).message)
+        assertTrue(result is ApiResult.Error)
+        val error = (result as ApiResult.Error).error
+        assertTrue(error is AppError.Server)
+        assertEquals(409, (error as AppError.Server).code)
     }
 
     @Test

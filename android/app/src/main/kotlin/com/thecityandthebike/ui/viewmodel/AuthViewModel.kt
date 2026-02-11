@@ -2,8 +2,8 @@ package com.thecityandthebike.ui.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.thecityandthebike.data.model.ApiResult
 import com.thecityandthebike.data.repository.AuthRepository
-import com.thecityandthebike.data.repository.AuthResult
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -43,11 +43,11 @@ class AuthViewModel @Inject constructor(
         viewModelScope.launch {
             _state.value = _state.value.copy(isLoading = true, error = null)
             when (val result = authRepository.login(username, password)) {
-                is AuthResult.Success -> {
+                is ApiResult.Success -> {
                     _state.value = _state.value.copy(isLoading = false, isLoggedIn = true)
                 }
-                is AuthResult.Error -> {
-                    _state.value = _state.value.copy(isLoading = false, error = result.message)
+                is ApiResult.Error -> {
+                    _state.value = _state.value.copy(isLoading = false, error = result.error.displayMessage)
                 }
             }
         }
@@ -57,11 +57,11 @@ class AuthViewModel @Inject constructor(
         viewModelScope.launch {
             _state.value = _state.value.copy(isLoading = true, error = null, registrationSuccess = false)
             when (val result = authRepository.register(username, email, password)) {
-                is AuthResult.Success -> {
+                is ApiResult.Success -> {
                     _state.value = _state.value.copy(isLoading = false, registrationSuccess = true)
                 }
-                is AuthResult.Error -> {
-                    _state.value = _state.value.copy(isLoading = false, error = result.message)
+                is ApiResult.Error -> {
+                    _state.value = _state.value.copy(isLoading = false, error = result.error.displayMessage)
                 }
             }
         }

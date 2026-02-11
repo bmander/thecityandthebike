@@ -3,10 +3,10 @@ package com.thecityandthebike.ui.viewmodel
 import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.thecityandthebike.data.model.ApiResult
 import com.thecityandthebike.data.model.dto.SubmissionCreate
 import com.thecityandthebike.data.model.dto.SubmissionResponse
 import com.thecityandthebike.data.repository.SubmissionRepository
-import com.thecityandthebike.data.repository.SubmissionResult
 import com.thecityandthebike.util.ImagePreparer
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -60,7 +60,7 @@ class MainViewModel @Inject constructor(
                 error = null
             )
             when (val result = submissionRepository.getSubmissions()) {
-                is SubmissionResult.Success -> {
+                is ApiResult.Success -> {
                     _state.value = _state.value.copy(
                         isLoading = false,
                         isRefreshing = false,
@@ -69,11 +69,11 @@ class MainViewModel @Inject constructor(
                         hasMorePages = result.data.items.size + result.data.offset < result.data.total
                     )
                 }
-                is SubmissionResult.Error -> {
+                is ApiResult.Error -> {
                     _state.value = _state.value.copy(
                         isLoading = false,
                         isRefreshing = false,
-                        error = result.message
+                        error = result.error.displayMessage
                     )
                 }
             }
@@ -88,7 +88,7 @@ class MainViewModel @Inject constructor(
             _state.value = _state.value.copy(isLoadingMore = true)
             val offset = _state.value.submissions.size
             when (val result = submissionRepository.getSubmissions(offset = offset)) {
-                is SubmissionResult.Success -> {
+                is ApiResult.Success -> {
                     val newSubmissions = _state.value.submissions + result.data.items
                     _state.value = _state.value.copy(
                         isLoadingMore = false,
@@ -97,10 +97,10 @@ class MainViewModel @Inject constructor(
                         hasMorePages = newSubmissions.size < result.data.total
                     )
                 }
-                is SubmissionResult.Error -> {
+                is ApiResult.Error -> {
                     _state.value = _state.value.copy(
                         isLoadingMore = false,
-                        error = result.message
+                        error = result.error.displayMessage
                     )
                 }
             }
@@ -131,7 +131,7 @@ class MainViewModel @Inject constructor(
             try {
                 // First upload the image
                 when (val uploadResult = submissionRepository.uploadImage(imageFile)) {
-                    is SubmissionResult.Success -> {
+                    is ApiResult.Success -> {
                         val imageUrl = uploadResult.data.url
 
                         // Then create the submission
@@ -144,27 +144,27 @@ class MainViewModel @Inject constructor(
                         )
 
                         when (val createResult = submissionRepository.createSubmission(submission)) {
-                            is SubmissionResult.Success -> {
+                            is ApiResult.Success -> {
                                 _state.value = _state.value.copy(
                                     isUploading = false,
                                     submissions = listOf(createResult.data) + _state.value.submissions,
                                     localImages = _state.value.localImages.filter { it != localUri }
                                 )
                             }
-                            is SubmissionResult.Error -> {
+                            is ApiResult.Error -> {
                                 _state.value = _state.value.copy(
                                     isUploading = false,
                                     localImages = _state.value.localImages.filter { it != localUri },
-                                    error = createResult.message
+                                    error = createResult.error.displayMessage
                                 )
                             }
                         }
                     }
-                    is SubmissionResult.Error -> {
+                    is ApiResult.Error -> {
                         _state.value = _state.value.copy(
                             isUploading = false,
                             localImages = _state.value.localImages.filter { it != localUri },
-                            error = uploadResult.message
+                            error = uploadResult.error.displayMessage
                         )
                     }
                 }

@@ -3,7 +3,6 @@ package com.thecityandthebike.viewmodel
 import com.thecityandthebike.data.api.ApiService
 import com.thecityandthebike.data.local.TokenManager
 import com.thecityandthebike.data.repository.AuthRepository
-import com.thecityandthebike.data.repository.AuthResult
 import com.thecityandthebike.ui.viewmodel.AuthViewModel
 import io.mockk.coEvery
 import io.mockk.every
@@ -117,7 +116,7 @@ class AuthViewModelTest {
         testDispatcher.scheduler.advanceUntilIdle()
 
         assertFalse(viewModel.state.value.registrationSuccess)
-        assertEquals("User already exists", viewModel.state.value.error)
+        assertEquals("Server error. Please try again later.", viewModel.state.value.error)
     }
 
     @Test
