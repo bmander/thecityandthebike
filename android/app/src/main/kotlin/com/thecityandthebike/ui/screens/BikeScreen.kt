@@ -23,6 +23,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import com.thecityandthebike.ui.components.BikeIdBadge
 import com.thecityandthebike.ui.components.ImageGrid
 import com.thecityandthebike.ui.viewmodel.BikeViewModel
 import com.thecityandthebike.util.imageUrlToUri
@@ -38,18 +39,13 @@ fun BikeScreen(
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
 
-    val bikeLabel = state.bikeDetail?.let { detail ->
-        if (detail.provider != null) {
-            "${detail.provider.replaceFirstChar { it.uppercase() }}: ${detail.bikeQrId}"
-        } else {
-            "Bike: ${detail.bikeQrId}"
-        }
-    } ?: viewModel.bikeQrId
+    val provider = state.bikeDetail?.provider
+    val bikeQrId = state.bikeDetail?.bikeQrId ?: viewModel.bikeQrId
 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(bikeLabel) },
+                title = { BikeIdBadge(provider = provider, bikeQrId = bikeQrId) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(
