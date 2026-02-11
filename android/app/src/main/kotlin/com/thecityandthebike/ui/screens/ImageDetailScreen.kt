@@ -52,7 +52,8 @@ import java.time.format.DateTimeFormatter
 fun ImageDetailScreen(
     submission: SubmissionResponse,
     onBack: () -> Unit,
-    onBikeClick: ((String) -> Unit)? = null
+    onBikeClick: ((String) -> Unit)? = null,
+    onUserClick: ((String) -> Unit)? = null
 ) {
     val imageUri = submission.imageUrlOriginal?.let { imageUrlToUri(it) }
     val thumbnailUri = submission.imageUrlThumbnail?.let { imageUrlToUri(it) }
@@ -172,7 +173,14 @@ fun ImageDetailScreen(
                 submission.username?.let { username ->
                     Text(
                         text = username,
-                        style = MaterialTheme.typography.titleMedium
+                        style = MaterialTheme.typography.titleMedium,
+                        color = if (onUserClick != null) MaterialTheme.colorScheme.primary
+                            else MaterialTheme.colorScheme.onSurface,
+                        modifier = if (onUserClick != null) {
+                            Modifier.clickable { onUserClick(submission.userId) }
+                        } else {
+                            Modifier
+                        }
                     )
                     Spacer(modifier = Modifier.height(4.dp))
                 }

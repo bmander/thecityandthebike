@@ -13,3 +13,13 @@ class UserResponse(BaseModel):
     email: str
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
+
+
+class UserDetailResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    user_id: UUID
+    username: str
+    submission_count: int
+    first_seen_at: Optional[datetime] = None
+    last_seen_at: Optional[datetime] = None
