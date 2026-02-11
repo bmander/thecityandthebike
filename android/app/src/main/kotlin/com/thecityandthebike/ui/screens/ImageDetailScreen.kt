@@ -221,7 +221,7 @@ fun ImageDetailScreen(
 @Preview(showBackground = true, name = "Dark", uiMode = android.content.res.Configuration.UI_MODE_NIGHT_YES)
 @Composable
 private fun ImageDetailScreenPreview() {
-    TheCityAndTheBikeTheme {
+    TheCityAndTheBikeTheme(dynamicColor = false) {
         ImageDetailScreen(
             submission = SubmissionResponse(
                 submissionId = "preview-1",
