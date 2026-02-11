@@ -30,6 +30,7 @@ import com.thecityandthebike.ui.screens.LoginScreen
 import com.thecityandthebike.ui.screens.MainScreen
 import com.thecityandthebike.ui.screens.OnboardingScreen
 import com.thecityandthebike.ui.screens.PhotoCaptureScreen
+import com.thecityandthebike.ui.screens.PhotoPreviewScreen
 import com.thecityandthebike.ui.screens.PrivacyCopyrightScreen
 import com.thecityandthebike.ui.screens.QrScannerScreen
 import com.thecityandthebike.ui.screens.RegisterScreen
@@ -306,18 +307,41 @@ class MainActivity : ComponentActivity() {
                                 navController.popBackStack()
                                 return@composable
                             }
+                            PhotoCaptureScreen(
+                                onPhotoCaptured = { uri ->
+                                    navController.navigate("photo_preview/${Uri.encode(qrId)}/${Uri.encode(uri.toString())}") {
+                                        popUpTo("photo_capture/{qrId}") { inclusive = true }
+                                    }
+                                },
+                                onBack = {
+                                    navController.popBackStack()
+                                }
+                            )
+                        }
+
+                        composable("photo_preview/{qrId}/{photoUri}") { backStackEntry ->
+                            val qrId = backStackEntry.arguments?.getString("qrId") ?: ""
+                            val photoUriString = backStackEntry.arguments?.getString("photoUri") ?: ""
+                            if (qrId.isEmpty() || photoUriString.isEmpty()) {
+                                navController.popBackStack()
+                                return@composable
+                            }
+                            val photoUri = Uri.parse(photoUriString)
                             val mainEntry = remember(backStackEntry) {
                                 navController.getBackStackEntry("main")
                             }
                             val mainViewModel: MainViewModel = hiltViewModel(mainEntry)
-                            PhotoCaptureScreen(
-                                onPhotoCaptured = { uri ->
-                                    mainViewModel.addLocalImage(uri)
-                                    mainViewModel.uploadAndCreateSubmission(uri, qrId)
+                            PhotoPreviewScreen(
+                                photoUri = photoUri,
+                                onConfirm = {
+                                    mainViewModel.addLocalImage(photoUri)
+                                    mainViewModel.uploadAndCreateSubmission(photoUri, qrId)
                                     navController.popBackStack("main", inclusive = false)
                                 },
-                                onBack = {
-                                    navController.popBackStack()
+                                onRetake = {
+                                    navController.navigate("photo_capture/${Uri.encode(qrId)}") {
+                                        popUpTo("photo_preview/{qrId}/{photoUri}") { inclusive = true }
+                                    }
                                 }
                             )
                         }
