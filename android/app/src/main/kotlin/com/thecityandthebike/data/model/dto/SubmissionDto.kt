@@ -6,9 +6,8 @@ import kotlinx.serialization.Serializable
 @Serializable
 data class SubmissionCreate(
     @SerialName("bike_qr_id") val bikeQrId: String,
-    @SerialName("image_url_original") val imageUrlOriginal: String,
+    @SerialName("image_url") val imageUrl: String,
     @SerialName("image_url_thumbnail") val imageUrlThumbnail: String? = null,
-    @SerialName("image_url_processed") val imageUrlProcessed: String,
     @SerialName("captured_date") val capturedDate: String,
     @SerialName("user_caption") val userCaption: String? = null
 )
@@ -18,9 +17,8 @@ data class SubmissionResponse(
     @SerialName("submission_id") val submissionId: String,
     @SerialName("user_id") val userId: String,
     @SerialName("bike_qr_id") val bikeQrId: String,
-    @SerialName("image_url_original") val imageUrlOriginal: String? = null,
+    @SerialName("image_url") val imageUrl: String? = null,
     @SerialName("image_url_thumbnail") val imageUrlThumbnail: String? = null,
-    @SerialName("image_url_processed") val imageUrlProcessed: String? = null,
     @SerialName("captured_date") val capturedDate: String? = null,
     @SerialName("uploaded_at") val uploadedAt: String? = null,
     @SerialName("user_caption") val userCaption: String? = null,

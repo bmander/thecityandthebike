@@ -86,8 +86,7 @@ class TestGetMySubmissions:
         other_submission = FenderSubmission(
             user_id=other_user.user_id,
             bike_id=other_bike.id,
-            image_url_original="https://example.com/other.jpg",
-            image_url_processed="https://example.com/other-processed.jpg",
+            image_url="https://example.com/other.jpg",
             captured_date=date.today(),
         )
         db_session.add(other_submission)
@@ -115,8 +114,7 @@ class TestGetMySubmissions:
             sub = FenderSubmission(
                 user_id=test_user.user_id,
                 bike_id=test_bike.id,
-                image_url_original=f"https://example.com/img{i}.jpg",
-                image_url_processed=f"https://example.com/img{i}-proc.jpg",
+                image_url=f"https://example.com/img{i}.jpg",
                 captured_date=date.today(),
             )
             db_session.add(sub)
@@ -201,8 +199,7 @@ class TestGetUserDetail:
             sub = FenderSubmission(
                 user_id=test_user.user_id,
                 bike_id=test_bike.id,
-                image_url_original=f"https://example.com/img{i}.jpg",
-                image_url_processed=f"https://example.com/img{i}-proc.jpg",
+                image_url=f"https://example.com/img{i}.jpg",
                 captured_date=date.today(),
             )
             db_session.add(sub)
@@ -265,15 +262,13 @@ class TestGetUserSubmissions:
         submission1 = FenderSubmission(
             user_id=test_user.user_id,
             bike_id=test_bike.id,
-            image_url_original="https://example.com/img1.jpg",
-            image_url_processed="https://example.com/img1-proc.jpg",
+            image_url="https://example.com/img1.jpg",
             captured_date=date.today(),
         )
         submission2 = FenderSubmission(
             user_id=test_user.user_id,
             bike_id=test_bike.id,
-            image_url_original="https://example.com/img2.jpg",
-            image_url_processed="https://example.com/img2-proc.jpg",
+            image_url="https://example.com/img2.jpg",
             captured_date=date.today(),
         )
         db_session.add_all([submission1, submission2])
@@ -318,8 +313,7 @@ class TestGetUserSubmissions:
             sub = FenderSubmission(
                 user_id=test_user.user_id,
                 bike_id=test_bike.id,
-                image_url_original=f"https://example.com/img{i}.jpg",
-                image_url_processed=f"https://example.com/img{i}-proc.jpg",
+                image_url=f"https://example.com/img{i}.jpg",
                 captured_date=date.today(),
             )
             db_session.add(sub)

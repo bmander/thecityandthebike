@@ -110,7 +110,7 @@ fun UserScreen(
                     }
 
                     val imageUris = state.submissions.mapNotNull { submission ->
-                        (submission.imageUrlThumbnail ?: submission.imageUrlOriginal)
+                        (submission.imageUrlThumbnail ?: submission.imageUrl)
                             ?.let { imageUrlToUri(it) }
                     }
 

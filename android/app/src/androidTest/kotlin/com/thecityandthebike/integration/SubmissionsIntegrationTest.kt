@@ -78,8 +78,7 @@ class SubmissionsIntegrationTest {
         // Create a submission
         val submission = SubmissionCreate(
             bikeQrId = "BIKE_${UUID.randomUUID().toString().take(8)}",
-            imageUrlOriginal = "https://example.com/test_image_original.jpg",
-            imageUrlProcessed = "https://example.com/test_image_processed.jpg",
+            imageUrl = "https://example.com/test_image_original.jpg",
             capturedDate = LocalDate.now(ZoneId.of("America/Los_Angeles")).toString(),
             userCaption = "Test submission"
         )
@@ -99,8 +98,7 @@ class SubmissionsIntegrationTest {
         // Try to create a submission without authentication
         val submission = SubmissionCreate(
             bikeQrId = "BIKE_${UUID.randomUUID().toString().take(8)}",
-            imageUrlOriginal = "https://example.com/test_image_original.jpg",
-            imageUrlProcessed = "https://example.com/test_image_processed.jpg",
+            imageUrl = "https://example.com/test_image_original.jpg",
             capturedDate = LocalDate.now(ZoneId.of("America/Los_Angeles")).toString()
         )
 
@@ -122,8 +120,7 @@ class SubmissionsIntegrationTest {
         val bikeQrId = "BIKE_${UUID.randomUUID().toString().take(8)}"
         val submission = SubmissionCreate(
             bikeQrId = bikeQrId,
-            imageUrlOriginal = "https://example.com/test_image_original.jpg",
-            imageUrlProcessed = "https://example.com/test_image_processed.jpg",
+            imageUrl = "https://example.com/test_image_original.jpg",
             capturedDate = LocalDate.now(ZoneId.of("America/Los_Angeles")).toString()
         )
 
