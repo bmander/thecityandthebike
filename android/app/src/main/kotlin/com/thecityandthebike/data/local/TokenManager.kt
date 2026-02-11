@@ -2,12 +2,14 @@ package com.thecityandthebike.data.local
 
 import android.content.Context
 import android.content.SharedPreferences
+import android.util.Base64
 import androidx.security.crypto.EncryptedSharedPreferences
 import androidx.security.crypto.MasterKey
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import org.json.JSONObject
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -68,6 +70,17 @@ class TokenManager @Inject constructor(
 
     fun hasToken(): Boolean {
         return !getToken().isNullOrEmpty()
+    }
+
+    fun getUserId(): String? {
+        val token = getToken() ?: return null
+        return try {
+            val payload = token.split(".")[1]
+            val decoded = Base64.decode(payload, Base64.URL_SAFE or Base64.NO_PADDING)
+            JSONObject(String(decoded)).getString("sub")
+        } catch (e: Exception) {
+            null
+        }
     }
 
     companion object {

@@ -3,9 +3,9 @@ package com.thecityandthebike.ui.viewmodel
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.thecityandthebike.data.local.TokenManager
 import com.thecityandthebike.data.model.ApiResult
 import com.thecityandthebike.data.model.dto.SubmissionResponse
-import com.thecityandthebike.data.repository.AuthRepository
 import com.thecityandthebike.data.repository.SubmissionRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -26,7 +26,7 @@ data class ImageDetailState(
 @HiltViewModel
 class ImageDetailViewModel @Inject constructor(
     private val submissionRepository: SubmissionRepository,
-    private val authRepository: AuthRepository,
+    private val tokenManager: TokenManager,
     savedStateHandle: SavedStateHandle
 ) : ViewModel() {
 
@@ -62,11 +62,8 @@ class ImageDetailViewModel @Inject constructor(
         }
     }
 
-    private suspend fun checkOwnership(submissionUserId: String): Boolean {
-        return when (val result = authRepository.getCurrentUser()) {
-            is ApiResult.Success -> result.data.userId == submissionUserId
-            is ApiResult.Error -> false
-        }
+    private fun checkOwnership(submissionUserId: String): Boolean {
+        return tokenManager.getUserId() == submissionUserId
     }
 
     fun deleteSubmission() {
