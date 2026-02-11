@@ -22,24 +22,16 @@ This prevents overwhelming output when there are multiple failures from the same
 
 ### Android Builds
 
-Before running Android builds or tests, ensure `android/local.properties` exists with the SDK path. If it's missing (it's gitignored), create it:
+The Android SDK is installed locally. Before running Android builds or tests, always recreate `android/local.properties` (it's gitignored and may be missing or stale, especially in worktrees):
 
 ```bash
 echo "sdk.dir=$HOME/Library/Android/sdk" > android/local.properties
 ```
 
-Also set the required environment variables:
+Environment variables must be set in the **same Bash invocation** as the build command, since shell state does not persist between tool calls. Build and install on a connected device:
 
 ```bash
-export JAVA_HOME="/Applications/Android Studio.app/Contents/jbr/Contents/Home"
-export ANDROID_HOME=~/Library/Android/sdk
-export PATH="$ANDROID_HOME/platform-tools:$PATH"
-```
-
-Build and install on a connected device:
-
-```bash
-cd android && ./gradlew assembleDebug && adb install app/build/outputs/apk/debug/app-debug.apk
+export JAVA_HOME="/Applications/Android Studio.app/Contents/jbr/Contents/Home" && export ANDROID_HOME=~/Library/Android/sdk && export PATH="$ANDROID_HOME/platform-tools:$PATH" && cd android && ./gradlew assembleDebug && adb install app/build/outputs/apk/debug/app-debug.apk
 ```
 
 ### Android Tests
