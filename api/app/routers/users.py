@@ -1,4 +1,4 @@
-from typing import Annotated, Optional
+from typing import Annotated
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
@@ -6,7 +6,7 @@ from sqlalchemy import func, select
 from sqlalchemy.orm import Session, joinedload
 
 from ..database import get_db
-from ..dependencies import get_current_user, get_current_user_optional
+from ..dependencies import get_current_user
 from ..models import User, FenderSubmission
 from ..schemas import PaginatedResponse, UserDetailResponse, UserResponse, SubmissionResponse
 
@@ -77,7 +77,6 @@ def get_user_detail(
 def get_user_submissions(
     user_id: UUID,
     db: Annotated[Session, Depends(get_db)],
-    current_user: Annotated[Optional[User], Depends(get_current_user_optional)] = None,
     limit: int = Query(default=20, ge=1, le=100),
     offset: int = Query(default=0, ge=0),
 ):
