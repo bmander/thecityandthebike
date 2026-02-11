@@ -44,6 +44,8 @@ import com.thecityandthebike.ui.components.BikeIdBadge
 import com.thecityandthebike.ui.components.InfoRow
 import com.thecityandthebike.ui.components.ZoomableImage
 import com.thecityandthebike.util.imageUrlToUri
+import androidx.compose.ui.tooling.preview.Preview
+import com.thecityandthebike.ui.theme.TheCityAndTheBikeTheme
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 
@@ -193,5 +195,25 @@ fun ImageDetailScreen(
                 }
             }
         }
+    }
+}
+
+@Preview(showBackground = true, name = "Light")
+@Preview(showBackground = true, name = "Dark", uiMode = android.content.res.Configuration.UI_MODE_NIGHT_YES)
+@Composable
+private fun ImageDetailScreenPreview() {
+    TheCityAndTheBikeTheme {
+        ImageDetailScreen(
+            submission = SubmissionResponse(
+                submissionId = "preview-1",
+                userId = "user-1",
+                bikeQrId = "BIKE-42",
+                capturedDate = "2026-02-11",
+                username = "bmander",
+                provider = "citibike"
+            ),
+            onBack = {},
+            isOwner = true
+        )
     }
 }
