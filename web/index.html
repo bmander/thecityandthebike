@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>The City and the Bike</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header>
+    <h1>The City and the Bike</h1>
+    <p class="tagline">A community photo gallery of fender art on shared bikes</p>
+  </header>
+
+  <section class="about">
+    <p>
+      The City and the Bike documents the stickers, drawings, and creative
+      expressions people leave on bike-share fenders. Snap a photo with the
+      Android app and share it with the community.
+    </p>
+    <a href="https://play.google.com/store/apps/details?id=com.thecityandthebike" class="app-link">
+      Get the Android app
+    </a>
+  </section>
+
+  <section class="gallery">
+    <div id="photo-grid"></div>
+    <div id="loading" class="loading">Loading...</div>
+    <div id="error" class="error" hidden>
+      Could not load submissions. Please try again later.
+    </div>
+    <div id="end" class="end-message" hidden>
+      No more submissions to show.
+    </div>
+  </section>
+
+  <footer>
+    <p>&copy; 2025 The City and the Bike</p>
+  </footer>
+
+  <script src="config.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
