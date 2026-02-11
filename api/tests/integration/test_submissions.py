@@ -1,4 +1,7 @@
 from datetime import date, datetime, timezone
+from unittest.mock import patch
+
+from sqlalchemy.orm import Query
 
 from app.dependencies import create_access_token, get_password_hash
 from app.models import User, Bike, FenderSubmission
@@ -385,6 +388,43 @@ class TestCreateSubmission:
         data = response.json()
         assert data["bike_qr_id"] == "PLAIN-BIKE-ID"
         assert data["provider"] is None
+
+    def test_create_submission_concurrent_bike_creation(
+        self, client, auth_headers, test_user, db_session
+    ):
+        """IntegrityError on bike insert falls back to fetching the existing bike."""
+        db_session.add(Bike(
+            bike_qr_id="RACE-BIKE",
+            first_seen_at=datetime.now(timezone.utc),
+            last_seen_at=datetime.now(timezone.utc),
+        ))
+        db_session.commit()
+
+        # First Bike query returns None to simulate the race window
+        original_first = Query.first
+        skip_once = True
+
+        def patched_first(self):
+            nonlocal skip_once
+            if skip_once and Bike in (d["entity"] for d in self.column_descriptions):
+                skip_once = False
+                return None
+            return original_first(self)
+
+        with patch.object(Query, "first", patched_first):
+            response = client.post(
+                "/submissions",
+                json={
+                    "bike_qr_id": "RACE-BIKE",
+                    "image_url_original": "https://example.com/original.jpg",
+                    "image_url_processed": "https://example.com/processed.jpg",
+                    "captured_date": date.today().isoformat(),
+                },
+                headers=auth_headers,
+            )
+
+        assert response.status_code == 201
+        assert response.json()["bike_qr_id"] == "RACE-BIKE"
 
     def test_create_submission_no_auth(self, client):
         """Request without auth should return 401."""

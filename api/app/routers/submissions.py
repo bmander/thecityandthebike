@@ -4,6 +4,7 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy import func, select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session, joinedload
 
 from ..bike_url_parser import parse_bike_url
@@ -83,14 +84,18 @@ def create_submission(
     if bike:
         bike.last_seen_at = now
     else:
-        bike = Bike(
-            bike_qr_id=parsed.bike_id,
-            provider=parsed.provider,
-            first_seen_at=now,
-            last_seen_at=now,
-        )
-        db.add(bike)
-        db.flush()
+        try:
+            with db.begin_nested():
+                bike = Bike(
+                    bike_qr_id=parsed.bike_id,
+                    provider=parsed.provider,
+                    first_seen_at=now,
+                    last_seen_at=now,
+                )
+                db.add(bike)
+        except IntegrityError:
+            bike = db.query(Bike).filter(Bike.bike_qr_id == parsed.bike_id).first()
+            bike.last_seen_at = now
 
     submission = FenderSubmission(
         user_id=current_user.user_id,
