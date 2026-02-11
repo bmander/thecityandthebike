@@ -1,6 +1,7 @@
 package com.thecityandthebike.ui.screens
 
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
@@ -15,6 +16,7 @@ import androidx.compose.ui.autofill.ContentType
 import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.contentType
 import androidx.compose.ui.semantics.semantics
@@ -151,12 +153,18 @@ fun RegisterScreen(
 
             // Checkbox: read and understood
             Row(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .toggleable(
+                        value = readUnderstood,
+                        onValueChange = { readUnderstood = it },
+                        role = Role.Checkbox
+                    ),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Checkbox(
                     checked = readUnderstood,
-                    onCheckedChange = { readUnderstood = it }
+                    onCheckedChange = null
                 )
                 Text(
                     text = stringResource(R.string.register_checkbox_read_understood),
@@ -167,12 +175,18 @@ fun RegisterScreen(
 
             // Checkbox: agree to license
             Row(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .toggleable(
+                        value = agreedToLicense,
+                        onValueChange = { agreedToLicense = it },
+                        role = Role.Checkbox
+                    ),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Checkbox(
                     checked = agreedToLicense,
-                    onCheckedChange = { agreedToLicense = it }
+                    onCheckedChange = null
                 )
                 Text(
                     text = stringResource(R.string.register_checkbox_agree_license),
