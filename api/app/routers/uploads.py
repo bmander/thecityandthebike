@@ -25,7 +25,8 @@ THUMBNAIL_MAX_SIZE = 300
 
 # Local upload dir (used when STORAGE_BUCKET is not set)
 UPLOAD_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "uploads")
-os.makedirs(os.path.join(UPLOAD_DIR, "images"), exist_ok=True)
+if not settings.STORAGE_BUCKET:
+    os.makedirs(os.path.join(UPLOAD_DIR, "images"), exist_ok=True)
 
 
 def _get_gcs_bucket():
