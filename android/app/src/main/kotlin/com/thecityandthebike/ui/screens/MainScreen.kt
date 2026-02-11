@@ -8,7 +8,6 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Snackbar
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -42,13 +41,11 @@ fun MainScreen(
 ) {
     val state by viewModel.state.collectAsState()
 
-    // Combine server submissions with local images
     val submissionsWithImages = state.submissions.filter { it.imageUrlOriginal != null }
-    val serverImageUris = submissionsWithImages.map { submission ->
+    val imageUris = submissionsWithImages.map { submission ->
         val url = submission.imageUrlThumbnail ?: submission.imageUrlOriginal!!
         imageUrlToUri(url)
     }
-    val allImageUris = state.localImages + serverImageUris
 
     PullToRefreshBox(
         isRefreshing = state.isRefreshing,
@@ -56,17 +53,12 @@ fun MainScreen(
         modifier = Modifier.fillMaxSize()
     ) {
         ImageGrid(
-            imageUris = allImageUris,
+            imageUris = imageUris,
             modifier = Modifier.fillMaxSize(),
-            uploadingUris = state.localImages.toSet(),
             onImageClick = onImageClick?.let { callback ->
                 { index ->
-                    val localCount = state.localImages.size
-                    if (index >= localCount) {
-                        val submissionIndex = index - localCount
-                        val submissionId = submissionsWithImages[submissionIndex].submissionId
-                        callback(submissionId)
-                    }
+                    val submissionId = submissionsWithImages[index].submissionId
+                    callback(submissionId)
                 }
             },
             onLoadMore = { viewModel.loadMoreSubmissions() }

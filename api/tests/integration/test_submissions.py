@@ -138,6 +138,25 @@ class TestGetSubmissions:
         assert response.status_code == 422
 
 
+class TestGetSubmission:
+    """Tests for GET /submissions/{submission_id} endpoint."""
+
+    def test_get_submission_success(self, client, test_submission):
+        response = client.get(f"/submissions/{test_submission.submission_id}")
+        assert response.status_code == 200
+        data = response.json()
+        assert data["submission_id"] == str(test_submission.submission_id)
+        assert data["username"] == "testuser"
+
+    def test_get_submission_not_found(self, client):
+        response = client.get("/submissions/00000000-0000-0000-0000-000000000000")
+        assert response.status_code == 404
+
+    def test_get_submission_invalid_id(self, client):
+        response = client.get("/submissions/not-a-uuid")
+        assert response.status_code == 422
+
+
 class TestCreateSubmission:
     """Tests for POST /submissions endpoint."""
 

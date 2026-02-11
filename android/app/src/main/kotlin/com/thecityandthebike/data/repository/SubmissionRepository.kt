@@ -58,6 +58,10 @@ class SubmissionRepository @Inject constructor(
         return safeApiCall { apiService.createSubmission(submission) }
     }
 
+    suspend fun getSubmission(submissionId: String): ApiResult<SubmissionResponse> {
+        return safeApiCall { apiService.getSubmission(submissionId) }
+    }
+
     suspend fun uploadImage(file: File): ApiResult<UploadResponse> {
         return safeApiCall {
             val requestFile = file.asRequestBody("image/*".toMediaTypeOrNull())

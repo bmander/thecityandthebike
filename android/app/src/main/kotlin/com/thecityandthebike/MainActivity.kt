@@ -13,7 +13,6 @@ import androidx.compose.material3.Surface
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ComposeUiFlags
 import androidx.compose.ui.ExperimentalComposeUiApi
@@ -52,7 +51,9 @@ import com.thecityandthebike.ui.screens.SplashScreen
 import com.thecityandthebike.ui.screens.UserScreen
 import com.thecityandthebike.ui.viewmodel.AuthViewModel
 import com.thecityandthebike.ui.viewmodel.BikeViewModel
+import com.thecityandthebike.ui.viewmodel.ImageDetailViewModel
 import com.thecityandthebike.ui.viewmodel.MainViewModel
+import com.thecityandthebike.ui.viewmodel.PhotoPreviewViewModel
 import com.thecityandthebike.ui.viewmodel.UserViewModel
 import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
@@ -171,37 +172,30 @@ class MainActivity : ComponentActivity() {
                             exitTransition = { ExitTransition.None },
                             popEnterTransition = { EnterTransition.None },
                             popExitTransition = { ExitTransition.None }
-                        ) { backStackEntry ->
-                            val route = backStackEntry.toRoute<ImageDetail>()
-                            if (route.submissionId.isEmpty()) {
-                                LaunchedEffect(Unit) { navController.popBackStack() }
-                                return@composable
-                            }
-                            val mainEntry = remember(backStackEntry) {
-                                navController.getBackStackEntry<Main>()
-                            }
-                            val mainViewModel: MainViewModel = hiltViewModel(mainEntry)
-                            val mainState by mainViewModel.state.collectAsState()
-                            if (mainState.isLoading) {
-                                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                                    CircularProgressIndicator()
-                                }
-                                return@composable
-                            }
-                            val submission = mainState.submissions.find { it.submissionId == route.submissionId }
-                            if (submission != null) {
-                                ImageDetailScreen(
-                                    submission = submission,
-                                    onBack = { navController.popBackStack() },
-                                    onBikeClick = { bikeQrId ->
-                                        navController.navigate(Bike(bikeQrId))
-                                    },
-                                    onUserClick = { userId ->
-                                        navController.navigate(User(userId))
+                        ) {
+                            val viewModel: ImageDetailViewModel = hiltViewModel()
+                            val detailState by viewModel.state.collectAsState()
+                            when {
+                                detailState.isLoading -> {
+                                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                                        CircularProgressIndicator()
                                     }
-                                )
-                            } else {
-                                LaunchedEffect(Unit) { navController.popBackStack() }
+                                }
+                                detailState.submission != null -> {
+                                    ImageDetailScreen(
+                                        submission = detailState.submission!!,
+                                        onBack = { navController.popBackStack() },
+                                        onBikeClick = { bikeQrId ->
+                                            navController.navigate(Bike(bikeQrId))
+                                        },
+                                        onUserClick = { userId ->
+                                            navController.navigate(User(userId))
+                                        }
+                                    )
+                                }
+                                else -> {
+                                    LaunchedEffect(Unit) { navController.popBackStack() }
+                                }
                             }
                         }
 
@@ -221,34 +215,27 @@ class MainActivity : ComponentActivity() {
                             exitTransition = { ExitTransition.None },
                             popEnterTransition = { EnterTransition.None },
                             popExitTransition = { ExitTransition.None }
-                        ) { backStackEntry ->
-                            val route = backStackEntry.toRoute<BikeImageDetail>()
-                            if (route.submissionId.isEmpty()) {
-                                LaunchedEffect(Unit) { navController.popBackStack() }
-                                return@composable
-                            }
-                            val bikeEntry = remember(backStackEntry) {
-                                navController.getBackStackEntry<Bike>()
-                            }
-                            val bikeViewModel: BikeViewModel = hiltViewModel(bikeEntry)
-                            val bikeState by bikeViewModel.state.collectAsState()
-                            if (bikeState.isLoading) {
-                                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                                    CircularProgressIndicator()
-                                }
-                                return@composable
-                            }
-                            val submission = bikeState.submissions.find { it.submissionId == route.submissionId }
-                            if (submission != null) {
-                                ImageDetailScreen(
-                                    submission = submission,
-                                    onBack = { navController.popBackStack() },
-                                    onUserClick = { userId ->
-                                        navController.navigate(User(userId))
+                        ) {
+                            val viewModel: ImageDetailViewModel = hiltViewModel()
+                            val detailState by viewModel.state.collectAsState()
+                            when {
+                                detailState.isLoading -> {
+                                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                                        CircularProgressIndicator()
                                     }
-                                )
-                            } else {
-                                LaunchedEffect(Unit) { navController.popBackStack() }
+                                }
+                                detailState.submission != null -> {
+                                    ImageDetailScreen(
+                                        submission = detailState.submission!!,
+                                        onBack = { navController.popBackStack() },
+                                        onUserClick = { userId ->
+                                            navController.navigate(User(userId))
+                                        }
+                                    )
+                                }
+                                else -> {
+                                    LaunchedEffect(Unit) { navController.popBackStack() }
+                                }
                             }
                         }
 
@@ -268,34 +255,27 @@ class MainActivity : ComponentActivity() {
                             exitTransition = { ExitTransition.None },
                             popEnterTransition = { EnterTransition.None },
                             popExitTransition = { ExitTransition.None }
-                        ) { backStackEntry ->
-                            val route = backStackEntry.toRoute<UserImageDetail>()
-                            if (route.submissionId.isEmpty()) {
-                                LaunchedEffect(Unit) { navController.popBackStack() }
-                                return@composable
-                            }
-                            val userEntry = remember(backStackEntry) {
-                                navController.getBackStackEntry<User>()
-                            }
-                            val userViewModel: UserViewModel = hiltViewModel(userEntry)
-                            val userState by userViewModel.state.collectAsState()
-                            if (userState.isLoading) {
-                                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                                    CircularProgressIndicator()
-                                }
-                                return@composable
-                            }
-                            val submission = userState.submissions.find { it.submissionId == route.submissionId }
-                            if (submission != null) {
-                                ImageDetailScreen(
-                                    submission = submission,
-                                    onBack = { navController.popBackStack() },
-                                    onBikeClick = { bikeQrId ->
-                                        navController.navigate(Bike(bikeQrId))
+                        ) {
+                            val viewModel: ImageDetailViewModel = hiltViewModel()
+                            val detailState by viewModel.state.collectAsState()
+                            when {
+                                detailState.isLoading -> {
+                                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                                        CircularProgressIndicator()
                                     }
-                                )
-                            } else {
-                                LaunchedEffect(Unit) { navController.popBackStack() }
+                                }
+                                detailState.submission != null -> {
+                                    ImageDetailScreen(
+                                        submission = detailState.submission!!,
+                                        onBack = { navController.popBackStack() },
+                                        onBikeClick = { bikeQrId ->
+                                            navController.navigate(Bike(bikeQrId))
+                                        }
+                                    )
+                                }
+                                else -> {
+                                    LaunchedEffect(Unit) { navController.popBackStack() }
+                                }
                             }
                         }
 
@@ -337,15 +317,11 @@ class MainActivity : ComponentActivity() {
                                 return@composable
                             }
                             val photoUri = android.net.Uri.parse(route.photoUri)
-                            val mainEntry = remember(backStackEntry) {
-                                navController.getBackStackEntry<Main>()
-                            }
-                            val mainViewModel: MainViewModel = hiltViewModel(mainEntry)
+                            val viewModel: PhotoPreviewViewModel = hiltViewModel()
                             PhotoPreviewScreen(
                                 photoUri = photoUri,
                                 onConfirm = {
-                                    mainViewModel.addLocalImage(photoUri)
-                                    mainViewModel.uploadAndCreateSubmission(photoUri, route.qrId)
+                                    viewModel.upload(photoUri, route.qrId)
                                     navController.popBackStack<Main>(inclusive = false)
                                 },
                                 onRetake = {

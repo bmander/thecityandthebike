@@ -40,6 +40,9 @@ interface ApiService {
     @POST("submissions")
     suspend fun createSubmission(@Body submission: SubmissionCreate): Response<SubmissionResponse>
 
+    @GET("submissions/{submissionId}")
+    suspend fun getSubmission(@Path("submissionId") submissionId: String): Response<SubmissionResponse>
+
     // User detail endpoints
     @GET("users/{userId}")
     suspend fun getUserDetail(@Path("userId") userId: String): Response<UserDetailResponse>

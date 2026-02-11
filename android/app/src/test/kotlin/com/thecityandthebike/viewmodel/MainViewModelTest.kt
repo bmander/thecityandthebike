@@ -1,43 +1,43 @@
 package com.thecityandthebike.viewmodel
 
-import android.net.Uri
 import com.thecityandthebike.data.model.ApiResult
 import com.thecityandthebike.data.model.AppError
 import com.thecityandthebike.data.model.dto.PaginatedSubmissions
 import com.thecityandthebike.data.model.dto.SubmissionResponse
-import com.thecityandthebike.data.model.dto.UploadResponse
 import com.thecityandthebike.data.repository.SubmissionRepository
 import com.thecityandthebike.ui.viewmodel.MainViewModel
-import com.thecityandthebike.util.ImagePreparer
+import com.thecityandthebike.upload.UploadManager
 import io.mockk.coEvery
-import io.mockk.coVerify
+import io.mockk.every
 import io.mockk.mockk
-import io.mockk.mockkStatic
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
+import com.thecityandthebike.upload.UploadState
 import org.junit.After
 import org.junit.Assert.*
 import org.junit.Before
 import org.junit.Test
-import java.io.File
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class MainViewModelTest {
 
     private val testDispatcher = StandardTestDispatcher()
     private lateinit var submissionRepository: SubmissionRepository
-    private lateinit var imagePreparer: ImagePreparer
+    private lateinit var uploadManager: UploadManager
+    private val uploadStateFlow = MutableStateFlow<UploadState>(UploadState.Idle)
     private lateinit var viewModel: MainViewModel
 
     @Before
     fun setup() {
         Dispatchers.setMain(testDispatcher)
         submissionRepository = mockk()
-        imagePreparer = mockk()
+        uploadManager = mockk()
+        every { uploadManager.state } returns uploadStateFlow
     }
 
     @After
@@ -46,7 +46,7 @@ class MainViewModelTest {
     }
 
     private fun createViewModel(): MainViewModel {
-        return MainViewModel(submissionRepository, imagePreparer)
+        return MainViewModel(submissionRepository, uploadManager)
     }
 
     @Test
@@ -88,28 +88,6 @@ class MainViewModelTest {
         assertTrue(viewModel.state.value.submissions.isEmpty())
         assertFalse(viewModel.state.value.isLoading)
         assertEquals("Network error. Check your connection and try again.", viewModel.state.value.error)
-    }
-
-    @Test
-    fun `addLocalImage should prepend image to local images list`() = runTest {
-        val paginated = PaginatedSubmissions(items = emptyList(), total = 0, limit = 20, offset = 0)
-        coEvery { submissionRepository.getSubmissions(any(), any()) } returns ApiResult.Success(paginated)
-
-        mockkStatic(Uri::class)
-        val uri1 = mockk<Uri>()
-        val uri2 = mockk<Uri>()
-
-        viewModel = createViewModel()
-        testDispatcher.scheduler.advanceUntilIdle()
-
-        viewModel.addLocalImage(uri1)
-        assertEquals(1, viewModel.state.value.localImages.size)
-        assertEquals(uri1, viewModel.state.value.localImages[0])
-
-        viewModel.addLocalImage(uri2)
-        assertEquals(2, viewModel.state.value.localImages.size)
-        assertEquals(uri2, viewModel.state.value.localImages[0])
-        assertEquals(uri1, viewModel.state.value.localImages[1])
     }
 
     @Test
@@ -263,112 +241,37 @@ class MainViewModelTest {
     }
 
     @Test
-    fun `upload success should add submission to state`() = runTest {
+    fun `upload success should trigger refresh`() = runTest {
         val paginated = PaginatedSubmissions(items = emptyList(), total = 0, limit = 20, offset = 0)
         coEvery { submissionRepository.getSubmissions(any(), any()) } returns ApiResult.Success(paginated)
-
-        val uri = mockk<Uri>()
-        val imageFile = mockk<File>(relaxed = true)
-        coEvery { imagePreparer.prepareImageFile(uri) } returns imageFile
-
-        val uploadResponse = UploadResponse(
-            url = "http://example.com/uploaded.jpg",
-            filename = "uploaded.jpg",
-            thumbnailUrl = "http://example.com/uploaded_thumb.jpg"
-        )
-        coEvery { submissionRepository.uploadImage(imageFile) } returns ApiResult.Success(uploadResponse)
-
-        val submissionResponse = SubmissionResponse(
-            submissionId = "new-1",
-            userId = "user1",
-            bikeQrId = "bike1",
-            imageUrlOriginal = "http://example.com/uploaded.jpg"
-        )
-        coEvery { submissionRepository.createSubmission(any()) } returns ApiResult.Success(submissionResponse)
 
         viewModel = createViewModel()
         testDispatcher.scheduler.advanceUntilIdle()
 
-        viewModel.addLocalImage(uri)
-        viewModel.uploadAndCreateSubmission(uri, "bike1")
+        val refreshedPage = listOf(
+            SubmissionResponse(submissionId = "new-1", userId = "user1", bikeQrId = "bike1")
+        )
+        val refreshedPaginated = PaginatedSubmissions(items = refreshedPage, total = 1, limit = 20, offset = 0)
+        coEvery { submissionRepository.getSubmissions(any(), any()) } returns ApiResult.Success(refreshedPaginated)
+
+        uploadStateFlow.value = UploadState.Success
         testDispatcher.scheduler.advanceUntilIdle()
 
-        assertFalse(viewModel.state.value.isUploading)
         assertEquals(1, viewModel.state.value.submissions.size)
         assertEquals("new-1", viewModel.state.value.submissions[0].submissionId)
-        assertFalse(viewModel.state.value.localImages.contains(uri))
-        assertNull(viewModel.state.value.error)
     }
 
     @Test
-    fun `upload failure should set error state`() = runTest {
+    fun `upload error should set error state`() = runTest {
         val paginated = PaginatedSubmissions(items = emptyList(), total = 0, limit = 20, offset = 0)
         coEvery { submissionRepository.getSubmissions(any(), any()) } returns ApiResult.Success(paginated)
-
-        val uri = mockk<Uri>()
-        val imageFile = mockk<File>(relaxed = true)
-        coEvery { imagePreparer.prepareImageFile(uri) } returns imageFile
-
-        coEvery { submissionRepository.uploadImage(imageFile) } returns ApiResult.Error(AppError.Server(500, "Upload failed"))
 
         viewModel = createViewModel()
         testDispatcher.scheduler.advanceUntilIdle()
 
-        viewModel.addLocalImage(uri)
-        viewModel.uploadAndCreateSubmission(uri, "bike1")
+        uploadStateFlow.value = UploadState.Error("Upload failed")
         testDispatcher.scheduler.advanceUntilIdle()
 
-        assertFalse(viewModel.state.value.isUploading)
-        assertEquals("Server error. Please try again later.", viewModel.state.value.error)
-        assertTrue(viewModel.state.value.submissions.isEmpty())
-    }
-
-    @Test
-    fun `submission creation failure should set error state`() = runTest {
-        val paginated = PaginatedSubmissions(items = emptyList(), total = 0, limit = 20, offset = 0)
-        coEvery { submissionRepository.getSubmissions(any(), any()) } returns ApiResult.Success(paginated)
-
-        val uri = mockk<Uri>()
-        val imageFile = mockk<File>(relaxed = true)
-        coEvery { imagePreparer.prepareImageFile(uri) } returns imageFile
-
-        val uploadResponse = UploadResponse(
-            url = "http://example.com/uploaded.jpg",
-            filename = "uploaded.jpg",
-            thumbnailUrl = "http://example.com/uploaded_thumb.jpg"
-        )
-        coEvery { submissionRepository.uploadImage(imageFile) } returns ApiResult.Success(uploadResponse)
-        coEvery { submissionRepository.createSubmission(any()) } returns ApiResult.Error(AppError.Server(500, "Create failed"))
-
-        viewModel = createViewModel()
-        testDispatcher.scheduler.advanceUntilIdle()
-
-        viewModel.addLocalImage(uri)
-        viewModel.uploadAndCreateSubmission(uri, "bike1")
-        testDispatcher.scheduler.advanceUntilIdle()
-
-        assertFalse(viewModel.state.value.isUploading)
-        assertEquals("Server error. Please try again later.", viewModel.state.value.error)
-        assertTrue(viewModel.state.value.submissions.isEmpty())
-    }
-
-    @Test
-    fun `file conversion failure should set error and not attempt upload`() = runTest {
-        val paginated = PaginatedSubmissions(items = emptyList(), total = 0, limit = 20, offset = 0)
-        coEvery { submissionRepository.getSubmissions(any(), any()) } returns ApiResult.Success(paginated)
-
-        val uri = mockk<Uri>()
-        coEvery { imagePreparer.prepareImageFile(uri) } returns null
-
-        viewModel = createViewModel()
-        testDispatcher.scheduler.advanceUntilIdle()
-
-        viewModel.addLocalImage(uri)
-        viewModel.uploadAndCreateSubmission(uri, "bike1")
-        testDispatcher.scheduler.advanceUntilIdle()
-
-        assertFalse(viewModel.state.value.isUploading)
-        assertEquals("Could not read image file", viewModel.state.value.error)
-        coVerify(exactly = 0) { submissionRepository.uploadImage(any()) }
+        assertEquals("Upload failed", viewModel.state.value.error)
     }
 }

@@ -1,7 +1,8 @@
 from datetime import datetime, timezone
 from typing import Annotated, Optional
+from uuid import UUID
 
-from fastapi import APIRouter, Depends, Query, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session, joinedload
 
@@ -33,6 +34,19 @@ def get_global_submissions(
         .all()
     )
     return PaginatedResponse(items=submissions, total=total, limit=limit, offset=offset)
+
+
+@router.get("/{submission_id}", response_model=SubmissionResponse)
+def get_submission(submission_id: UUID, db: Annotated[Session, Depends(get_db)]):
+    submission = (
+        db.query(FenderSubmission)
+        .options(joinedload(FenderSubmission.user), joinedload(FenderSubmission.bike))
+        .filter(FenderSubmission.submission_id == submission_id)
+        .first()
+    )
+    if submission is None:
+        raise HTTPException(status_code=404, detail="Submission not found")
+    return submission
 
 
 @router.post("", response_model=SubmissionResponse, status_code=status.HTTP_201_CREATED)

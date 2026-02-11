@@ -1,30 +1,24 @@
 package com.thecityandthebike.ui.viewmodel
 
-import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.thecityandthebike.data.model.ApiResult
-import com.thecityandthebike.data.model.dto.SubmissionCreate
 import com.thecityandthebike.data.model.dto.SubmissionResponse
 import com.thecityandthebike.data.repository.SubmissionRepository
-import com.thecityandthebike.util.ImagePreparer
+import com.thecityandthebike.upload.UploadManager
+import com.thecityandthebike.upload.UploadState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
-import java.time.LocalDate
-import java.time.ZoneId
-import java.util.UUID
 import javax.inject.Inject
 
 data class MainState(
     val isLoading: Boolean = false,
     val isRefreshing: Boolean = false,
     val submissions: List<SubmissionResponse> = emptyList(),
-    val localImages: List<Uri> = emptyList(),
     val error: String? = null,
-    val isUploading: Boolean = false,
     val isLoadingMore: Boolean = false,
     val hasMorePages: Boolean = true,
     val totalSubmissions: Int = 0
@@ -33,7 +27,7 @@ data class MainState(
 @HiltViewModel
 class MainViewModel @Inject constructor(
     private val submissionRepository: SubmissionRepository,
-    private val imagePreparer: ImagePreparer
+    private val uploadManager: UploadManager
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(MainState())
@@ -41,6 +35,21 @@ class MainViewModel @Inject constructor(
 
     init {
         loadSubmissions()
+        observeUploadState()
+    }
+
+    private fun observeUploadState() {
+        viewModelScope.launch {
+            uploadManager.state.collect { uploadState ->
+                when (uploadState) {
+                    is UploadState.Success -> refreshSubmissions()
+                    is UploadState.Error -> {
+                        _state.value = _state.value.copy(error = uploadState.message)
+                    }
+                    else -> {}
+                }
+            }
+        }
     }
 
     fun loadSubmissions() {
@@ -103,73 +112,6 @@ class MainViewModel @Inject constructor(
                         error = result.error.displayMessage
                     )
                 }
-            }
-        }
-    }
-
-    fun addLocalImage(uri: Uri) {
-        _state.value = _state.value.copy(
-            localImages = listOf(uri) + _state.value.localImages
-        )
-    }
-
-    fun uploadAndCreateSubmission(localUri: Uri, bikeQrId: String? = null) {
-        viewModelScope.launch {
-            _state.value = _state.value.copy(isUploading = true, error = null)
-
-            val imageFile = imagePreparer.prepareImageFile(localUri)
-
-            if (imageFile == null) {
-                _state.value = _state.value.copy(
-                    isUploading = false,
-                    localImages = _state.value.localImages.filter { it != localUri },
-                    error = "Could not read image file"
-                )
-                return@launch
-            }
-
-            try {
-                // First upload the image
-                when (val uploadResult = submissionRepository.uploadImage(imageFile)) {
-                    is ApiResult.Success -> {
-                        val imageUrl = uploadResult.data.url
-
-                        // Then create the submission
-                        val submission = SubmissionCreate(
-                            bikeQrId = bikeQrId ?: UUID.randomUUID().toString(),
-                            imageUrlOriginal = imageUrl,
-                            imageUrlThumbnail = uploadResult.data.thumbnailUrl,
-                            imageUrlProcessed = imageUrl,
-                            capturedDate = LocalDate.now(ZoneId.of("America/Los_Angeles")).toString()
-                        )
-
-                        when (val createResult = submissionRepository.createSubmission(submission)) {
-                            is ApiResult.Success -> {
-                                _state.value = _state.value.copy(
-                                    isUploading = false,
-                                    submissions = listOf(createResult.data) + _state.value.submissions,
-                                    localImages = _state.value.localImages.filter { it != localUri }
-                                )
-                            }
-                            is ApiResult.Error -> {
-                                _state.value = _state.value.copy(
-                                    isUploading = false,
-                                    localImages = _state.value.localImages.filter { it != localUri },
-                                    error = createResult.error.displayMessage
-                                )
-                            }
-                        }
-                    }
-                    is ApiResult.Error -> {
-                        _state.value = _state.value.copy(
-                            isUploading = false,
-                            localImages = _state.value.localImages.filter { it != localUri },
-                            error = uploadResult.error.displayMessage
-                        )
-                    }
-                }
-            } finally {
-                imageFile.delete()
             }
         }
     }
