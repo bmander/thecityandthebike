@@ -10,7 +10,7 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-tcatbpass}
       POSTGRES_DB: tcatb_dev
     ports:
-      - "5432:5432"
+      - "127.0.0.1:5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
@@ -33,6 +33,7 @@ services:
       PGPASSWORD: ${POSTGRES_PASSWORD:-tcatbpass}
       PGDATABASE: tcatb_dev
       JWT_SECRET_KEY: ${JWT_SECRET_KEY:-dev-only-secret}
+      PORT: "5000"
     ports:
       - "5000:5000"
 
