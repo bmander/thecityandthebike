@@ -1,5 +1,6 @@
 package com.thecityandthebike.viewmodel
 
+import android.net.Uri
 import com.thecityandthebike.data.model.ApiResult
 import com.thecityandthebike.data.model.AppError
 import com.thecityandthebike.data.model.dto.PaginatedSubmissions
@@ -273,5 +274,91 @@ class MainViewModelTest {
         testDispatcher.scheduler.advanceUntilIdle()
 
         assertEquals("Upload failed", viewModel.state.value.error)
+    }
+
+    @Test
+    fun `uploading state should set pendingUploadUri`() = runTest {
+        val paginated = PaginatedSubmissions(items = emptyList(), total = 0, limit = 20, offset = 0)
+        coEvery { submissionRepository.getSubmissions(any(), any()) } returns ApiResult.Success(paginated)
+
+        viewModel = createViewModel()
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        assertNull(viewModel.state.value.pendingUploadUri)
+
+        val uri = mockk<Uri>()
+        uploadStateFlow.value = UploadState.Uploading(uri)
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        assertEquals(uri, viewModel.state.value.pendingUploadUri)
+    }
+
+    @Test
+    fun `upload success should clear pendingUploadUri after refresh`() = runTest {
+        val paginated = PaginatedSubmissions(items = emptyList(), total = 0, limit = 20, offset = 0)
+        coEvery { submissionRepository.getSubmissions(any(), any()) } returns ApiResult.Success(paginated)
+
+        viewModel = createViewModel()
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        val uri = mockk<Uri>()
+        uploadStateFlow.value = UploadState.Uploading(uri)
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        assertEquals(uri, viewModel.state.value.pendingUploadUri)
+
+        val refreshedPage = listOf(
+            SubmissionResponse(submissionId = "new-1", userId = "user1", bikeQrId = "bike1")
+        )
+        val refreshedPaginated = PaginatedSubmissions(items = refreshedPage, total = 1, limit = 20, offset = 0)
+        coEvery { submissionRepository.getSubmissions(any(), any()) } returns ApiResult.Success(refreshedPaginated)
+
+        uploadStateFlow.value = UploadState.Success
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        assertNull(viewModel.state.value.pendingUploadUri)
+        assertEquals(1, viewModel.state.value.submissions.size)
+    }
+
+    @Test
+    fun `upload error should clear pendingUploadUri`() = runTest {
+        val paginated = PaginatedSubmissions(items = emptyList(), total = 0, limit = 20, offset = 0)
+        coEvery { submissionRepository.getSubmissions(any(), any()) } returns ApiResult.Success(paginated)
+
+        viewModel = createViewModel()
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        val uri = mockk<Uri>()
+        uploadStateFlow.value = UploadState.Uploading(uri)
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        assertEquals(uri, viewModel.state.value.pendingUploadUri)
+
+        uploadStateFlow.value = UploadState.Error("Upload failed")
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        assertNull(viewModel.state.value.pendingUploadUri)
+        assertEquals("Upload failed", viewModel.state.value.error)
+    }
+
+    @Test
+    fun `pull to refresh should not clear pendingUploadUri`() = runTest {
+        val paginated = PaginatedSubmissions(items = emptyList(), total = 0, limit = 20, offset = 0)
+        coEvery { submissionRepository.getSubmissions(any(), any()) } returns ApiResult.Success(paginated)
+
+        viewModel = createViewModel()
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        val uri = mockk<Uri>()
+        uploadStateFlow.value = UploadState.Uploading(uri)
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        assertEquals(uri, viewModel.state.value.pendingUploadUri)
+
+        // Pull-to-refresh should keep pendingUploadUri
+        viewModel.refreshSubmissions()
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        assertEquals(uri, viewModel.state.value.pendingUploadUri)
     }
 }

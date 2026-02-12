@@ -56,7 +56,7 @@ fun ImageGrid(
         horizontalArrangement = Arrangement.spacedBy(2.dp),
         verticalArrangement = Arrangement.spacedBy(2.dp)
     ) {
-        itemsIndexed(imageUris) { index, uri ->
+        itemsIndexed(imageUris, key = { _, uri -> uri.toString() }) { index, uri ->
             val isUploading = uri in uploadingUris
             Box(
                 modifier = Modifier

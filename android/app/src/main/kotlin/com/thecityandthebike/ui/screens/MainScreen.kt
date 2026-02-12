@@ -45,10 +45,13 @@ fun MainScreen(
     val state by viewModel.state.collectAsStateWithLifecycle()
 
     val submissionsWithImages = state.submissions.filter { it.imageUrl != null }
-    val imageUris = submissionsWithImages.map { submission ->
+    val submissionImageUris = submissionsWithImages.map { submission ->
         val url = submission.imageUrlThumbnail ?: submission.imageUrl!!
         imageUrlToUri(url)
     }
+    val pendingUri = state.pendingUploadUri
+    val imageUris = if (pendingUri != null) listOf(pendingUri) + submissionImageUris else submissionImageUris
+    val uploadingUris = if (pendingUri != null) setOf(pendingUri) else emptySet()
 
     PullToRefreshBox(
         isRefreshing = state.isRefreshing,
@@ -57,11 +60,15 @@ fun MainScreen(
     ) {
         ImageGrid(
             imageUris = imageUris,
+            uploadingUris = uploadingUris,
             modifier = Modifier.fillMaxSize(),
             onImageClick = onImageClick?.let { callback ->
                 { index ->
-                    val submissionId = submissionsWithImages[index].submissionId
-                    callback(submissionId)
+                    val adjustedIndex = if (pendingUri != null) index - 1 else index
+                    if (adjustedIndex >= 0) {
+                        val submissionId = submissionsWithImages[adjustedIndex].submissionId
+                        callback(submissionId)
+                    }
                 }
             },
             onLoadMore = { viewModel.loadMoreSubmissions() }

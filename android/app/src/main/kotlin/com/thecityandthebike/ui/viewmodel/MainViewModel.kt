@@ -2,6 +2,7 @@ package com.thecityandthebike.ui.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import android.net.Uri
 import com.thecityandthebike.data.model.ApiResult
 import com.thecityandthebike.data.model.dto.SubmissionResponse
 import com.thecityandthebike.data.repository.SubmissionRepository
@@ -21,7 +22,8 @@ data class MainState(
     val error: String? = null,
     val isLoadingMore: Boolean = false,
     val hasMorePages: Boolean = true,
-    val totalSubmissions: Int = 0
+    val totalSubmissions: Int = 0,
+    val pendingUploadUri: Uri? = null
 )
 
 @HiltViewModel
@@ -42,9 +44,17 @@ class MainViewModel @Inject constructor(
         viewModelScope.launch {
             uploadManager.state.collect { uploadState ->
                 when (uploadState) {
-                    is UploadState.Success -> refreshSubmissions()
+                    is UploadState.Uploading -> {
+                        _state.value = _state.value.copy(pendingUploadUri = uploadState.localUri)
+                    }
+                    is UploadState.Success -> {
+                        fetchSubmissions(isRefresh = true, clearPendingUpload = true)
+                    }
                     is UploadState.Error -> {
-                        _state.value = _state.value.copy(error = uploadState.message)
+                        _state.value = _state.value.copy(
+                            pendingUploadUri = null,
+                            error = uploadState.message
+                        )
                     }
                     else -> {}
                 }
@@ -61,7 +71,7 @@ class MainViewModel @Inject constructor(
         fetchSubmissions(isRefresh = true)
     }
 
-    private fun fetchSubmissions(isRefresh: Boolean) {
+    private fun fetchSubmissions(isRefresh: Boolean, clearPendingUpload: Boolean = false) {
         viewModelScope.launch {
             _state.value = _state.value.copy(
                 isLoading = !isRefresh,
@@ -75,14 +85,16 @@ class MainViewModel @Inject constructor(
                         isRefreshing = false,
                         submissions = result.data.items,
                         totalSubmissions = result.data.total,
-                        hasMorePages = result.data.items.size + result.data.offset < result.data.total
+                        hasMorePages = result.data.items.size + result.data.offset < result.data.total,
+                        pendingUploadUri = if (clearPendingUpload) null else _state.value.pendingUploadUri
                     )
                 }
                 is ApiResult.Error -> {
                     _state.value = _state.value.copy(
                         isLoading = false,
                         isRefreshing = false,
-                        error = result.error.displayMessage
+                        error = result.error.displayMessage,
+                        pendingUploadUri = if (clearPendingUpload) null else _state.value.pendingUploadUri
                     )
                 }
             }

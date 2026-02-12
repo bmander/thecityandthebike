@@ -19,7 +19,7 @@ import javax.inject.Singleton
 
 sealed interface UploadState {
     data object Idle : UploadState
-    data object Uploading : UploadState
+    data class Uploading(val localUri: Uri) : UploadState
     data object Success : UploadState
     data class Error(val message: String) : UploadState
 }
@@ -35,7 +35,7 @@ class UploadManager @Inject constructor(
 
     fun uploadAndCreateSubmission(localUri: Uri, bikeQrId: String) {
         appScope.launch {
-            _state.value = UploadState.Uploading
+            _state.value = UploadState.Uploading(localUri)
 
             val imageFile = imagePreparer.prepareImageFile(localUri)
 
