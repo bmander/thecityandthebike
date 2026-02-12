@@ -3,9 +3,12 @@ package com.thecityandthebike.ui.screens
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
+import androidx.compose.ui.test.hasClickAction
+import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextInput
 import com.thecityandthebike.setContentWithTheme
 import com.thecityandthebike.ui.viewmodel.AuthState
@@ -33,7 +36,9 @@ class RegisterScreenTest {
         composeTestRule.onNodeWithText("Email").assertIsDisplayed()
         composeTestRule.onNodeWithText("Password").assertIsDisplayed()
         composeTestRule.onNodeWithText("Confirm Password").assertIsDisplayed()
-        composeTestRule.onNodeWithText("Create Account").assertIsDisplayed()
+        composeTestRule.onNode(hasText("Create Account") and hasClickAction())
+            .performScrollTo()
+            .assertIsDisplayed()
     }
 
     @Test
@@ -48,7 +53,9 @@ class RegisterScreenTest {
             )
         }
 
-        composeTestRule.onNodeWithText("Create Account").assertIsNotEnabled()
+        composeTestRule.onNode(hasText("Create Account") and hasClickAction())
+            .performScrollTo()
+            .assertIsNotEnabled()
     }
 
     @Test
@@ -69,10 +76,16 @@ class RegisterScreenTest {
         composeTestRule.onNodeWithText("Confirm Password").performTextInput("password123")
 
         // Check both checkboxes
-        composeTestRule.onNodeWithText("I've read this and I understand").performClick()
-        composeTestRule.onNodeWithText("I agree to license my photos under CC BY-NC 4.0").performClick()
+        composeTestRule.onNodeWithText("I've read this and I understand")
+            .performScrollTo()
+            .performClick()
+        composeTestRule.onNodeWithText("I agree to license my photos under CC BY-NC 4.0")
+            .performScrollTo()
+            .performClick()
 
-        composeTestRule.onNodeWithText("Create Account").assertIsEnabled()
+        composeTestRule.onNode(hasText("Create Account") and hasClickAction())
+            .performScrollTo()
+            .assertIsEnabled()
     }
 
     @Test
@@ -87,7 +100,9 @@ class RegisterScreenTest {
             )
         }
 
-        composeTestRule.onNodeWithText("Username already taken").assertIsDisplayed()
+        composeTestRule.onNodeWithText("Username already taken")
+            .performScrollTo()
+            .assertIsDisplayed()
     }
 
     @Test

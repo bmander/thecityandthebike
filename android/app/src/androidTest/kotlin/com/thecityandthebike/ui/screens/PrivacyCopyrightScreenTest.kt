@@ -2,6 +2,7 @@ package com.thecityandthebike.ui.screens
 
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import com.thecityandthebike.setContentWithTheme
@@ -19,7 +20,7 @@ class PrivacyCopyrightScreenTest {
             PrivacyCopyrightScreen(onBack = {})
         }
 
-        composeTestRule.onNodeWithText("Privacy & Copyright").assertIsDisplayed()
+        composeTestRule.onAllNodesWithText("Privacy & Copyright")[0].assertIsDisplayed()
     }
 
     @Test
