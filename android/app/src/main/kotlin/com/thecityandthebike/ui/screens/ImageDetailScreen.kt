@@ -59,7 +59,6 @@ import com.thecityandthebike.ui.components.BikeIdBadge
 import com.thecityandthebike.ui.components.InfoRow
 import com.thecityandthebike.ui.components.MaskPainter
 import com.thecityandthebike.ui.components.ZoomableImage
-import com.thecityandthebike.ui.components.exportComposited
 import com.thecityandthebike.ui.components.rememberMaskPainterState
 import com.thecityandthebike.util.imageUrlToUri
 import androidx.compose.ui.tooling.preview.Preview
@@ -170,13 +169,8 @@ fun ImageDetailScreen(
                     Button(
                         onClick = {
                             imageUri?.let { uri ->
-                                val file = exportComposited(
-                                    context, uri,
-                                    maskState.strokes.toList(),
-                                    maskState.canvasSize.width,
-                                    maskState.canvasSize.height
-                                )
-                                file?.let { onCreateTag(it) }
+                                maskState.exportComposited(context, uri)
+                                    ?.let { onCreateTag(it) }
                             }
                         },
                         enabled = maskState.hasStrokes && !isCreatingTag
