@@ -7,6 +7,7 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import com.thecityandthebike.data.model.dto.SubmissionResponse
 import com.thecityandthebike.setContentWithTheme
+import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 
@@ -19,7 +20,7 @@ class ImageDetailScreenTest {
         submissionId = "sub-1",
         userId = "user-1",
         bikeQrId = "BIKE-42",
-        capturedDate = "2025-03-15",
+        capturedDate = "2025-01-15",
         username = "testuser",
         provider = "citibike"
     )
@@ -29,12 +30,12 @@ class ImageDetailScreenTest {
         composeTestRule.setContentWithTheme {
             ImageDetailScreen(
                 submission = testSubmission,
-                onBack = {}
+                onHome = {}
             )
         }
 
         composeTestRule.onNodeWithText("testuser").assertIsDisplayed()
-        composeTestRule.onNodeWithText("Mar 15, 2025").assertIsDisplayed()
+        composeTestRule.onNodeWithText("Jan 15, 2025").assertIsDisplayed()
     }
 
     @Test
@@ -42,7 +43,7 @@ class ImageDetailScreenTest {
         composeTestRule.setContentWithTheme {
             ImageDetailScreen(
                 submission = testSubmission,
-                onBack = {},
+                onHome = {},
                 isOwner = true
             )
         }
@@ -56,7 +57,7 @@ class ImageDetailScreenTest {
         composeTestRule.setContentWithTheme {
             ImageDetailScreen(
                 submission = testSubmission,
-                onBack = {},
+                onHome = {},
                 isOwner = false
             )
         }
@@ -70,7 +71,7 @@ class ImageDetailScreenTest {
         composeTestRule.setContentWithTheme {
             ImageDetailScreen(
                 submission = testSubmission,
-                onBack = {},
+                onHome = {},
                 isOwner = true,
                 onDelete = {}
             )
@@ -85,5 +86,51 @@ class ImageDetailScreenTest {
         composeTestRule.onNodeWithText("Cancel").performClick()
 
         composeTestRule.onNodeWithText("Delete Photo").assertDoesNotExist()
+    }
+
+    @Test
+    fun homeButton_isDisplayed() {
+        composeTestRule.setContentWithTheme {
+            ImageDetailScreen(
+                submission = testSubmission,
+                onHome = {}
+            )
+        }
+
+        composeTestRule
+            .onNodeWithContentDescription("Home")
+            .assertIsDisplayed()
+    }
+
+    @Test
+    fun homeButton_clickCallsOnHome() {
+        var homeCalled = false
+
+        composeTestRule.setContentWithTheme {
+            ImageDetailScreen(
+                submission = testSubmission,
+                onHome = { homeCalled = true }
+            )
+        }
+
+        composeTestRule
+            .onNodeWithContentDescription("Home")
+            .performClick()
+
+        assertTrue("onHome should be called when home button is clicked", homeCalled)
+    }
+
+    @Test
+    fun homeButton_doesNotShowBackArrow() {
+        composeTestRule.setContentWithTheme {
+            ImageDetailScreen(
+                submission = testSubmission,
+                onHome = {}
+            )
+        }
+
+        composeTestRule
+            .onNodeWithContentDescription("Back")
+            .assertDoesNotExist()
     }
 }
