@@ -16,7 +16,6 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.DirectionsBike
 import androidx.compose.material.icons.filled.CalendarToday
 import androidx.compose.material.icons.filled.Delete
@@ -58,7 +57,7 @@ import java.time.format.DateTimeFormatter
 @Composable
 fun ImageDetailScreen(
     submission: SubmissionResponse,
-    onBack: () -> Unit,
+    onHome: () -> Unit,
     onBikeClick: ((String) -> Unit)? = null,
     onUserClick: ((String) -> Unit)? = null,
     isOwner: Boolean = false,
@@ -109,10 +108,10 @@ fun ImageDetailScreen(
             TopAppBar(
                 title = { },
                 navigationIcon = {
-                    IconButton(onClick = onBack) {
+                    IconButton(onClick = onHome) {
                         Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Back"
+                            imageVector = Icons.AutoMirrored.Filled.DirectionsBike,
+                            contentDescription = "Home"
                         )
                     }
                 }
@@ -231,7 +230,7 @@ private fun ImageDetailScreenPreview() {
                 username = "bmander",
                 provider = "citibike"
             ),
-            onBack = {},
+            onHome = {},
             isOwner = true
         )
     }
