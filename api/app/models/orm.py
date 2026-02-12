@@ -76,6 +76,8 @@ class FenderSubmission(Base):
     user = relationship("User", back_populates="submissions")
     bike = relationship("Bike", back_populates="submissions")
 
+    tags = relationship("Tag", back_populates="submission", cascade="all, delete-orphan")
+
     @property
     def bike_qr_id(self):
         return self.bike.bike_qr_id if self.bike else None
@@ -87,3 +89,16 @@ class FenderSubmission(Base):
     @property
     def provider(self):
         return self.bike.provider if self.bike else None
+
+
+class Tag(Base):
+    __tablename__ = "tags"
+
+    tag_id = Column(Uuid, primary_key=True, default=uuid.uuid4)
+    submission_id = Column(Uuid, ForeignKey("fender_submissions.submission_id"), nullable=False, index=True)
+    user_id = Column(Uuid, ForeignKey("users.user_id"), nullable=False)
+    image_url = Column(Text, nullable=False)
+    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
+
+    submission = relationship("FenderSubmission", back_populates="tags")
+    user = relationship("User")

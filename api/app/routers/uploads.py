@@ -19,6 +19,7 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/uploads", tags=["uploads"])
 
 ALLOWED_EXTENSIONS = {".jpg", ".jpeg"}
+ALLOWED_SERVE_EXTENSIONS = {".jpg", ".jpeg", ".png"}
 MAX_FILE_SIZE = 10 * 1024 * 1024  # 10 MB
 CHUNK_SIZE = 64 * 1024  # 64 KB
 THUMBNAIL_MAX_SIZE = 300
@@ -169,7 +170,7 @@ async def upload_image(
 @router.get("/images/{filename}")
 async def get_image(filename: str):
     ext = os.path.splitext(filename)[1].lower()
-    if ext not in ALLOWED_EXTENSIONS:
+    if ext not in ALLOWED_SERVE_EXTENSIONS:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Not found")
 
     if ".." in filename or "/" in filename or "\\" in filename:

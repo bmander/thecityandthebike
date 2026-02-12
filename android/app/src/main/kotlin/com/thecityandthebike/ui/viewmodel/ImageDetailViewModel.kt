@@ -6,7 +6,9 @@ import androidx.lifecycle.viewModelScope
 import com.thecityandthebike.data.local.TokenManager
 import com.thecityandthebike.data.model.ApiResult
 import com.thecityandthebike.data.model.dto.SubmissionResponse
+import com.thecityandthebike.data.model.dto.TagResponse
 import com.thecityandthebike.data.repository.SubmissionRepository
+import com.thecityandthebike.data.repository.TagRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -20,12 +22,17 @@ data class ImageDetailState(
     val error: String? = null,
     val isOwner: Boolean = false,
     val isDeleting: Boolean = false,
-    val isDeleted: Boolean = false
+    val isDeleted: Boolean = false,
+    val tags: List<TagResponse> = emptyList(),
+    val isTagMode: Boolean = false,
+    val isCreatingTag: Boolean = false,
+    val isDeletingTag: Boolean = false,
 )
 
 @HiltViewModel
 class ImageDetailViewModel @Inject constructor(
     private val submissionRepository: SubmissionRepository,
+    private val tagRepository: TagRepository,
     private val tokenManager: TokenManager,
     savedStateHandle: SavedStateHandle
 ) : ViewModel() {
@@ -37,6 +44,7 @@ class ImageDetailViewModel @Inject constructor(
 
     init {
         loadSubmission()
+        loadTags()
     }
 
     private fun loadSubmission() {
@@ -85,5 +93,75 @@ class ImageDetailViewModel @Inject constructor(
 
     fun clearError() {
         _state.value = _state.value.copy(error = null)
+    }
+
+    private fun loadTags() {
+        viewModelScope.launch {
+            when (val result = tagRepository.getTags(submissionId)) {
+                is ApiResult.Success -> {
+                    _state.value = _state.value.copy(tags = result.data)
+                }
+                is ApiResult.Error -> {
+                    // Silently fail - tags are supplementary
+                }
+            }
+        }
+    }
+
+    fun enterTagMode() {
+        _state.value = _state.value.copy(isTagMode = true)
+    }
+
+    fun exitTagMode() {
+        _state.value = _state.value.copy(isTagMode = false)
+    }
+
+    fun createTag(imageFile: java.io.File) {
+        viewModelScope.launch {
+            _state.value = _state.value.copy(isCreatingTag = true)
+            when (val result = tagRepository.createTag(submissionId, imageFile)) {
+                is ApiResult.Success -> {
+                    _state.value = _state.value.copy(
+                        isCreatingTag = false,
+                        isTagMode = false,
+                        tags = listOf(result.data) + _state.value.tags
+                    )
+                }
+                is ApiResult.Error -> {
+                    _state.value = _state.value.copy(
+                        isCreatingTag = false,
+                        error = "Failed to create tag"
+                    )
+                }
+            }
+        }
+    }
+
+    fun deleteTag(tagId: String) {
+        viewModelScope.launch {
+            _state.value = _state.value.copy(isDeletingTag = true)
+            when (tagRepository.deleteTag(tagId)) {
+                is ApiResult.Success -> {
+                    _state.value = _state.value.copy(
+                        isDeletingTag = false,
+                        tags = _state.value.tags.filter { it.tagId != tagId }
+                    )
+                }
+                is ApiResult.Error -> {
+                    _state.value = _state.value.copy(
+                        isDeletingTag = false,
+                        error = "Failed to delete tag"
+                    )
+                }
+            }
+        }
+    }
+
+    fun isLoggedIn(): Boolean {
+        return tokenManager.getUserId() != null
+    }
+
+    fun isTagOwner(tag: TagResponse): Boolean {
+        return tokenManager.getUserId() == tag.userId
     }
 }

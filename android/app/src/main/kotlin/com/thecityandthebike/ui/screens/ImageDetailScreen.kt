@@ -12,21 +12,27 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.DirectionsBike
 import androidx.compose.material.icons.filled.CalendarToday
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Download
+import androidx.compose.material.icons.automirrored.filled.Label
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.FilledIconButton
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedIconButton
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
@@ -41,15 +47,24 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import coil.compose.AsyncImage
 import com.thecityandthebike.data.model.dto.SubmissionResponse
+import com.thecityandthebike.data.model.dto.TagResponse
 import com.thecityandthebike.ui.theme.ExtendedTheme
 import com.thecityandthebike.ui.components.BikeIdBadge
 import com.thecityandthebike.ui.components.InfoRow
+import com.thecityandthebike.ui.components.MaskPainter
 import com.thecityandthebike.ui.components.ZoomableImage
+import com.thecityandthebike.ui.components.exportComposited
+import com.thecityandthebike.ui.components.rememberMaskPainterState
 import com.thecityandthebike.util.imageUrlToUri
 import androidx.compose.ui.tooling.preview.Preview
 import com.thecityandthebike.ui.theme.TheCityAndTheBikeTheme
+import java.io.File
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 
@@ -63,7 +78,16 @@ fun ImageDetailScreen(
     isOwner: Boolean = false,
     isDeleting: Boolean = false,
     onDelete: () -> Unit = {},
-    onDownload: () -> Unit = {}
+    onDownload: () -> Unit = {},
+    isLoggedIn: Boolean = false,
+    tags: List<TagResponse> = emptyList(),
+    isTagMode: Boolean = false,
+    isCreatingTag: Boolean = false,
+    onEnterTagMode: () -> Unit = {},
+    onExitTagMode: () -> Unit = {},
+    onCreateTag: (File) -> Unit = {},
+    onDeleteTag: (String) -> Unit = {},
+    isTagOwner: (TagResponse) -> Boolean = { false },
 ) {
     val imageUri = submission.imageUrl?.let { imageUrlToUri(it) }
     val thumbnailUri = submission.imageUrlThumbnail?.let { imageUrlToUri(it) }
@@ -124,11 +148,53 @@ fun ImageDetailScreen(
                 .padding(paddingValues)
                 .verticalScroll(rememberScrollState())
         ) {
-            ZoomableImage(
-                imageUri = imageUri,
-                thumbnailUri = thumbnailUri,
-                contentDescription = "Submission photo"
-            )
+            if (isTagMode) {
+                val maskState = rememberMaskPainterState()
+                val context = LocalContext.current
+
+                MaskPainter(
+                    imageUri = imageUri,
+                    thumbnailUri = thumbnailUri,
+                    state = maskState
+                )
+
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 8.dp),
+                    horizontalArrangement = Arrangement.SpaceEvenly
+                ) {
+                    OutlinedButton(onClick = onExitTagMode) {
+                        Text("Discard")
+                    }
+                    Button(
+                        onClick = {
+                            imageUri?.let { uri ->
+                                val file = exportComposited(
+                                    context, uri,
+                                    maskState.strokes.toList(),
+                                    maskState.canvasSize.width,
+                                    maskState.canvasSize.height
+                                )
+                                file?.let { onCreateTag(it) }
+                            }
+                        },
+                        enabled = maskState.hasStrokes && !isCreatingTag
+                    ) {
+                        if (isCreatingTag) {
+                            CircularProgressIndicator(modifier = Modifier.size(16.dp))
+                        } else {
+                            Text("Save tag")
+                        }
+                    }
+                }
+            } else {
+                ZoomableImage(
+                    imageUri = imageUri,
+                    thumbnailUri = thumbnailUri,
+                    contentDescription = "Submission photo"
+                )
+            }
 
             if (isOwner) {
                 Box(
@@ -166,6 +232,26 @@ fun ImageDetailScreen(
                                 )
                             }
                         }
+                    }
+                }
+            }
+
+            if (isLoggedIn && !isTagMode) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 8.dp, start = 16.dp),
+                    contentAlignment = Alignment.CenterStart
+                ) {
+                    OutlinedIconButton(
+                        onClick = onEnterTagMode,
+                        shape = RoundedCornerShape(8.dp),
+                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
+                    ) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.Label,
+                            contentDescription = "Add tag"
+                        )
                     }
                 }
             }
@@ -209,6 +295,44 @@ fun ImageDetailScreen(
                             text = date,
                             style = MaterialTheme.typography.titleMedium
                         )
+                    }
+                }
+            }
+
+            if (tags.isNotEmpty()) {
+                Spacer(modifier = Modifier.height(16.dp))
+                LazyRow(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    items(tags) { tag ->
+                        Box {
+                            AsyncImage(
+                                model = imageUrlToUri(tag.imageUrl),
+                                contentDescription = "Tag",
+                                modifier = Modifier
+                                    .size(80.dp)
+                                    .clip(RoundedCornerShape(8.dp)),
+                                contentScale = ContentScale.Crop
+                            )
+                            if (isTagOwner(tag)) {
+                                IconButton(
+                                    onClick = { onDeleteTag(tag.tagId) },
+                                    modifier = Modifier
+                                        .align(Alignment.TopEnd)
+                                        .size(24.dp)
+                                ) {
+                                    Icon(
+                                        Icons.Default.Close,
+                                        contentDescription = "Delete tag",
+                                        tint = MaterialTheme.colorScheme.error,
+                                        modifier = Modifier.size(16.dp)
+                                    )
+                                }
+                            }
+                        }
                     }
                 }
             }
