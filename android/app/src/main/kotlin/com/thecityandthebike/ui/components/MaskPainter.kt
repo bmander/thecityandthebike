@@ -24,8 +24,11 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.CompositingStrategy
 import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.onSizeChanged
@@ -82,10 +85,11 @@ fun MaskPainter(
             contentScale = ContentScale.Crop
         )
 
-        // Paint overlay canvas
+        // Scratch-off mask overlay: black semi-transparent mask with strokes cut out
         Canvas(
             modifier = Modifier
                 .fillMaxSize()
+                .graphicsLayer { compositingStrategy = CompositingStrategy.Offscreen }
                 .pointerInput(Unit) {
                     detectDragGestures(
                         onDragStart = { offset ->
@@ -110,33 +114,38 @@ fun MaskPainter(
                     )
                 }
         ) {
-            val highlightColor = Color(0x80FFFF00) // Semi-transparent yellow
             val strokeWidth = 40f
 
-            // Draw committed strokes
+            // Draw the semi-transparent black mask over the entire image
+            drawRect(color = Color(0x80000000))
+
+            // Scratch off the mask where the user has drawn (BlendMode.Clear
+            // punches transparent holes through the offscreen layer)
             for (stroke in state.strokes) {
                 if (stroke.points.size >= 2) {
                     for (i in 1 until stroke.points.size) {
                         drawLine(
-                            color = highlightColor,
+                            color = Color.Black,
                             start = Offset(stroke.points[i - 1].x, stroke.points[i - 1].y),
                             end = Offset(stroke.points[i].x, stroke.points[i].y),
                             strokeWidth = strokeWidth,
-                            cap = StrokeCap.Round
+                            cap = StrokeCap.Round,
+                            blendMode = BlendMode.Clear
                         )
                     }
                 }
             }
 
-            // Draw current stroke in progress
+            // Scratch off current stroke in progress
             if (state.currentStroke.size >= 2) {
                 for (i in 1 until state.currentStroke.size) {
                     drawLine(
-                        color = highlightColor,
+                        color = Color.Black,
                         start = Offset(state.currentStroke[i - 1].x, state.currentStroke[i - 1].y),
                         end = Offset(state.currentStroke[i].x, state.currentStroke[i].y),
                         strokeWidth = strokeWidth,
-                        cap = StrokeCap.Round
+                        cap = StrokeCap.Round,
+                        blendMode = BlendMode.Clear
                     )
                 }
             }
