@@ -29,6 +29,7 @@ import com.thecityandthebike.data.model.dto.SubmissionResponse
 import com.thecityandthebike.ui.components.BikeIdBadge
 import com.thecityandthebike.ui.components.CalendarEntry
 import com.thecityandthebike.ui.components.CalendarPhoto
+import com.thecityandthebike.ui.viewmodel.BikeState
 import com.thecityandthebike.ui.viewmodel.BikeViewModel
 import com.thecityandthebike.util.imageUrlToUri
 import java.time.LocalDate
@@ -86,9 +87,27 @@ fun BikeScreen(
     onImageClick: (String) -> Unit
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
-
-    val provider = state.bikeDetail?.provider
     val bikeQrId = state.bikeDetail?.bikeQrId ?: viewModel.bikeQrId
+
+    BikeScreenContent(
+        state = state,
+        bikeQrId = bikeQrId,
+        onBack = onBack,
+        onImageClick = onImageClick,
+        onLoadMore = { viewModel.loadMoreSubmissions() }
+    )
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+internal fun BikeScreenContent(
+    state: BikeState,
+    bikeQrId: String,
+    onBack: () -> Unit,
+    onImageClick: (String) -> Unit,
+    onLoadMore: () -> Unit = {}
+) {
+    val provider = state.bikeDetail?.provider
 
     Scaffold(
         topBar = {
@@ -147,7 +166,7 @@ fun BikeScreen(
 
                 LaunchedEffect(shouldLoadMore.value) {
                     if (shouldLoadMore.value) {
-                        viewModel.loadMoreSubmissions()
+                        onLoadMore()
                     }
                 }
 
