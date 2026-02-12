@@ -31,3 +31,10 @@ class BikeDetailResponse(BikeResponse):
     first_captured_by: Optional[UserSummary] = None
     last_captured_by: Optional[UserSummary] = None
     owners: list[Owner] = []
+
+
+class BikeListItem(BaseModel):
+    bike_qr_id: str
+    provider: Optional[str] = None
+    submission_count: int
+    owner: Optional[UserSummary] = None

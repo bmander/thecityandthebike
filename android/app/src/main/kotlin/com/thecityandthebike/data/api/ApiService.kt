@@ -58,6 +58,12 @@ interface ApiService {
     ): Response<PaginatedSubmissions>
 
     // Bike endpoints
+    @GET("bikes")
+    suspend fun getBikes(
+        @Query("limit") limit: Int = 20,
+        @Query("offset") offset: Int = 0
+    ): Response<PaginatedBikes>
+
     @GET("bikes/{bikeQrId}")
     suspend fun getBikeDetail(@Path("bikeQrId") bikeQrId: String): Response<BikeDetailResponse>
 

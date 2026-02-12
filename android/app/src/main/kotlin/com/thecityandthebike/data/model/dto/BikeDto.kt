@@ -16,6 +16,22 @@ data class BikeOwner(
 )
 
 @Serializable
+data class BikeListItem(
+    @SerialName("bike_qr_id") val bikeQrId: String,
+    val provider: String? = null,
+    @SerialName("submission_count") val submissionCount: Int,
+    val owner: UserSummary? = null
+)
+
+@Serializable
+data class PaginatedBikes(
+    val items: List<BikeListItem>,
+    val total: Int,
+    val limit: Int,
+    val offset: Int
+)
+
+@Serializable
 data class BikeDetailResponse(
     @SerialName("bike_qr_id") val bikeQrId: String,
     val provider: String? = null,

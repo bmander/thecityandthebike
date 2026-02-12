@@ -4,6 +4,168 @@ from app.dependencies import get_password_hash
 from app.models import FenderSubmission, User
 
 
+class TestListBikes:
+    """Tests for GET /bikes endpoint."""
+
+    def test_list_bikes_empty(self, client):
+        """Should return empty list when no bikes exist."""
+        response = client.get("/bikes")
+        assert response.status_code == 200
+        data = response.json()
+        assert data["items"] == []
+        assert data["total"] == 0
+        assert data["limit"] == 20
+        assert data["offset"] == 0
+
+    def test_list_bikes_single_bike_no_submissions(self, client, test_bike):
+        """Single bike with no submissions should have count 0 and no owner."""
+        response = client.get("/bikes")
+        assert response.status_code == 200
+        data = response.json()
+        assert data["total"] == 1
+        assert len(data["items"]) == 1
+        item = data["items"][0]
+        assert item["bike_qr_id"] == test_bike.bike_qr_id
+        assert item["submission_count"] == 0
+        assert item["owner"] is None
+
+    def test_list_bikes_with_submissions_and_owner(
+        self, client, test_bike, test_user, db_session
+    ):
+        """Bike with submissions should show count and owner."""
+        for i in range(3):
+            db_session.add(FenderSubmission(
+                user_id=test_user.user_id,
+                bike_id=test_bike.id,
+                image_url=f"https://example.com/img{i}.jpg",
+                captured_date=date.today(),
+            ))
+        db_session.commit()
+
+        response = client.get("/bikes")
+        assert response.status_code == 200
+        data = response.json()
+        item = data["items"][0]
+        assert item["submission_count"] == 3
+        assert item["owner"]["name"] == test_user.username
+        assert item["owner"]["id"] == str(test_user.user_id)
+
+    def test_list_bikes_ordered_by_submission_count_desc(
+        self, client, test_user, db_session
+    ):
+        """Bikes should be ordered by submission count descending."""
+        from app.models import Bike
+        bike_a = Bike(bike_qr_id="BIKE-AAA", first_seen_at=datetime.now(timezone.utc), last_seen_at=datetime.now(timezone.utc))
+        bike_b = Bike(bike_qr_id="BIKE-BBB", first_seen_at=datetime.now(timezone.utc), last_seen_at=datetime.now(timezone.utc))
+        db_session.add_all([bike_a, bike_b])
+        db_session.commit()
+        db_session.refresh(bike_a)
+        db_session.refresh(bike_b)
+
+        # bike_b gets 3 submissions, bike_a gets 1
+        db_session.add(FenderSubmission(
+            user_id=test_user.user_id,
+            bike_id=bike_a.id,
+            image_url="https://example.com/a1.jpg",
+            captured_date=date.today(),
+        ))
+        for i in range(3):
+            db_session.add(FenderSubmission(
+                user_id=test_user.user_id,
+                bike_id=bike_b.id,
+                image_url=f"https://example.com/b{i}.jpg",
+                captured_date=date.today(),
+            ))
+        db_session.commit()
+
+        response = client.get("/bikes")
+        assert response.status_code == 200
+        data = response.json()
+        assert len(data["items"]) == 2
+        assert data["items"][0]["bike_qr_id"] == "BIKE-BBB"
+        assert data["items"][0]["submission_count"] == 3
+        assert data["items"][1]["bike_qr_id"] == "BIKE-AAA"
+        assert data["items"][1]["submission_count"] == 1
+
+    def test_list_bikes_pagination(self, client, db_session):
+        """Should respect limit and offset parameters."""
+        from app.models import Bike
+        for i in range(5):
+            db_session.add(Bike(
+                bike_qr_id=f"BIKE-{i:03d}",
+                first_seen_at=datetime.now(timezone.utc),
+                last_seen_at=datetime.now(timezone.utc),
+            ))
+        db_session.commit()
+
+        response = client.get("/bikes?limit=2&offset=0")
+        assert response.status_code == 200
+        data = response.json()
+        assert data["total"] == 5
+        assert len(data["items"]) == 2
+        assert data["limit"] == 2
+        assert data["offset"] == 0
+
+        response = client.get("/bikes?limit=2&offset=2")
+        data = response.json()
+        assert data["total"] == 5
+        assert len(data["items"]) == 2
+        assert data["offset"] == 2
+
+    def test_list_bikes_owner_is_user_with_most_submissions(
+        self, client, test_bike, test_user, db_session
+    ):
+        """Owner should be the user with the most submissions for that bike."""
+        second_user = User(
+            username="seconduser",
+            email="second@example.com",
+            password_hash=get_password_hash("password123"),
+        )
+        db_session.add(second_user)
+        db_session.commit()
+        db_session.refresh(second_user)
+
+        # test_user gets 1 submission, second_user gets 2
+        db_session.add(FenderSubmission(
+            user_id=test_user.user_id,
+            bike_id=test_bike.id,
+            image_url="https://example.com/u1.jpg",
+            captured_date=date.today(),
+        ))
+        for i in range(2):
+            db_session.add(FenderSubmission(
+                user_id=second_user.user_id,
+                bike_id=test_bike.id,
+                image_url=f"https://example.com/u2_{i}.jpg",
+                captured_date=date.today(),
+            ))
+        db_session.commit()
+
+        response = client.get("/bikes")
+        assert response.status_code == 200
+        data = response.json()
+        item = data["items"][0]
+        assert item["owner"]["name"] == "seconduser"
+        assert item["owner"]["id"] == str(second_user.user_id)
+
+    def test_list_bikes_provider_included(self, client, db_session):
+        """Provider field should be included in the response."""
+        from app.models import Bike
+        bike = Bike(
+            bike_qr_id="BIKE-PROV",
+            provider="citibike",
+            first_seen_at=datetime.now(timezone.utc),
+            last_seen_at=datetime.now(timezone.utc),
+        )
+        db_session.add(bike)
+        db_session.commit()
+
+        response = client.get("/bikes")
+        assert response.status_code == 200
+        data = response.json()
+        assert data["items"][0]["provider"] == "citibike"
+
+
 class TestGetBikeDetail:
     """Tests for GET /bikes/{bike_qr_id} endpoint."""
 

@@ -36,6 +36,7 @@ import com.thecityandthebike.ui.components.CameraFAB
 import com.thecityandthebike.ui.components.ImageGrid
 import com.thecityandthebike.ui.components.LoginFAB
 import com.thecityandthebike.ui.components.MenuButton
+import com.thecityandthebike.ui.viewmodel.BikesListViewModel
 import com.thecityandthebike.ui.viewmodel.LeaderboardViewModel
 import com.thecityandthebike.ui.viewmodel.MainViewModel
 import com.thecityandthebike.util.imageUrlToUri
@@ -43,7 +44,8 @@ import kotlinx.coroutines.launch
 
 private enum class MainTab(val title: String) {
     FEED("Feed"),
-    LEADERBOARD("Leaderboard")
+    LEADERBOARD("Leaderboard"),
+    BIKES("Bikes")
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -51,13 +53,15 @@ private enum class MainTab(val title: String) {
 fun MainScreen(
     viewModel: MainViewModel,
     leaderboardViewModel: LeaderboardViewModel,
+    bikesListViewModel: BikesListViewModel,
     isLoggedIn: Boolean,
     onLogout: () -> Unit,
     onLoginClick: () -> Unit,
     onScanQrCode: () -> Unit,
     onShowPrivacyCopyright: () -> Unit = {},
     onImageClick: ((String) -> Unit)? = null,
-    onUserClick: (String) -> Unit = {}
+    onUserClick: (String) -> Unit = {},
+    onBikeClick: (String) -> Unit = {}
 ) {
     val tabs = MainTab.entries
     val pagerState = rememberPagerState(pageCount = { tabs.size })
@@ -104,6 +108,15 @@ fun MainScreen(
                             onPeriodSelected = { leaderboardViewModel.selectPeriod(it) },
                             onUserClick = onUserClick,
                             onClearError = { leaderboardViewModel.clearError() }
+                        )
+                    }
+                    MainTab.BIKES -> {
+                        val bikesListState by bikesListViewModel.state.collectAsStateWithLifecycle()
+                        BikesContent(
+                            state = bikesListState,
+                            onBikeClick = onBikeClick,
+                            onLoadMore = { bikesListViewModel.loadMoreBikes() },
+                            onClearError = { bikesListViewModel.clearError() }
                         )
                     }
                 }

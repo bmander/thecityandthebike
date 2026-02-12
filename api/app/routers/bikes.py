@@ -7,9 +7,76 @@ from sqlalchemy.orm import Session, joinedload
 from ..database import get_db
 from ..dependencies import get_current_user_optional
 from ..models import User, Bike, FenderSubmission
-from ..schemas import BikeDetailResponse, Owner, PaginatedResponse, SubmissionResponse, UserSummary
+from ..schemas import BikeDetailResponse, BikeListItem, Owner, PaginatedResponse, SubmissionResponse, UserSummary
 
 router = APIRouter(prefix="/bikes", tags=["bikes"])
+
+
+@router.get("", response_model=PaginatedResponse[BikeListItem])
+def list_bikes(
+    db: Annotated[Session, Depends(get_db)],
+    limit: int = Query(default=20, ge=1, le=100),
+    offset: int = Query(default=0, ge=0),
+):
+    total = db.execute(select(func.count()).select_from(Bike)).scalar()
+
+    # Subquery: count submissions per bike
+    sub_count = (
+        select(
+            FenderSubmission.bike_id,
+            func.count().label("cnt"),
+        )
+        .group_by(FenderSubmission.bike_id)
+        .subquery()
+    )
+
+    bikes = (
+        db.query(Bike, sub_count.c.cnt)
+        .outerjoin(sub_count, Bike.id == sub_count.c.bike_id)
+        .order_by(func.coalesce(sub_count.c.cnt, 0).desc(), Bike.bike_qr_id.asc())
+        .offset(offset)
+        .limit(limit)
+        .all()
+    )
+
+    # For each bike, find the owner (user with most submissions)
+    bike_ids = [bike.id for bike, _ in bikes]
+    owners_map: dict[int, UserSummary] = {}
+    if bike_ids:
+        # Subquery: max submission count per user per bike
+        user_counts = (
+            db.query(
+                FenderSubmission.bike_id,
+                User.user_id,
+                User.username,
+                func.count().label("cnt"),
+            )
+            .join(User, FenderSubmission.user_id == User.user_id)
+            .filter(FenderSubmission.bike_id.in_(bike_ids))
+            .group_by(FenderSubmission.bike_id, User.user_id, User.username)
+            .all()
+        )
+
+        # Find the user with max count per bike
+        bike_max: dict[int, tuple] = {}
+        for bike_id, user_id, username, cnt in user_counts:
+            if bike_id not in bike_max or cnt > bike_max[bike_id][2]:
+                bike_max[bike_id] = (user_id, username, cnt)
+
+        for bike_id, (user_id, username, _) in bike_max.items():
+            owners_map[bike_id] = UserSummary(name=username, id=user_id)
+
+    items = [
+        BikeListItem(
+            bike_qr_id=bike.bike_qr_id,
+            provider=bike.provider,
+            submission_count=cnt or 0,
+            owner=owners_map.get(bike.id),
+        )
+        for bike, cnt in bikes
+    ]
+
+    return PaginatedResponse(items=items, total=total, limit=limit, offset=offset)
 
 
 @router.get("/{bike_qr_id}", response_model=BikeDetailResponse)
