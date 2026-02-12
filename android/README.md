@@ -19,12 +19,12 @@ The Android app is built with Jetpack Compose (compileSdk 35, targetSdk 34, minS
 2. Build the debug APK:
    ```bash
    cd android
-   ./gradlew assembleLocalDebug
+   ./gradlew assembleStagingDebug
    ```
 
 3. Install on a connected device:
    ```bash
-   adb install app/build/outputs/apk/local/debug/app-localDebug.apk
+   adb install app/build/outputs/apk/staging/debug/app-staging-debug.apk
    ```
 
 4. Launch the app:
