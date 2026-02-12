@@ -5,6 +5,7 @@
   var offset = 0;
   var loading = false;
   var done = false;
+  var observer = null;
 
   var grid = document.getElementById("photo-grid");
   var loadingEl = document.getElementById("loading");
@@ -70,12 +71,12 @@
         return res.json();
       })
       .then(function (data) {
-        loadingEl.hidden = true;
         data.items.forEach(renderCard);
         offset += data.items.length;
 
         if (offset >= data.total || data.items.length === 0) {
           done = true;
+          loadingEl.hidden = true;
           endEl.hidden = offset === 0;
         }
       })
@@ -86,12 +87,16 @@
       })
       .finally(function () {
         loading = false;
+        if (!done && observer) {
+          observer.unobserve(loadingEl);
+          observer.observe(loadingEl);
+        }
       });
   }
 
   // Infinite scroll via IntersectionObserver
   if ("IntersectionObserver" in window) {
-    var observer = new IntersectionObserver(
+    observer = new IntersectionObserver(
       function (entries) {
         if (entries[0].isIntersecting) {
           fetchPage();
