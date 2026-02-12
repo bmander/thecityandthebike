@@ -44,7 +44,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import kotlinx.coroutines.launch
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -59,7 +61,6 @@ import com.thecityandthebike.ui.components.BikeIdBadge
 import com.thecityandthebike.ui.components.InfoRow
 import com.thecityandthebike.ui.components.MaskPainter
 import com.thecityandthebike.ui.components.ZoomableImage
-import com.thecityandthebike.ui.components.exportComposited
 import com.thecityandthebike.ui.components.rememberMaskPainterState
 import com.thecityandthebike.util.imageUrlToUri
 import androidx.compose.ui.tooling.preview.Preview
@@ -151,6 +152,7 @@ fun ImageDetailScreen(
             if (isTagMode) {
                 val maskState = rememberMaskPainterState()
                 val context = LocalContext.current
+                val scope = rememberCoroutineScope()
 
                 MaskPainter(
                     imageUri = imageUri,
@@ -170,13 +172,10 @@ fun ImageDetailScreen(
                     Button(
                         onClick = {
                             imageUri?.let { uri ->
-                                val file = exportComposited(
-                                    context, uri,
-                                    maskState.strokes.toList(),
-                                    maskState.canvasSize.width,
-                                    maskState.canvasSize.height
-                                )
-                                file?.let { onCreateTag(it) }
+                                scope.launch {
+                                    maskState.exportComposited(context, uri)
+                                        ?.let { onCreateTag(it) }
+                                }
                             }
                         },
                         enabled = maskState.hasStrokes && !isCreatingTag

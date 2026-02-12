@@ -2,10 +2,12 @@ package com.thecityandthebike.ui.screens
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.pager.HorizontalPager
@@ -78,16 +80,49 @@ fun MainScreen(
                 .fillMaxSize()
                 .windowInsetsPadding(WindowInsets.statusBars)
         ) {
-            // Top tab bar
-            TabRow(selectedTabIndex = pagerState.currentPage) {
-                tabs.forEachIndexed { index, tab ->
-                    Tab(
-                        selected = pagerState.currentPage == index,
-                        onClick = {
-                            coroutineScope.launch { pagerState.animateScrollToPage(index) }
-                        },
-                        text = { Text(tab.title) }
-                    )
+            // Top header: tab bar + hamburger menu
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                TabRow(
+                    selectedTabIndex = pagerState.currentPage,
+                    modifier = Modifier.weight(1f)
+                ) {
+                    tabs.forEachIndexed { index, tab ->
+                        Tab(
+                            selected = pagerState.currentPage == index,
+                            onClick = {
+                                coroutineScope.launch { pagerState.animateScrollToPage(index) }
+                            },
+                            text = { Text(tab.title) }
+                        )
+                    }
+                }
+
+                Box {
+                    var menuExpanded by remember { mutableStateOf(false) }
+
+                    MenuButton(onClick = { menuExpanded = true })
+
+                    DropdownMenu(
+                        expanded = menuExpanded,
+                        onDismissRequest = { menuExpanded = false }
+                    ) {
+                        DropdownMenuItem(
+                            text = { Text("Privacy & Copyright") },
+                            onClick = {
+                                menuExpanded = false
+                                onShowPrivacyCopyright()
+                            }
+                        )
+                        if (isLoggedIn) {
+                            DropdownMenuItem(
+                                text = { Text("Log out") },
+                                onClick = {
+                                    menuExpanded = false
+                                    onLogout()
+                                }
+                            )
+                        }
+                    }
                 }
             }
 
@@ -123,55 +158,21 @@ fun MainScreen(
             }
         }
 
-        // Hamburger menu (top left) - always visible, floating on top
-        Box(
-            modifier = Modifier
-                .align(Alignment.TopStart)
-                .windowInsetsPadding(WindowInsets.statusBars)
-                .padding(16.dp)
-        ) {
-            var menuExpanded by remember { mutableStateOf(false) }
-
-            MenuButton(onClick = { menuExpanded = true })
-
-            DropdownMenu(
-                expanded = menuExpanded,
-                onDismissRequest = { menuExpanded = false }
-            ) {
-                DropdownMenuItem(
-                    text = { Text("Privacy & Copyright") },
-                    onClick = {
-                        menuExpanded = false
-                        onShowPrivacyCopyright()
-                    }
-                )
-                if (isLoggedIn) {
-                    DropdownMenuItem(
-                        text = { Text("Log out") },
-                        onClick = {
-                            menuExpanded = false
-                            onLogout()
-                        }
-                    )
-                }
-            }
-        }
-
-        // Camera FAB (top right) when logged in, Login FAB when not logged in
+        // Camera FAB (bottom center) when logged in, Login FAB when not logged in
         if (isLoggedIn) {
             CameraFAB(
                 onClick = onScanQrCode,
                 modifier = Modifier
-                    .align(Alignment.TopEnd)
-                    .windowInsetsPadding(WindowInsets.statusBars)
+                    .align(Alignment.BottomCenter)
+                    .windowInsetsPadding(WindowInsets.navigationBars)
                     .padding(16.dp)
             )
         } else {
             LoginFAB(
                 onClick = onLoginClick,
                 modifier = Modifier
-                    .align(Alignment.TopEnd)
-                    .windowInsetsPadding(WindowInsets.statusBars)
+                    .align(Alignment.BottomCenter)
+                    .windowInsetsPadding(WindowInsets.navigationBars)
                     .padding(16.dp)
             )
         }

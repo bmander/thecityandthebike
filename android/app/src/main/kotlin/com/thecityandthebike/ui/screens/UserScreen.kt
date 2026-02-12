@@ -6,6 +6,9 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.CircularProgressIndicator
@@ -17,12 +20,17 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.derivedStateOf
+import androidx.compose.runtime.remember
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import com.thecityandthebike.ui.components.ImageGrid
+import com.thecityandthebike.ui.components.CalendarEntry
+import com.thecityandthebike.ui.components.CalendarPhoto
+import com.thecityandthebike.ui.components.groupSubmissionsByDate
 import com.thecityandthebike.ui.viewmodel.UserState
 import com.thecityandthebike.ui.viewmodel.UserViewModel
 import com.thecityandthebike.util.imageUrlToUri
@@ -96,51 +104,73 @@ internal fun UserScreenContent(
                 }
             }
             else -> {
-                Column(
+                val dateGroups = remember(state.submissions) {
+                    groupSubmissionsByDate(state.submissions)
+                }
+
+                val listState = rememberLazyListState()
+
+                val shouldLoadMore = remember {
+                    derivedStateOf {
+                        val layoutInfo = listState.layoutInfo
+                        val lastVisibleIndex = layoutInfo.visibleItemsInfo.lastOrNull()?.index ?: 0
+                        val totalItems = layoutInfo.totalItemsCount
+                        totalItems > 0 && lastVisibleIndex >= totalItems - 3
+                    }
+                }
+
+                LaunchedEffect(shouldLoadMore.value) {
+                    if (shouldLoadMore.value) {
+                        onLoadMore()
+                    }
+                }
+
+                LazyColumn(
+                    state = listState,
                     modifier = Modifier
                         .fillMaxSize()
                         .padding(paddingValues)
                 ) {
                     state.userDetail?.let { detail ->
-                        Column(modifier = Modifier.padding(16.dp)) {
-                            Text(
-                                text = "${detail.submissionCount} photo${if (detail.submissionCount != 1) "s" else ""}",
-                                style = MaterialTheme.typography.titleMedium
-                            )
-                            detail.firstSeenAt?.let { firstSeen ->
-                                Spacer(modifier = Modifier.height(4.dp))
+                        item {
+                            Column(modifier = Modifier.padding(16.dp)) {
                                 Text(
-                                    text = "First seen: ${formatDateTime(firstSeen)}",
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    text = "${detail.submissionCount} photo${if (detail.submissionCount != 1) "s" else ""}",
+                                    style = MaterialTheme.typography.titleMedium
                                 )
-                            }
-                            detail.lastSeenAt?.let { lastSeen ->
-                                Spacer(modifier = Modifier.height(4.dp))
-                                Text(
-                                    text = "Last seen: ${formatDateTime(lastSeen)}",
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
+                                detail.firstSeenAt?.let { firstSeen ->
+                                    Spacer(modifier = Modifier.height(4.dp))
+                                    Text(
+                                        text = "First seen: ${formatDateTime(firstSeen)}",
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
+                                detail.lastSeenAt?.let { lastSeen ->
+                                    Spacer(modifier = Modifier.height(4.dp))
+                                    Text(
+                                        text = "Last seen: ${formatDateTime(lastSeen)}",
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
                             }
                         }
                     }
 
-                    val imageUris = state.submissions.mapNotNull { submission ->
-                        (submission.imageUrlThumbnail ?: submission.imageUrl)
-                            ?.let { imageUrlToUri(it) }
+                    items(dateGroups, key = { it.dateLabel }) { group ->
+                        CalendarEntry(
+                            dateLabel = group.dateLabel,
+                            yearLabel = group.yearLabel,
+                            photos = group.photos.map { photo ->
+                                CalendarPhoto(
+                                    submissionId = photo.submissionId,
+                                    imageUri = imageUrlToUri(photo.imageUrl)
+                                )
+                            },
+                            onImageClick = onImageClick
+                        )
                     }
-
-                    ImageGrid(
-                        imageUris = imageUris,
-                        modifier = Modifier.fillMaxSize(),
-                        onImageClick = { index ->
-                            state.submissions.getOrNull(index)?.submissionId?.let { id ->
-                                onImageClick(id)
-                            }
-                        },
-                        onLoadMore = onLoadMore
-                    )
                 }
             }
         }
