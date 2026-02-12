@@ -1,7 +1,13 @@
 from datetime import datetime
 from typing import Optional
+from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict
+
+
+class CapturedByUser(BaseModel):
+    name: str
+    id: UUID
 
 
 class BikeResponse(BaseModel):
@@ -17,3 +23,5 @@ class BikeResponse(BaseModel):
 
 class BikeDetailResponse(BikeResponse):
     submission_count: int
+    first_captured_by: Optional[CapturedByUser] = None
+    last_captured_by: Optional[CapturedByUser] = None

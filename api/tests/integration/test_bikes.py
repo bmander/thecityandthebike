@@ -1,6 +1,7 @@
-from datetime import date
+from datetime import date, datetime, timezone, timedelta
 
-from app.models import FenderSubmission
+from app.dependencies import get_password_hash
+from app.models import FenderSubmission, User
 
 
 class TestGetBikeDetail:
@@ -19,6 +20,93 @@ class TestGetBikeDetail:
         response = client.get("/bikes/NONEXISTENT-BIKE")
         assert response.status_code == 404
         assert "Bike not found" in response.json()["detail"]["msg"]
+
+    def test_get_bike_detail_no_submissions_captured_by_null(self, client, test_bike):
+        """Bike with no submissions should return null for both captured_by fields."""
+        response = client.get(f"/bikes/{test_bike.bike_qr_id}")
+        assert response.status_code == 200
+        data = response.json()
+        assert data["first_captured_by"] is None
+        assert data["last_captured_by"] is None
+
+    def test_get_bike_detail_one_submission_captured_by_same_user(
+        self, client, test_bike, test_user, db_session
+    ):
+        """Single submission should return same user for both captured_by fields."""
+        sub = FenderSubmission(
+            user_id=test_user.user_id,
+            bike_id=test_bike.id,
+            image_url="https://example.com/img.jpg",
+            captured_date=date.today(),
+        )
+        db_session.add(sub)
+        db_session.commit()
+
+        response = client.get(f"/bikes/{test_bike.bike_qr_id}")
+        assert response.status_code == 200
+        data = response.json()
+        assert data["first_captured_by"]["name"] == test_user.username
+        assert data["first_captured_by"]["id"] == str(test_user.user_id)
+        assert data["last_captured_by"]["name"] == test_user.username
+        assert data["last_captured_by"]["id"] == str(test_user.user_id)
+
+    def test_get_bike_detail_multiple_submissions_captured_by(
+        self, client, test_bike, test_user, db_session
+    ):
+        """Multiple submissions from different users should return correct first/last."""
+        second_user = User(
+            username="seconduser",
+            email="second@example.com",
+            password_hash=get_password_hash("password123"),
+        )
+        db_session.add(second_user)
+        db_session.commit()
+        db_session.refresh(second_user)
+
+        now = datetime.now(timezone.utc)
+        early_sub = FenderSubmission(
+            user_id=test_user.user_id,
+            bike_id=test_bike.id,
+            image_url="https://example.com/first.jpg",
+            captured_date=date.today(),
+            uploaded_at=now - timedelta(days=10),
+        )
+        late_sub = FenderSubmission(
+            user_id=second_user.user_id,
+            bike_id=test_bike.id,
+            image_url="https://example.com/last.jpg",
+            captured_date=date.today(),
+            uploaded_at=now,
+        )
+        db_session.add_all([early_sub, late_sub])
+        db_session.commit()
+
+        response = client.get(f"/bikes/{test_bike.bike_qr_id}")
+        assert response.status_code == 200
+        data = response.json()
+        assert data["first_captured_by"]["name"] == test_user.username
+        assert data["first_captured_by"]["id"] == str(test_user.user_id)
+        assert data["last_captured_by"]["name"] == "seconduser"
+        assert data["last_captured_by"]["id"] == str(second_user.user_id)
+
+    def test_get_bike_detail_captured_by_user_object_format(
+        self, client, test_bike, test_user, db_session
+    ):
+        """Captured-by fields should have exactly 'name' and 'id' keys."""
+        sub = FenderSubmission(
+            user_id=test_user.user_id,
+            bike_id=test_bike.id,
+            image_url="https://example.com/img.jpg",
+            captured_date=date.today(),
+        )
+        db_session.add(sub)
+        db_session.commit()
+
+        response = client.get(f"/bikes/{test_bike.bike_qr_id}")
+        assert response.status_code == 200
+        data = response.json()
+        assert set(data["first_captured_by"].keys()) == {"name", "id"}
+        assert set(data["last_captured_by"].keys()) == {"name", "id"}
 
     def test_get_bike_detail_submission_count(
         self, client, test_bike, test_user, db_session

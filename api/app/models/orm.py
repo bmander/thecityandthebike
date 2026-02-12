@@ -61,6 +61,7 @@ class FenderSubmission(Base):
     __tablename__ = "fender_submissions"
     __table_args__ = (
         Index("ix_fender_submissions_user_id_uploaded_at", "user_id", "uploaded_at"),
+        Index("ix_fender_submissions_bike_id_uploaded_at", "bike_id", "uploaded_at"),
     )
 
     submission_id = Column(Uuid, primary_key=True, default=uuid.uuid4)

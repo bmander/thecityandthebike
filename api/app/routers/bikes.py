@@ -7,7 +7,7 @@ from sqlalchemy.orm import Session, joinedload
 from ..database import get_db
 from ..dependencies import get_current_user_optional
 from ..models import User, Bike, FenderSubmission
-from ..schemas import BikeDetailResponse, PaginatedResponse, SubmissionResponse
+from ..schemas import BikeDetailResponse, CapturedByUser, PaginatedResponse, SubmissionResponse
 
 router = APIRouter(prefix="/bikes", tags=["bikes"])
 
@@ -30,6 +30,31 @@ def get_bike_detail(
         .where(FenderSubmission.bike_id == bike.id)
     ).scalar()
 
+    first_submission = (
+        db.query(FenderSubmission)
+        .options(joinedload(FenderSubmission.user))
+        .filter(FenderSubmission.bike_id == bike.id)
+        .order_by(FenderSubmission.uploaded_at.asc())
+        .first()
+    )
+
+    last_submission = (
+        db.query(FenderSubmission)
+        .options(joinedload(FenderSubmission.user))
+        .filter(FenderSubmission.bike_id == bike.id)
+        .order_by(FenderSubmission.uploaded_at.desc())
+        .first()
+    )
+
+    first_captured_by = (
+        CapturedByUser(name=first_submission.user.username, id=first_submission.user.user_id)
+        if first_submission else None
+    )
+    last_captured_by = (
+        CapturedByUser(name=last_submission.user.username, id=last_submission.user.user_id)
+        if last_submission else None
+    )
+
     return BikeDetailResponse(
         bike_qr_id=bike.bike_qr_id,
         provider=bike.provider,
@@ -38,6 +63,8 @@ def get_bike_detail(
         last_seen_at=bike.last_seen_at,
         notes=bike.notes,
         submission_count=submission_count,
+        first_captured_by=first_captured_by,
+        last_captured_by=last_captured_by,
     )
 
 
