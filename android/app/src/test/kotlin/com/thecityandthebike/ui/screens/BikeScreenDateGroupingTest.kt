@@ -1,6 +1,7 @@
 package com.thecityandthebike.ui.screens
 
 import com.thecityandthebike.data.model.dto.SubmissionResponse
+import com.thecityandthebike.ui.components.groupSubmissionsByDate
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
