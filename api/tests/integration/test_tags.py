@@ -1,8 +1,10 @@
 import io
+import os
 import uuid
 
 from PIL import Image
 
+from app.models import Tag
 from tests.conftest import create_test_image
 
 
@@ -27,6 +29,44 @@ class TestListTags:
         data = response.json()
         assert len(data) == 1
         assert data[0]["tag_id"] == str(test_tag.tag_id)
+
+    def test_list_tags_response_shape(self, client, test_tag, test_submission):
+        """All expected fields are present in the response."""
+        response = client.get(f"/submissions/{test_submission.submission_id}/tags")
+        assert response.status_code == 200
+        tag = response.json()[0]
+        assert tag["tag_id"] == str(test_tag.tag_id)
+        assert tag["submission_id"] == str(test_tag.submission_id)
+        assert tag["user_id"] == str(test_tag.user_id)
+        assert tag["image_url"] == test_tag.image_url
+        assert "created_at" in tag
+
+    def test_list_tags_ordered_by_created_at_desc(
+        self, client, db_session, test_submission, test_user
+    ):
+        """Multiple tags are returned newest-first."""
+        from datetime import datetime, timezone, timedelta
+
+        older = Tag(
+            submission_id=test_submission.submission_id,
+            user_id=test_user.user_id,
+            image_url="/uploads/images/old.png",
+            created_at=datetime(2020, 1, 1, tzinfo=timezone.utc),
+        )
+        newer = Tag(
+            submission_id=test_submission.submission_id,
+            user_id=test_user.user_id,
+            image_url="/uploads/images/new.png",
+            created_at=datetime(2025, 1, 1, tzinfo=timezone.utc),
+        )
+        db_session.add_all([older, newer])
+        db_session.commit()
+
+        response = client.get(f"/submissions/{test_submission.submission_id}/tags")
+        data = response.json()
+        assert len(data) == 2
+        assert data[0]["image_url"] == "/uploads/images/new.png"
+        assert data[1]["image_url"] == "/uploads/images/old.png"
 
     def test_list_tags_nonexistent_submission(self, client):
         fake_id = str(uuid.uuid4())
@@ -75,6 +115,28 @@ class TestCreateTag:
         )
         assert response.status_code == 400
 
+    def test_create_tag_corrupt_image(self, client, auth_headers, test_submission):
+        """A .png file with garbage bytes should be rejected."""
+        corrupt_buf = io.BytesIO(b"not-a-real-image")
+        response = client.post(
+            f"/submissions/{test_submission.submission_id}/tags",
+            headers=auth_headers,
+            files={"image": ("tag.png", corrupt_buf, "image/png")},
+        )
+        assert response.status_code == 400
+
+    def test_create_tag_non_image_bytes_with_png_extension(
+        self, client, auth_headers, test_submission
+    ):
+        """Random bytes that happen to have a .png extension should be rejected."""
+        random_bytes = io.BytesIO(os.urandom(256))
+        response = client.post(
+            f"/submissions/{test_submission.submission_id}/tags",
+            headers=auth_headers,
+            files={"image": ("payload.png", random_bytes, "image/png")},
+        )
+        assert response.status_code == 400
+
 
 class TestDeleteTag:
     def test_delete_own_tag(self, client, auth_headers, test_tag):
@@ -119,3 +181,65 @@ class TestDeleteTag:
     def test_delete_tag_no_auth(self, client, test_tag):
         response = client.delete(f"/tags/{test_tag.tag_id}")
         assert response.status_code == 401
+
+    def test_delete_tag_removes_stored_image(self, client, auth_headers, test_submission):
+        """Deleting a tag should also delete the stored image file."""
+        # First create a real tag so a file gets written to disk
+        png_buf = create_test_png()
+        create_resp = client.post(
+            f"/submissions/{test_submission.submission_id}/tags",
+            headers=auth_headers,
+            files={"image": ("tag.png", png_buf, "image/png")},
+        )
+        assert create_resp.status_code == 201
+        tag_data = create_resp.json()
+
+        # Verify the file exists on disk
+        from app.routers.uploads import UPLOAD_DIR
+
+        filename = tag_data["image_url"].rsplit("/", 1)[-1]
+        file_path = os.path.join(UPLOAD_DIR, "images", filename)
+        assert os.path.isfile(file_path)
+
+        # Delete the tag
+        delete_resp = client.delete(
+            f"/tags/{tag_data['tag_id']}",
+            headers=auth_headers,
+        )
+        assert delete_resp.status_code == 200
+
+        # Verify the file was removed
+        assert not os.path.isfile(file_path)
+
+
+class TestTagCascadeDelete:
+    def test_deleting_submission_deletes_its_tags(
+        self, client, auth_headers, db_session, test_submission
+    ):
+        """Tags should be cascade-deleted when their parent submission is deleted."""
+        # Create two tags on the submission
+        for _ in range(2):
+            png_buf = create_test_png()
+            resp = client.post(
+                f"/submissions/{test_submission.submission_id}/tags",
+                headers=auth_headers,
+                files={"image": ("tag.png", png_buf, "image/png")},
+            )
+            assert resp.status_code == 201
+
+        # Verify tags exist
+        list_resp = client.get(f"/submissions/{test_submission.submission_id}/tags")
+        assert len(list_resp.json()) == 2
+
+        # Delete the submission
+        del_resp = client.delete(
+            f"/submissions/{test_submission.submission_id}",
+            headers=auth_headers,
+        )
+        assert del_resp.status_code == 200
+
+        # Verify tags were cascade-deleted from the DB
+        remaining = db_session.query(Tag).filter(
+            Tag.submission_id == test_submission.submission_id
+        ).count()
+        assert remaining == 0

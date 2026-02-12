@@ -1,11 +1,14 @@
 package com.thecityandthebike.ui.screens
 
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertIsEnabled
+import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import com.thecityandthebike.data.model.dto.SubmissionResponse
+import com.thecityandthebike.data.model.dto.TagResponse
 import com.thecityandthebike.setContentWithTheme
 import org.junit.Assert.assertTrue
 import org.junit.Rule
@@ -132,5 +135,212 @@ class ImageDetailScreenTest {
         composeTestRule
             .onNodeWithContentDescription("Back")
             .assertDoesNotExist()
+    }
+
+    // --- Tag UI tests ---
+
+    @Test
+    fun addTagButton_visibleWhenLoggedIn() {
+        composeTestRule.setContentWithTheme {
+            ImageDetailScreen(
+                submission = testSubmission,
+                onHome = {},
+                isLoggedIn = true
+            )
+        }
+
+        composeTestRule.onNodeWithContentDescription("Add tag").assertIsDisplayed()
+    }
+
+    @Test
+    fun addTagButton_hiddenWhenNotLoggedIn() {
+        composeTestRule.setContentWithTheme {
+            ImageDetailScreen(
+                submission = testSubmission,
+                onHome = {},
+                isLoggedIn = false
+            )
+        }
+
+        composeTestRule.onNodeWithContentDescription("Add tag").assertDoesNotExist()
+    }
+
+    @Test
+    fun addTagButton_clickCallsOnEnterTagMode() {
+        var enterCalled = false
+
+        composeTestRule.setContentWithTheme {
+            ImageDetailScreen(
+                submission = testSubmission,
+                onHome = {},
+                isLoggedIn = true,
+                onEnterTagMode = { enterCalled = true }
+            )
+        }
+
+        composeTestRule.onNodeWithContentDescription("Add tag").performClick()
+
+        assertTrue("onEnterTagMode should be called", enterCalled)
+    }
+
+    @Test
+    fun tagMode_showsDiscardAndSaveButtons() {
+        composeTestRule.setContentWithTheme {
+            ImageDetailScreen(
+                submission = testSubmission,
+                onHome = {},
+                isLoggedIn = true,
+                isTagMode = true
+            )
+        }
+
+        composeTestRule.onNodeWithText("Discard").assertIsDisplayed()
+        composeTestRule.onNodeWithText("Save tag").assertIsDisplayed()
+    }
+
+    @Test
+    fun tagMode_hidesAddTagButton() {
+        composeTestRule.setContentWithTheme {
+            ImageDetailScreen(
+                submission = testSubmission,
+                onHome = {},
+                isLoggedIn = true,
+                isTagMode = true
+            )
+        }
+
+        composeTestRule.onNodeWithContentDescription("Add tag").assertDoesNotExist()
+    }
+
+    @Test
+    fun tagMode_discardCallsOnExitTagMode() {
+        var exitCalled = false
+
+        composeTestRule.setContentWithTheme {
+            ImageDetailScreen(
+                submission = testSubmission,
+                onHome = {},
+                isLoggedIn = true,
+                isTagMode = true,
+                onExitTagMode = { exitCalled = true }
+            )
+        }
+
+        composeTestRule.onNodeWithText("Discard").performClick()
+
+        assertTrue("onExitTagMode should be called", exitCalled)
+    }
+
+    @Test
+    fun tagMode_saveTagDisabledWithNoStrokes() {
+        composeTestRule.setContentWithTheme {
+            ImageDetailScreen(
+                submission = testSubmission,
+                onHome = {},
+                isLoggedIn = true,
+                isTagMode = true
+            )
+        }
+
+        composeTestRule.onNodeWithText("Save tag").assertIsNotEnabled()
+    }
+
+    @Test
+    fun tagList_showsTagThumbnails() {
+        val tags = listOf(
+            TagResponse(
+                tagId = "tag-1",
+                submissionId = "sub-1",
+                userId = "user-1",
+                imageUrl = "/uploads/images/tag1.png",
+                createdAt = "2026-01-01T00:00:00Z"
+            )
+        )
+
+        composeTestRule.setContentWithTheme {
+            ImageDetailScreen(
+                submission = testSubmission,
+                onHome = {},
+                tags = tags
+            )
+        }
+
+        composeTestRule.onNodeWithContentDescription("Tag").assertIsDisplayed()
+    }
+
+    @Test
+    fun tagList_showsDeleteButtonForOwnedTags() {
+        val tags = listOf(
+            TagResponse(
+                tagId = "tag-1",
+                submissionId = "sub-1",
+                userId = "user-1",
+                imageUrl = "/uploads/images/tag1.png",
+                createdAt = "2026-01-01T00:00:00Z"
+            )
+        )
+
+        composeTestRule.setContentWithTheme {
+            ImageDetailScreen(
+                submission = testSubmission,
+                onHome = {},
+                tags = tags,
+                isTagOwner = { true }
+            )
+        }
+
+        composeTestRule.onNodeWithContentDescription("Delete tag").assertIsDisplayed()
+    }
+
+    @Test
+    fun tagList_hidesDeleteButtonForOtherUsersTags() {
+        val tags = listOf(
+            TagResponse(
+                tagId = "tag-1",
+                submissionId = "sub-1",
+                userId = "other-user",
+                imageUrl = "/uploads/images/tag1.png",
+                createdAt = "2026-01-01T00:00:00Z"
+            )
+        )
+
+        composeTestRule.setContentWithTheme {
+            ImageDetailScreen(
+                submission = testSubmission,
+                onHome = {},
+                tags = tags,
+                isTagOwner = { false }
+            )
+        }
+
+        composeTestRule.onNodeWithContentDescription("Delete tag").assertDoesNotExist()
+    }
+
+    @Test
+    fun tagList_deleteButtonCallsOnDeleteTag() {
+        var deletedTagId: String? = null
+        val tags = listOf(
+            TagResponse(
+                tagId = "tag-1",
+                submissionId = "sub-1",
+                userId = "user-1",
+                imageUrl = "/uploads/images/tag1.png",
+                createdAt = "2026-01-01T00:00:00Z"
+            )
+        )
+
+        composeTestRule.setContentWithTheme {
+            ImageDetailScreen(
+                submission = testSubmission,
+                onHome = {},
+                tags = tags,
+                isTagOwner = { true },
+                onDeleteTag = { deletedTagId = it }
+            )
+        }
+
+        composeTestRule.onNodeWithContentDescription("Delete tag").performClick()
+
+        assertTrue("onDeleteTag should be called with tag id", deletedTagId == "tag-1")
     }
 }
