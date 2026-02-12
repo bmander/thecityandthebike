@@ -162,7 +162,8 @@ fun AppNavGraph(onboardingPrefs: OnboardingPrefs) {
                 onBack = { navController.popBackStack() },
                 onImageClick = { submissionId ->
                     navController.navigate(BikeImageDetail(submissionId))
-                }
+                },
+                onUserClick = { userId -> navController.navigate(User(userId)) }
             )
         }
 

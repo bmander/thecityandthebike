@@ -25,10 +25,15 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.material.icons.filled.Person
+import com.thecityandthebike.data.model.dto.BikeDetailResponse
 import com.thecityandthebike.data.model.dto.SubmissionResponse
 import com.thecityandthebike.ui.components.BikeIdBadge
 import com.thecityandthebike.ui.components.CalendarEntry
 import com.thecityandthebike.ui.components.CalendarPhoto
+import com.thecityandthebike.ui.components.InfoRow
 import com.thecityandthebike.ui.viewmodel.BikeState
 import com.thecityandthebike.ui.viewmodel.BikeViewModel
 import com.thecityandthebike.util.imageUrlToUri
@@ -84,7 +89,8 @@ fun groupSubmissionsByDate(submissions: List<SubmissionResponse>): List<DateGrou
 fun BikeScreen(
     viewModel: BikeViewModel,
     onBack: () -> Unit,
-    onImageClick: (String) -> Unit
+    onImageClick: (String) -> Unit,
+    onUserClick: (String) -> Unit
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val bikeQrId = state.bikeDetail?.bikeQrId ?: viewModel.bikeQrId
@@ -94,6 +100,7 @@ fun BikeScreen(
         bikeQrId = bikeQrId,
         onBack = onBack,
         onImageClick = onImageClick,
+        onUserClick = onUserClick,
         onLoadMore = { viewModel.loadMoreSubmissions() }
     )
 }
@@ -105,6 +112,7 @@ internal fun BikeScreenContent(
     bikeQrId: String,
     onBack: () -> Unit,
     onImageClick: (String) -> Unit,
+    onUserClick: (String) -> Unit = {},
     onLoadMore: () -> Unit = {}
 ) {
     val provider = state.bikeDetail?.provider
@@ -183,6 +191,49 @@ internal fun BikeScreenContent(
                                 style = MaterialTheme.typography.titleMedium,
                                 modifier = Modifier.padding(16.dp)
                             )
+                        }
+
+                        if (detail.owners.isNotEmpty() || detail.firstCapturedBy != null) {
+                            item {
+                                Column(
+                                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+                                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                                ) {
+                                    detail.owners.forEach { owner ->
+                                        InfoRow(
+                                            icon = Icons.Default.Person,
+                                            iconDescription = "Owner",
+                                            onClick = { onUserClick(owner.user.id) }
+                                        ) {
+                                            Text(
+                                                text = "${owner.user.name} (${owner.submissionCount} photo${if (owner.submissionCount != 1) "s" else ""})",
+                                                style = MaterialTheme.typography.bodyLarge,
+                                                modifier = Modifier.weight(1f)
+                                            )
+                                        }
+                                    }
+
+                                    detail.firstCapturedBy?.let { user ->
+                                        InfoRow(
+                                            icon = Icons.Default.Person,
+                                            iconDescription = "First captured by",
+                                            onClick = { onUserClick(user.id) }
+                                        ) {
+                                            val dateText = detail.firstSeenAt?.let { date ->
+                                                try {
+                                                    val parsed = LocalDate.parse(date.substringBefore("T"))
+                                                    " on ${parsed.format(DateTimeFormatter.ofPattern("MMM d, yyyy"))}"
+                                                } catch (_: Exception) { "" }
+                                            } ?: ""
+                                            Text(
+                                                text = "First captured by ${user.name}$dateText",
+                                                style = MaterialTheme.typography.bodyLarge,
+                                                modifier = Modifier.weight(1f)
+                                            )
+                                        }
+                                    }
+                                }
+                            }
                         }
                     }
 
