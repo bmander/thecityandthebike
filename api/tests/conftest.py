@@ -26,7 +26,7 @@ from app.dependencies import get_password_hash, create_access_token
 from app.models import User, Bike, FenderSubmission
 from app.main import SecurityHeadersMiddleware
 from app.rate_limit import AccountLockout, get_account_lockout, limiter, rate_limit_exceeded_handler
-from app.routers import auth_router, users_router, submissions_router, bikes_router, uploads_router
+from app.routers import auth_router, users_router, submissions_router, bikes_router, uploads_router, leaderboard_router
 
 
 def create_test_image(width=800, height=600, format="JPEG", mode="RGB", color="red"):
@@ -67,6 +67,7 @@ test_app.include_router(users_router)
 test_app.include_router(submissions_router)
 test_app.include_router(bikes_router)
 test_app.include_router(uploads_router)
+test_app.include_router(leaderboard_router)
 setup_admin(test_app, test_engine, "test-secret-key")
 
 test_app.add_exception_handler(RateLimitExceeded, rate_limit_exceeded_handler)
