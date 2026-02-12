@@ -147,7 +147,7 @@ fun AppNavGraph(onboardingPrefs: OnboardingPrefs) {
             popExitTransition = { ExitTransition.None }
         ) {
             ImageDetailRoute(
-                onBack = { navController.popBackStack() },
+                onHome = { navController.popBackStack<Main>(inclusive = false) },
                 onDeleted = navController.handleDeletion(),
                 onBikeClick = { bikeQrId -> navController.navigate(Bike(bikeQrId)) },
                 onUserClick = { userId -> navController.navigate(User(userId)) }
@@ -173,7 +173,7 @@ fun AppNavGraph(onboardingPrefs: OnboardingPrefs) {
             popExitTransition = { ExitTransition.None }
         ) {
             ImageDetailRoute(
-                onBack = { navController.popBackStack() },
+                onHome = { navController.popBackStack<Main>(inclusive = false) },
                 onDeleted = navController.handleDeletion(),
                 onUserClick = { userId -> navController.navigate(User(userId)) }
             )
@@ -198,7 +198,7 @@ fun AppNavGraph(onboardingPrefs: OnboardingPrefs) {
             popExitTransition = { ExitTransition.None }
         ) {
             ImageDetailRoute(
-                onBack = { navController.popBackStack() },
+                onHome = { navController.popBackStack<Main>(inclusive = false) },
                 onDeleted = navController.handleDeletion(),
                 onBikeClick = { bikeQrId -> navController.navigate(Bike(bikeQrId)) }
             )
@@ -284,7 +284,7 @@ private fun NavController.handleDeletion(): (String) -> Unit = { submissionId ->
 
 @Composable
 private fun ImageDetailRoute(
-    onBack: () -> Unit,
+    onHome: () -> Unit,
     onDeleted: (String) -> Unit,
     onBikeClick: ((String) -> Unit)? = null,
     onUserClick: ((String) -> Unit)? = null
@@ -308,7 +308,7 @@ private fun ImageDetailRoute(
         detailState.submission != null -> {
             ImageDetailScreen(
                 submission = detailState.submission!!,
-                onBack = onBack,
+                onHome = onHome,
                 onBikeClick = onBikeClick,
                 onUserClick = onUserClick,
                 isOwner = detailState.isOwner,
@@ -330,7 +330,7 @@ private fun ImageDetailRoute(
             )
         }
         else -> {
-            LaunchedEffect(Unit) { onBack() }
+            LaunchedEffect(Unit) { onHome() }
         }
     }
 }

@@ -204,4 +204,48 @@ class UserViewModelTest {
         val viewModel = createViewModel()
         assertEquals(testUserId, viewModel.userId)
     }
+
+    @Test
+    fun `removeSubmission should remove by id`() = runTest {
+        val submissions = listOf(
+            SubmissionResponse(submissionId = "1", userId = testUserId, bikeQrId = "BIKE-001"),
+            SubmissionResponse(submissionId = "2", userId = testUserId, bikeQrId = "BIKE-002"),
+            SubmissionResponse(submissionId = "3", userId = testUserId, bikeQrId = "BIKE-003")
+        )
+        val paginated = PaginatedSubmissions(items = submissions, total = 3, limit = 20, offset = 0)
+
+        coEvery { userRepository.getUserDetail(testUserId) } returns ApiResult.Success(testUserDetail)
+        coEvery { userRepository.getUserSubmissions(testUserId, any(), any()) } returns ApiResult.Success(paginated)
+
+        val viewModel = createViewModel()
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        assertEquals(3, viewModel.state.value.submissions.size)
+
+        viewModel.removeSubmission("2")
+
+        assertEquals(2, viewModel.state.value.submissions.size)
+        assertFalse(viewModel.state.value.submissions.any { it.submissionId == "2" })
+        assertTrue(viewModel.state.value.submissions.any { it.submissionId == "1" })
+        assertTrue(viewModel.state.value.submissions.any { it.submissionId == "3" })
+    }
+
+    @Test
+    fun `removeSubmission should be no-op when id not found`() = runTest {
+        val submissions = listOf(
+            SubmissionResponse(submissionId = "1", userId = testUserId, bikeQrId = "BIKE-001")
+        )
+        val paginated = PaginatedSubmissions(items = submissions, total = 1, limit = 20, offset = 0)
+
+        coEvery { userRepository.getUserDetail(testUserId) } returns ApiResult.Success(testUserDetail)
+        coEvery { userRepository.getUserSubmissions(testUserId, any(), any()) } returns ApiResult.Success(paginated)
+
+        val viewModel = createViewModel()
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        viewModel.removeSubmission("nonexistent")
+
+        assertEquals(1, viewModel.state.value.submissions.size)
+        assertEquals("1", viewModel.state.value.submissions[0].submissionId)
+    }
 }

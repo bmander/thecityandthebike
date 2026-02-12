@@ -10,7 +10,7 @@ from .admin import setup_admin
 from .config import API_VERSION, settings
 from .database import engine
 from .rate_limit import limiter, rate_limit_exceeded_handler
-from .routers import auth_router, users_router, submissions_router, bikes_router, uploads_router
+from .routers import auth_router, users_router, submissions_router, bikes_router, uploads_router, leaderboard_router
 
 
 class SecurityHeadersMiddleware(BaseHTTPMiddleware):
@@ -66,5 +66,6 @@ app.include_router(users_router)
 app.include_router(submissions_router)
 app.include_router(bikes_router)
 app.include_router(uploads_router)
+app.include_router(leaderboard_router)
 
 setup_admin(app, engine, settings.JWT_SECRET_KEY)
