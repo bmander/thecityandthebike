@@ -89,10 +89,10 @@ class TestGetBikeDetail:
         assert data["last_captured_by"]["name"] == "seconduser"
         assert data["last_captured_by"]["id"] == str(second_user.user_id)
 
-    def test_get_bike_detail_captured_by_user_object_format(
+    def test_get_bike_detail_user_summary_object_format(
         self, client, test_bike, test_user, db_session
     ):
-        """Captured-by fields should have exactly 'name' and 'id' keys."""
+        """UserSummary fields should have exactly 'name' and 'id' keys."""
         sub = FenderSubmission(
             user_id=test_user.user_id,
             bike_id=test_bike.id,
@@ -107,6 +107,93 @@ class TestGetBikeDetail:
         data = response.json()
         assert set(data["first_captured_by"].keys()) == {"name", "id"}
         assert set(data["last_captured_by"].keys()) == {"name", "id"}
+        assert set(data["owners"][0]["user"].keys()) == {"name", "id"}
+
+    def test_get_bike_detail_no_submissions_owners_empty(self, client, test_bike):
+        """Bike with no submissions should return empty owners list."""
+        response = client.get(f"/bikes/{test_bike.bike_qr_id}")
+        assert response.status_code == 200
+        data = response.json()
+        assert data["owners"] == []
+
+    def test_get_bike_detail_single_submission_owner(
+        self, client, test_bike, test_user, db_session
+    ):
+        """Single submission should make that user the sole owner."""
+        sub = FenderSubmission(
+            user_id=test_user.user_id,
+            bike_id=test_bike.id,
+            image_url="https://example.com/img.jpg",
+            captured_date=date.today(),
+        )
+        db_session.add(sub)
+        db_session.commit()
+
+        response = client.get(f"/bikes/{test_bike.bike_qr_id}")
+        assert response.status_code == 200
+        data = response.json()
+        assert len(data["owners"]) == 1
+        assert data["owners"][0]["user"]["name"] == test_user.username
+        assert data["owners"][0]["user"]["id"] == str(test_user.user_id)
+        assert data["owners"][0]["submission_count"] == 1
+
+    def test_get_bike_detail_single_owner_multiple_submissions(
+        self, client, test_bike, test_user, db_session
+    ):
+        """One user with multiple submissions should be the sole owner."""
+        for i in range(3):
+            sub = FenderSubmission(
+                user_id=test_user.user_id,
+                bike_id=test_bike.id,
+                image_url=f"https://example.com/img{i}.jpg",
+                captured_date=date.today(),
+            )
+            db_session.add(sub)
+        db_session.commit()
+
+        response = client.get(f"/bikes/{test_bike.bike_qr_id}")
+        assert response.status_code == 200
+        data = response.json()
+        assert len(data["owners"]) == 1
+        assert data["owners"][0]["user"]["name"] == test_user.username
+        assert data["owners"][0]["submission_count"] == 3
+
+    def test_get_bike_detail_shared_ownership(
+        self, client, test_bike, test_user, db_session
+    ):
+        """Two users tied for most submissions should both be owners."""
+        second_user = User(
+            username="seconduser",
+            email="second@example.com",
+            password_hash=get_password_hash("password123"),
+        )
+        db_session.add(second_user)
+        db_session.commit()
+        db_session.refresh(second_user)
+
+        for i in range(2):
+            db_session.add(FenderSubmission(
+                user_id=test_user.user_id,
+                bike_id=test_bike.id,
+                image_url=f"https://example.com/u1_{i}.jpg",
+                captured_date=date.today(),
+            ))
+            db_session.add(FenderSubmission(
+                user_id=second_user.user_id,
+                bike_id=test_bike.id,
+                image_url=f"https://example.com/u2_{i}.jpg",
+                captured_date=date.today(),
+            ))
+        db_session.commit()
+
+        response = client.get(f"/bikes/{test_bike.bike_qr_id}")
+        assert response.status_code == 200
+        data = response.json()
+        assert len(data["owners"]) == 2
+        owner_names = {o["user"]["name"] for o in data["owners"]}
+        assert owner_names == {test_user.username, "seconduser"}
+        for owner in data["owners"]:
+            assert owner["submission_count"] == 2
 
     def test_get_bike_detail_submission_count(
         self, client, test_bike, test_user, db_session

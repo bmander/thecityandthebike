@@ -5,9 +5,14 @@ from uuid import UUID
 from pydantic import BaseModel, ConfigDict
 
 
-class CapturedByUser(BaseModel):
+class UserSummary(BaseModel):
     name: str
     id: UUID
+
+
+class Owner(BaseModel):
+    user: UserSummary
+    submission_count: int
 
 
 class BikeResponse(BaseModel):
@@ -23,5 +28,6 @@ class BikeResponse(BaseModel):
 
 class BikeDetailResponse(BikeResponse):
     submission_count: int
-    first_captured_by: Optional[CapturedByUser] = None
-    last_captured_by: Optional[CapturedByUser] = None
+    first_captured_by: Optional[UserSummary] = None
+    last_captured_by: Optional[UserSummary] = None
+    owners: list[Owner] = []

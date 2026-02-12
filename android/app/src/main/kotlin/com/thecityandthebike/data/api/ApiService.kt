@@ -68,6 +68,10 @@ interface ApiService {
         @Query("offset") offset: Int = 0
     ): Response<PaginatedSubmissions>
 
+    // Leaderboard endpoint
+    @GET("leaderboard")
+    suspend fun getLeaderboard(@Query("period") period: String = "weekly"): Response<LeaderboardResponse>
+
     // Upload endpoint
     @Multipart
     @POST("uploads/images")

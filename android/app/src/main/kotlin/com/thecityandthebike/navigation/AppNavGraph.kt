@@ -39,6 +39,7 @@ import com.thecityandthebike.util.imageUrlToUri
 import com.thecityandthebike.ui.viewmodel.AuthViewModel
 import com.thecityandthebike.ui.viewmodel.BikeViewModel
 import com.thecityandthebike.ui.viewmodel.ImageDetailViewModel
+import com.thecityandthebike.ui.viewmodel.LeaderboardViewModel
 import com.thecityandthebike.ui.viewmodel.MainViewModel
 import com.thecityandthebike.ui.viewmodel.PhotoPreviewViewModel
 import com.thecityandthebike.ui.viewmodel.UserViewModel
@@ -112,9 +113,11 @@ fun AppNavGraph(onboardingPrefs: OnboardingPrefs) {
 
         composable<Main> { backStackEntry ->
             val mainViewModel: MainViewModel = hiltViewModel()
+            val leaderboardViewModel: LeaderboardViewModel = hiltViewModel()
             ObserveDeletion(backStackEntry) { mainViewModel.removeSubmission(it) }
             MainScreen(
                 viewModel = mainViewModel,
+                leaderboardViewModel = leaderboardViewModel,
                 isLoggedIn = authState.isLoggedIn,
                 onLogout = {
                     authViewModel.logout()
@@ -130,6 +133,9 @@ fun AppNavGraph(onboardingPrefs: OnboardingPrefs) {
                 },
                 onImageClick = { submissionId ->
                     navController.navigate(ImageDetail(submissionId))
+                },
+                onUserClick = { userId ->
+                    navController.navigate(User(userId))
                 }
             )
         }
