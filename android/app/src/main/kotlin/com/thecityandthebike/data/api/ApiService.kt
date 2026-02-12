@@ -72,4 +72,18 @@ interface ApiService {
     @Multipart
     @POST("uploads/images")
     suspend fun uploadImage(@Part image: MultipartBody.Part): Response<UploadResponse>
+
+    // Tag endpoints
+    @GET("submissions/{submissionId}/tags")
+    suspend fun getTags(@Path("submissionId") submissionId: String): Response<List<TagResponse>>
+
+    @Multipart
+    @POST("submissions/{submissionId}/tags")
+    suspend fun createTag(
+        @Path("submissionId") submissionId: String,
+        @Part image: MultipartBody.Part
+    ): Response<TagResponse>
+
+    @DELETE("tags/{tagId}")
+    suspend fun deleteTag(@Path("tagId") tagId: String): Response<MessageResponse>
 }

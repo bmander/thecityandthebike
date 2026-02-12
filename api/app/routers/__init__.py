@@ -4,5 +4,6 @@ from .submissions import router as submissions_router
 from .bikes import router as bikes_router
 from .uploads import router as uploads_router
 from .leaderboard import router as leaderboard_router
+from .tags import router as tags_router
 
-__all__ = ["auth_router", "users_router", "submissions_router", "bikes_router", "uploads_router", "leaderboard_router"]
+__all__ = ["auth_router", "users_router", "submissions_router", "bikes_router", "uploads_router", "leaderboard_router", "tags_router"]

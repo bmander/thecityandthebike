@@ -326,7 +326,16 @@ private fun ImageDetailRoute(
                         val dm = context.getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
                         dm.enqueue(request)
                     }
-                }
+                },
+                isLoggedIn = viewModel.isLoggedIn(),
+                tags = detailState.tags,
+                isTagMode = detailState.isTagMode,
+                isCreatingTag = detailState.isCreatingTag,
+                onEnterTagMode = { viewModel.enterTagMode() },
+                onExitTagMode = { viewModel.exitTagMode() },
+                onCreateTag = { file -> viewModel.createTag(file) },
+                onDeleteTag = { tagId -> viewModel.deleteTag(tagId) },
+                isTagOwner = { tag -> viewModel.isTagOwner(tag) },
             )
         }
         else -> {

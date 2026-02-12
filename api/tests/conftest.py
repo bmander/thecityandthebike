@@ -23,10 +23,10 @@ from slowapi.errors import RateLimitExceeded
 from app.admin import setup_admin
 from app.database import Base, get_db
 from app.dependencies import get_password_hash, create_access_token
-from app.models import User, Bike, FenderSubmission
+from app.models import User, Bike, FenderSubmission, Tag
 from app.main import SecurityHeadersMiddleware
 from app.rate_limit import AccountLockout, get_account_lockout, limiter, rate_limit_exceeded_handler
-from app.routers import auth_router, users_router, submissions_router, bikes_router, uploads_router, leaderboard_router
+from app.routers import auth_router, users_router, submissions_router, bikes_router, uploads_router, leaderboard_router, tags_router
 
 
 def create_test_image(width=800, height=600, format="JPEG", mode="RGB", color="red"):
@@ -68,6 +68,7 @@ test_app.include_router(submissions_router)
 test_app.include_router(bikes_router)
 test_app.include_router(uploads_router)
 test_app.include_router(leaderboard_router)
+test_app.include_router(tags_router)
 setup_admin(test_app, test_engine, "test-secret-key")
 
 test_app.add_exception_handler(RateLimitExceeded, rate_limit_exceeded_handler)
@@ -232,3 +233,25 @@ def test_admin_user(db_session):
     })()
     db_session.expunge(user)
     return user_data
+
+
+@pytest.fixture
+def test_tag(db_session, test_submission, test_user):
+    """Create and return a test tag in the database."""
+    tag = Tag(
+        submission_id=test_submission.submission_id,
+        user_id=test_user.user_id,
+        image_url="/uploads/images/test-tag.png",
+    )
+    db_session.add(tag)
+    db_session.commit()
+    db_session.refresh(tag)
+    tag_data = type("TagData", (), {
+        "tag_id": tag.tag_id,
+        "submission_id": tag.submission_id,
+        "user_id": tag.user_id,
+        "image_url": tag.image_url,
+        "created_at": tag.created_at,
+    })()
+    db_session.expunge(tag)
+    return tag_data
