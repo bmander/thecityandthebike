@@ -153,4 +153,67 @@ class ImageDetailViewModelTest {
 
         assertFalse(viewModel.state.value.isOwner)
     }
+
+    @Test
+    fun `deleteSubmission success should set isDeleted true`() = runTest {
+        coEvery { submissionRepository.getSubmission(testSubmissionId) } returns ApiResult.Success(testSubmission)
+        every { tokenManager.getUserId() } returns "user1"
+        coEvery { submissionRepository.deleteSubmission(testSubmissionId) } returns ApiResult.Success(
+            com.thecityandthebike.data.model.dto.MessageResponse(msg = "Deleted")
+        )
+
+        val viewModel = createViewModel()
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        viewModel.deleteSubmission()
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        val state = viewModel.state.value
+        assertTrue(state.isDeleted)
+        assertFalse(state.isDeleting)
+        assertNull(state.error)
+    }
+
+    @Test
+    fun `deleteSubmission failure should set error`() = runTest {
+        coEvery { submissionRepository.getSubmission(testSubmissionId) } returns ApiResult.Success(testSubmission)
+        every { tokenManager.getUserId() } returns "user1"
+        coEvery { submissionRepository.deleteSubmission(testSubmissionId) } returns ApiResult.Error(AppError.Server(500, "Error"))
+
+        val viewModel = createViewModel()
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        viewModel.deleteSubmission()
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        val state = viewModel.state.value
+        assertFalse(state.isDeleted)
+        assertFalse(state.isDeleting)
+        assertEquals("Failed to delete submission", state.error)
+    }
+
+    @Test
+    fun `deleteSubmission should set isDeleting while in progress`() = runTest {
+        coEvery { submissionRepository.getSubmission(testSubmissionId) } returns ApiResult.Success(testSubmission)
+        every { tokenManager.getUserId() } returns "user1"
+
+        val deleteDeferred = kotlinx.coroutines.CompletableDeferred<ApiResult<com.thecityandthebike.data.model.dto.MessageResponse>>()
+        coEvery { submissionRepository.deleteSubmission(testSubmissionId) } coAnswers {
+            deleteDeferred.await()
+        }
+
+        val viewModel = createViewModel()
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        viewModel.deleteSubmission()
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        // Coroutine is suspended waiting on deferred — isDeleting should be true
+        assertTrue(viewModel.state.value.isDeleting)
+
+        deleteDeferred.complete(ApiResult.Success(com.thecityandthebike.data.model.dto.MessageResponse(msg = "Deleted")))
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        assertFalse(viewModel.state.value.isDeleting)
+    }
 }
