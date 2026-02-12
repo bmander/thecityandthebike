@@ -132,3 +132,26 @@ footer a {
 footer a:hover {
   color: var(--text);
 }
+
+@media (max-width: 600px) {
+  :root {
+    --content-margin: 1rem;
+    --gap: 4px;
+  }
+
+  .gallery {
+    padding: 0 0 var(--gap);
+  }
+
+  #photo-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  .card {
+    border-radius: 0;
+  }
+
+  .card .caption {
+    display: none;
+  }
+}
