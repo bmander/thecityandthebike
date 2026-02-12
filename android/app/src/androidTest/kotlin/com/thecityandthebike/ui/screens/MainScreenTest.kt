@@ -71,7 +71,7 @@ class MainScreenTest {
             .assertIsDisplayed()
 
         composeTestRule
-            .onNodeWithText("Capture")
+            .onNodeWithContentDescription("Capture")
             .assertIsDisplayed()
     }
 
@@ -138,7 +138,7 @@ class MainScreenTest {
         }
 
         composeTestRule
-            .onNodeWithText("Capture")
+            .onNodeWithContentDescription("Capture")
             .assertIsDisplayed()
     }
 
@@ -176,7 +176,7 @@ class MainScreenTest {
             .assertIsDisplayed()
 
         composeTestRule
-            .onNodeWithText("Capture")
+            .onNodeWithContentDescription("Capture")
             .assertDoesNotExist()
     }
 
@@ -260,7 +260,7 @@ class MainScreenTest {
         }
 
         composeTestRule
-            .onNodeWithText("Capture")
+            .onNodeWithContentDescription("Capture")
             .assertIsDisplayed()
 
         composeTestRule

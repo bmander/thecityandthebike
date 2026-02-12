@@ -68,6 +68,10 @@ Testing on Android 16 devices requires recent library versions due to `InputMana
 
 If tests fail with `NoSuchMethodException: android.hardware.input.InputManager.getInstance`, update these dependencies.
 
+## Incidental Findings
+
+If during exploration or implementation you notice a particularly urgent or elegant refactor opportunity, or a security flaw, pause and ask whether to file a GitHub issue for it before continuing with the main task.
+
 ## Background Commands
 
 Do not pipe background shell commands through `tail`, `head`, or other utilities. The background shell environment has a limited PATH and these commands may not be found, causing the entire command to fail with exit code 127.

@@ -2,7 +2,7 @@ package com.thecityandthebike.ui.components
 
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
-import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.performClick
 import com.thecityandthebike.setContentWithTheme
 import org.junit.Assert.assertTrue
@@ -21,7 +21,7 @@ class CameraFABTest {
         }
 
         composeTestRule
-            .onNodeWithText("Capture")
+            .onNodeWithContentDescription("Capture")
             .assertIsDisplayed()
     }
 
@@ -34,7 +34,7 @@ class CameraFABTest {
         }
 
         composeTestRule
-            .onNodeWithText("Capture")
+            .onNodeWithContentDescription("Capture")
             .performClick()
 
         assertTrue("onClick should be called when FAB is clicked", clicked)
@@ -47,7 +47,7 @@ class CameraFABTest {
         }
 
         composeTestRule
-            .onNodeWithText("Capture")
+            .onNodeWithContentDescription("Capture")
             .assertExists()
     }
 }
