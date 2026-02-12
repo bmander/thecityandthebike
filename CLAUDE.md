@@ -10,6 +10,8 @@ cd api && python -m venv venv && source venv/bin/activate && pip install -r requ
 
 ## Testing
 
+All new behavior must be covered by a test case. Do not consider a task complete until tests are written and passing.
+
 ### Python Tests
 
 Always run tests with the `-x` flag to stop on the first error:
