@@ -33,7 +33,7 @@ echo "sdk.dir=$HOME/Library/Android/sdk" > android/local.properties
 Environment variables must be set in the **same Bash invocation** as the build command, since shell state does not persist between tool calls. Build and install on a connected device:
 
 ```bash
-export JAVA_HOME="/Applications/Android Studio.app/Contents/jbr/Contents/Home" && export ANDROID_HOME=~/Library/Android/sdk && export PATH="$ANDROID_HOME/platform-tools:$PATH" && cd android && ./gradlew assembleDebug && adb install app/build/outputs/apk/debug/app-debug.apk
+export JAVA_HOME="/Applications/Android Studio.app/Contents/jbr/Contents/Home" && export ANDROID_HOME=~/Library/Android/sdk && export PATH="$ANDROID_HOME/platform-tools:$PATH" && cd android && ./gradlew assembleStagingDebug && adb install app/build/outputs/apk/staging/debug/app-staging-debug.apk
 ```
 
 ### Android Tests

@@ -90,7 +90,7 @@ jobs:
         run: chmod +x gradlew
 
       - name: Run unit tests
-        run: ./gradlew testLocalDebugUnitTest
+        run: ./gradlew testStagingDebugUnitTest
 
       - name: Upload test results
         uses: actions/upload-artifact@v6
@@ -133,7 +133,7 @@ jobs:
           api-level: 30
           arch: x86_64
           profile: Nexus 6
-          script: cd android && ./gradlew connectedLocalDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.notPackage=com.thecityandthebike.integration
+          script: cd android && ./gradlew connectedStagingDebugAndroidTest
           emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim
 
       - name: Upload test results
