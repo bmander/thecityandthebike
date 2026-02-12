@@ -31,7 +31,7 @@ jobs:
           echo "STORAGE_BUCKET=tcatb-staging-uploads" >> $GITHUB_ENV
           echo "JWT_SECRET=jwt-secret-staging" >> $GITHUB_ENV
           echo "DB_PASSWORD_SECRET=db-password-staging" >> $GITHUB_ENV
-          echo "CORS_ORIGINS=https://bmander.github.io" >> $GITHUB_ENV
+          echo "CORS_ORIGINS=https://www.thecityandthebike.com" >> $GITHUB_ENV
 
       - name: Authenticate to Google Cloud
         uses: google-github-actions/auth@v3
