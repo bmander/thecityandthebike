@@ -274,4 +274,60 @@ class MainViewModelTest {
 
         assertEquals("Upload failed", viewModel.state.value.error)
     }
+
+    @Test
+    fun `removeSubmission should remove by id and decrement totalSubmissions`() = runTest {
+        val submissions = listOf(
+            SubmissionResponse(submissionId = "1", userId = "user1", bikeQrId = "bike1"),
+            SubmissionResponse(submissionId = "2", userId = "user1", bikeQrId = "bike2"),
+            SubmissionResponse(submissionId = "3", userId = "user1", bikeQrId = "bike3")
+        )
+        val paginated = PaginatedSubmissions(items = submissions, total = 3, limit = 20, offset = 0)
+        coEvery { submissionRepository.getSubmissions(any(), any()) } returns ApiResult.Success(paginated)
+
+        viewModel = createViewModel()
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        assertEquals(3, viewModel.state.value.submissions.size)
+        assertEquals(3, viewModel.state.value.totalSubmissions)
+
+        viewModel.removeSubmission("2")
+
+        assertEquals(2, viewModel.state.value.submissions.size)
+        assertEquals(2, viewModel.state.value.totalSubmissions)
+        assertFalse(viewModel.state.value.submissions.any { it.submissionId == "2" })
+    }
+
+    @Test
+    fun `removeSubmission should be no-op when id not found`() = runTest {
+        val submissions = listOf(
+            SubmissionResponse(submissionId = "1", userId = "user1", bikeQrId = "bike1"),
+            SubmissionResponse(submissionId = "2", userId = "user1", bikeQrId = "bike2")
+        )
+        val paginated = PaginatedSubmissions(items = submissions, total = 2, limit = 20, offset = 0)
+        coEvery { submissionRepository.getSubmissions(any(), any()) } returns ApiResult.Success(paginated)
+
+        viewModel = createViewModel()
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        viewModel.removeSubmission("nonexistent")
+
+        assertEquals(2, viewModel.state.value.submissions.size)
+        assertEquals(1, viewModel.state.value.totalSubmissions)
+    }
+
+    @Test
+    fun `removeSubmission totalSubmissions should not go below zero`() = runTest {
+        val paginated = PaginatedSubmissions(items = emptyList(), total = 0, limit = 20, offset = 0)
+        coEvery { submissionRepository.getSubmissions(any(), any()) } returns ApiResult.Success(paginated)
+
+        viewModel = createViewModel()
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        assertEquals(0, viewModel.state.value.totalSubmissions)
+
+        viewModel.removeSubmission("nonexistent")
+
+        assertEquals(0, viewModel.state.value.totalSubmissions)
+    }
 }

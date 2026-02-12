@@ -23,6 +23,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.thecityandthebike.ui.components.ImageGrid
+import com.thecityandthebike.ui.viewmodel.UserState
 import com.thecityandthebike.ui.viewmodel.UserViewModel
 import com.thecityandthebike.util.imageUrlToUri
 import java.time.ZonedDateTime
@@ -37,6 +38,22 @@ fun UserScreen(
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
 
+    UserScreenContent(
+        state = state,
+        onBack = onBack,
+        onImageClick = onImageClick,
+        onLoadMore = { viewModel.loadMoreSubmissions() }
+    )
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+internal fun UserScreenContent(
+    state: UserState,
+    onBack: () -> Unit,
+    onImageClick: (String) -> Unit,
+    onLoadMore: () -> Unit = {}
+) {
     val title = state.userDetail?.username ?: "User"
 
     Scaffold(
@@ -122,7 +139,7 @@ fun UserScreen(
                                 onImageClick(id)
                             }
                         },
-                        onLoadMore = { viewModel.loadMoreSubmissions() }
+                        onLoadMore = onLoadMore
                     )
                 }
             }
