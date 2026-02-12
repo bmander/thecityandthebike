@@ -60,3 +60,35 @@ class TestAccountLockout:
     def test_clear_nonexistent_user_is_noop(self, db):
         lockout = AccountLockout(max_attempts=3, duration=60)
         lockout.clear("nobody", db)  # should not raise
+
+
+class TestRateLimitExceededHandler:
+    """Tests for the rate_limit_exceeded_handler function."""
+
+    def test_handler_returns_429_when_view_rate_limit_is_none(self):
+        import asyncio
+        from unittest.mock import MagicMock
+        from app.rate_limit import rate_limit_exceeded_handler
+
+        request = MagicMock()
+        request.state.view_rate_limit = None
+        exc = MagicMock()
+
+        response = asyncio.run(rate_limit_exceeded_handler(request, exc))
+        assert response.status_code == 429
+        assert "Retry-After" not in response.headers
+
+
+class TestGetAccountLockout:
+    """Tests for the get_account_lockout factory function."""
+
+    def test_returns_lockout_with_settings_values(self, monkeypatch):
+        from app.rate_limit import get_account_lockout
+        from app import config
+
+        monkeypatch.setattr(config.settings, "ACCOUNT_LOCKOUT_ATTEMPTS", 5)
+        monkeypatch.setattr(config.settings, "ACCOUNT_LOCKOUT_DURATION", 600)
+
+        lockout = get_account_lockout()
+        assert lockout.max_attempts == 5
+        assert lockout.duration == 600

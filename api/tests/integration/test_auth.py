@@ -166,6 +166,30 @@ class TestRegister:
         )
         assert response.status_code == 201
 
+    def test_register_username_exactly_3_chars(self, client):
+        """Registration with exactly 3-character username should succeed."""
+        response = client.post(
+            "/auth/register",
+            json={
+                "username": "abc",
+                "email": "abc@example.com",
+                "password": "password123",
+            },
+        )
+        assert response.status_code == 201
+
+    def test_register_username_exactly_50_chars(self, client):
+        """Registration with exactly 50-character username should succeed."""
+        response = client.post(
+            "/auth/register",
+            json={
+                "username": "a" * 50,
+                "email": "long@example.com",
+                "password": "password123",
+            },
+        )
+        assert response.status_code == 201
+
 
 class TestLogin:
     """Tests for POST /auth/login endpoint."""
@@ -241,6 +265,28 @@ class TestLogin:
             },
         )
         assert response.status_code == 422
+
+    def test_login_stores_refresh_token_in_database(
+        self, client, test_user, test_user_data, db_session
+    ):
+        """Login should persist a RefreshToken row with matching token and user_id."""
+        response = client.post(
+            "/auth/login",
+            json={
+                "username": test_user_data["username"],
+                "password": test_user_data["password"],
+            },
+        )
+        assert response.status_code == 200
+        refresh_value = response.json()["refresh_token"]
+
+        row = (
+            db_session.query(RefreshToken)
+            .filter(RefreshToken.token == refresh_value)
+            .first()
+        )
+        assert row is not None
+        assert row.user_id == test_user.user_id
 
 
 class TestRefresh:

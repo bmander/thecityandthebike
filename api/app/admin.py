@@ -42,7 +42,11 @@ class AdminAuth(AuthenticationBackend):
 
         session = self.session_factory()
         try:
-            user = session.query(User).filter(User.user_id == uuid_mod.UUID(user_id)).first()
+            try:
+                uid = uuid_mod.UUID(user_id)
+            except ValueError:
+                return False
+            user = session.query(User).filter(User.user_id == uid).first()
             if not user or not user.is_admin:
                 return False
             return True

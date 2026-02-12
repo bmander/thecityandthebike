@@ -480,6 +480,20 @@ class TestCreateSubmission:
         data = response.json()
         assert data["image_url_thumbnail"] == "https://example.com/thumb.jpg"
 
+    def test_create_submission_missing_image_url(self, client, auth_headers):
+        """Submission without image_url should return 422."""
+        submission_data = {
+            "bike_qr_id": "TEST-BIKE",
+            "captured_date": date.today().isoformat(),
+        }
+
+        response = client.post(
+            "/submissions",
+            json=submission_data,
+            headers=auth_headers,
+        )
+        assert response.status_code == 422
+
     def test_create_submission_no_auth(self, client):
         """Request without auth should return 401."""
         submission_data = {
