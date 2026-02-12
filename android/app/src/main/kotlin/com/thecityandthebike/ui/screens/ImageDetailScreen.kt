@@ -44,7 +44,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import kotlinx.coroutines.launch
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -150,6 +152,7 @@ fun ImageDetailScreen(
             if (isTagMode) {
                 val maskState = rememberMaskPainterState()
                 val context = LocalContext.current
+                val scope = rememberCoroutineScope()
 
                 MaskPainter(
                     imageUri = imageUri,
@@ -169,8 +172,10 @@ fun ImageDetailScreen(
                     Button(
                         onClick = {
                             imageUri?.let { uri ->
-                                maskState.exportComposited(context, uri)
-                                    ?.let { onCreateTag(it) }
+                                scope.launch {
+                                    maskState.exportComposited(context, uri)
+                                        ?.let { onCreateTag(it) }
+                                }
                             }
                         },
                         enabled = maskState.hasStrokes && !isCreatingTag

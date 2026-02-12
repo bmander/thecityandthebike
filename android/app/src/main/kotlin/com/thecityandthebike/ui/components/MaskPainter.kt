@@ -70,13 +70,18 @@ class MaskPainterState {
      * Export the composited image: original pixels where the mask was painted,
      * transparent elsewhere. Uses PorterDuff.SRC_IN compositing.
      */
-    fun exportComposited(context: Context, imageUri: Uri): File? {
-        if (strokes.isEmpty() || canvasSize.width <= 0 || canvasSize.height <= 0) return null
+    suspend fun exportComposited(context: Context, imageUri: Uri): File? = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+        if (strokes.isEmpty() || canvasSize.width <= 0 || canvasSize.height <= 0) return@withContext null
 
-        val inputStream = context.contentResolver.openInputStream(imageUri) ?: return null
+        val scheme = imageUri.scheme
+        val inputStream = if (scheme == "http" || scheme == "https") {
+            java.net.URL(imageUri.toString()).openStream()
+        } else {
+            context.contentResolver.openInputStream(imageUri)
+        } ?: return@withContext null
         val originalBitmap = android.graphics.BitmapFactory.decodeStream(inputStream)
         inputStream.close()
-        if (originalBitmap == null) return null
+        if (originalBitmap == null) return@withContext null
 
         val outputWidth = originalBitmap.width
         val outputHeight = originalBitmap.height
@@ -124,7 +129,7 @@ class MaskPainterState {
         }
         output.recycle()
 
-        return tempFile
+        tempFile
     }
 }
 

@@ -11,12 +11,17 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.unit.IntSize
 import androidx.test.platform.app.InstrumentationRegistry
 import com.thecityandthebike.setContentWithTheme
+import kotlinx.coroutines.runBlocking
+import okhttp3.mockwebserver.MockResponse
+import okhttp3.mockwebserver.MockWebServer
+import okio.Buffer
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
+import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.FileOutputStream
 
@@ -209,7 +214,7 @@ class MaskPainterTest {
         val state = MaskPainterState()
         state.canvasSize = IntSize(100, 100)
 
-        assertNull(state.exportComposited(context, createTestImageUri()))
+        assertNull(runBlocking { state.exportComposited(context, createTestImageUri()) })
     }
 
     @Test
@@ -218,7 +223,7 @@ class MaskPainterTest {
         val state = MaskPainterState()
         state.strokes.add(StrokePath(listOf(StrokePoint(10f, 10f), StrokePoint(50f, 50f))))
 
-        assertNull(state.exportComposited(context, createTestImageUri()))
+        assertNull(runBlocking { state.exportComposited(context, createTestImageUri()) })
     }
 
     @Test
@@ -228,7 +233,7 @@ class MaskPainterTest {
         state.strokes.add(StrokePath(listOf(StrokePoint(10f, 10f), StrokePoint(50f, 50f))))
         state.canvasSize = IntSize(0, 100)
 
-        assertNull(state.exportComposited(context, createTestImageUri()))
+        assertNull(runBlocking { state.exportComposited(context, createTestImageUri()) })
     }
 
     @Test
@@ -238,7 +243,7 @@ class MaskPainterTest {
         state.strokes.add(StrokePath(listOf(StrokePoint(10f, 10f), StrokePoint(50f, 50f))))
         state.canvasSize = IntSize(100, 0)
 
-        assertNull(state.exportComposited(context, createTestImageUri()))
+        assertNull(runBlocking { state.exportComposited(context, createTestImageUri()) })
     }
 
     @Test
@@ -248,7 +253,7 @@ class MaskPainterTest {
         state.strokes.add(StrokePath(listOf(StrokePoint(10f, 10f), StrokePoint(50f, 50f))))
         state.canvasSize = IntSize(100, 100)
 
-        val result = state.exportComposited(context, createTestImageUri())
+        val result = runBlocking { state.exportComposited(context, createTestImageUri()) }
 
         assertNotNull("Should produce an output file", result)
         assertTrue("Output file should exist", result!!.exists())
@@ -262,10 +267,39 @@ class MaskPainterTest {
         state.strokes.add(StrokePath(listOf(StrokePoint(10f, 10f), StrokePoint(50f, 50f))))
         state.canvasSize = IntSize(100, 100)
 
-        val result = state.exportComposited(context, createTestImageUri())
+        val result = runBlocking { state.exportComposited(context, createTestImageUri()) }
 
         assertNotNull(result)
         assertTrue("Output filename should end with .png", result!!.name.endsWith(".png"))
     }
 
+    @Test
+    fun exportComposited_worksWithHttpUrl() {
+        val context = InstrumentationRegistry.getInstrumentation().targetContext
+        val state = MaskPainterState()
+        state.strokes.add(StrokePath(listOf(StrokePoint(10f, 10f), StrokePoint(50f, 50f))))
+        state.canvasSize = IntSize(100, 100)
+
+        // Serve a test PNG over HTTP
+        val bitmap = Bitmap.createBitmap(100, 100, Bitmap.Config.ARGB_8888)
+        val pngBytes = ByteArrayOutputStream().also { out ->
+            bitmap.compress(Bitmap.CompressFormat.PNG, 100, out)
+        }.toByteArray()
+        bitmap.recycle()
+
+        val server = MockWebServer()
+        server.enqueue(MockResponse().setBody(Buffer().write(pngBytes)))
+        server.start()
+
+        try {
+            val httpUri = Uri.parse(server.url("/test-image.png").toString())
+            val result = runBlocking { state.exportComposited(context, httpUri) }
+
+            assertNotNull("Should produce output from HTTP URL", result)
+            assertTrue("Output file should exist", result!!.exists())
+            assertTrue("Output file should be non-empty", result.length() > 0)
+        } finally {
+            server.shutdown()
+        }
+    }
 }
