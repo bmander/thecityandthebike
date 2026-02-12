@@ -12,6 +12,7 @@ import com.thecityandthebike.util.ImagePreparer
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.mockk
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestScope
@@ -135,5 +136,29 @@ class UploadManagerTest {
 
         uploadManager.clearError()
         assertEquals(UploadState.Idle, uploadManager.state.value)
+    }
+
+    @Test
+    fun `uploading state should carry the local uri`() = testScope.runTest {
+        val uri = mockk<Uri>()
+        // Use CompletableDeferred to suspend prepareImageFile so we can observe
+        // the intermediate Uploading state before the upload completes
+        val deferred = CompletableDeferred<File?>()
+        coEvery { imagePreparer.prepareImageFile(uri) } coAnswers { deferred.await() }
+
+        val uploadManager = createUploadManager()
+        uploadManager.uploadAndCreateSubmission(uri, "bike1")
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        val state = uploadManager.state.value
+        assertTrue(state is UploadState.Uploading)
+        assertEquals(uri, (state as UploadState.Uploading).localUri)
+
+        // Complete the deferred to let the coroutine finish (transitions to Error
+        // since null file means "Could not read image file")
+        deferred.complete(null)
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        assertTrue(uploadManager.state.value is UploadState.Error)
     }
 }
