@@ -60,7 +60,7 @@ class MainScreenTest {
                 CameraFAB(
                     onClick = {},
                     modifier = Modifier
-                        .align(Alignment.TopEnd)
+                        .align(Alignment.BottomCenter)
                         .padding(16.dp)
                 )
             }
@@ -71,7 +71,7 @@ class MainScreenTest {
             .assertIsDisplayed()
 
         composeTestRule
-            .onNodeWithContentDescription("Add image")
+            .onNodeWithText("Capture")
             .assertIsDisplayed()
     }
 
@@ -94,7 +94,7 @@ class MainScreenTest {
                 CameraFAB(
                     onClick = {},
                     modifier = Modifier
-                        .align(Alignment.TopEnd)
+                        .align(Alignment.BottomCenter)
                         .padding(16.dp)
                 )
             }
@@ -125,20 +125,20 @@ class MainScreenTest {
     }
 
     @Test
-    fun mainScreen_cameraFABPositioned_topEnd() {
+    fun mainScreen_cameraFABPositioned_bottomCenter() {
         composeTestRule.setContentWithTheme {
             Box(modifier = Modifier.fillMaxSize()) {
                 CameraFAB(
                     onClick = {},
                     modifier = Modifier
-                        .align(Alignment.TopEnd)
+                        .align(Alignment.BottomCenter)
                         .padding(16.dp)
                 )
             }
         }
 
         composeTestRule
-            .onNodeWithContentDescription("Add image")
+            .onNodeWithText("Capture")
             .assertIsDisplayed()
     }
 
@@ -157,14 +157,14 @@ class MainScreenTest {
                     CameraFAB(
                         onClick = {},
                         modifier = Modifier
-                            .align(Alignment.TopEnd)
+                            .align(Alignment.BottomCenter)
                             .padding(16.dp)
                     )
                 } else {
                     LoginFAB(
                         onClick = {},
                         modifier = Modifier
-                            .align(Alignment.TopEnd)
+                            .align(Alignment.BottomCenter)
                             .padding(16.dp)
                     )
                 }
@@ -176,7 +176,7 @@ class MainScreenTest {
             .assertIsDisplayed()
 
         composeTestRule
-            .onNodeWithContentDescription("Add image")
+            .onNodeWithText("Capture")
             .assertDoesNotExist()
     }
 
@@ -245,14 +245,14 @@ class MainScreenTest {
                     CameraFAB(
                         onClick = {},
                         modifier = Modifier
-                            .align(Alignment.TopEnd)
+                            .align(Alignment.BottomCenter)
                             .padding(16.dp)
                     )
                 } else {
                     LoginFAB(
                         onClick = {},
                         modifier = Modifier
-                            .align(Alignment.TopEnd)
+                            .align(Alignment.BottomCenter)
                             .padding(16.dp)
                     )
                 }
@@ -260,7 +260,7 @@ class MainScreenTest {
         }
 
         composeTestRule
-            .onNodeWithContentDescription("Add image")
+            .onNodeWithText("Capture")
             .assertIsDisplayed()
 
         composeTestRule
@@ -336,7 +336,7 @@ class MainScreenTest {
                 CameraFAB(
                     onClick = {},
                     modifier = Modifier
-                        .align(Alignment.TopEnd)
+                        .align(Alignment.BottomCenter)
                         .padding(16.dp)
                 )
             }
@@ -408,7 +408,7 @@ class MainScreenTest {
                 CameraFAB(
                     onClick = {},
                     modifier = Modifier
-                        .align(Alignment.TopEnd)
+                        .align(Alignment.BottomCenter)
                         .padding(16.dp)
                 )
             }

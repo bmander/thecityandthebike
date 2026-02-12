@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.pager.HorizontalPager
@@ -144,21 +145,21 @@ fun MainScreen(
             }
         }
 
-        // Camera FAB (top right) when logged in, Login FAB when not logged in
+        // Camera FAB (bottom center) when logged in, Login FAB when not logged in
         if (isLoggedIn) {
             CameraFAB(
                 onClick = onScanQrCode,
                 modifier = Modifier
-                    .align(Alignment.TopEnd)
-                    .windowInsetsPadding(WindowInsets.statusBars)
+                    .align(Alignment.BottomCenter)
+                    .windowInsetsPadding(WindowInsets.navigationBars)
                     .padding(16.dp)
             )
         } else {
             LoginFAB(
                 onClick = onLoginClick,
                 modifier = Modifier
-                    .align(Alignment.TopEnd)
-                    .windowInsetsPadding(WindowInsets.statusBars)
+                    .align(Alignment.BottomCenter)
+                    .windowInsetsPadding(WindowInsets.navigationBars)
                     .padding(16.dp)
             )
         }
