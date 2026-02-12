@@ -11,7 +11,7 @@ import logging
 import os
 import sys
 
-from sqlalchemy import create_engine, select, text
+from sqlalchemy import create_engine, text
 from sqlalchemy.orm import Session
 
 # Add parent to path so we can import app modules
