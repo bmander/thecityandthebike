@@ -1,3 +1,9 @@
+import asyncio
+from unittest.mock import MagicMock
+
+from tests.conftest import TestingSessionLocal
+
+
 class TestAdminAccess:
     def test_admin_login_page_accessible(self, client):
         response = client.get("/admin/login", follow_redirects=False)
@@ -32,6 +38,45 @@ class TestAdminAccess:
             follow_redirects=False,
         )
         assert response.status_code == 400
+
+    def test_authenticate_invalid_uuid_in_session(self):
+        from app.admin import AdminAuth
+
+        auth = AdminAuth(secret_key="test", session_factory=TestingSessionLocal)
+        request = MagicMock()
+        request.session = {"user_id": "not-a-uuid"}
+        result = asyncio.run(auth.authenticate(request))
+        assert result is False
+
+    def test_authenticate_deleted_user(self, db_session, test_admin_user):
+        from app.admin import AdminAuth
+        from app.models import User
+
+        # Delete the admin user
+        user = db_session.query(User).filter(
+            User.user_id == test_admin_user.user_id
+        ).first()
+        db_session.delete(user)
+        db_session.commit()
+
+        auth = AdminAuth(secret_key="test", session_factory=TestingSessionLocal)
+        request = MagicMock()
+        request.session = {"user_id": str(test_admin_user.user_id)}
+        result = asyncio.run(auth.authenticate(request))
+        assert result is False
+
+
+class TestAdminLogout:
+    def test_logout_clears_session_and_returns_true(self):
+        from app.admin import AdminAuth
+
+        auth = AdminAuth(secret_key="test", session_factory=TestingSessionLocal)
+        session = {"user_id": "x", "extra": "y"}
+        request = MagicMock()
+        request.session = session
+        result = asyncio.run(auth.logout(request))
+        assert result is True
+        assert session == {}
 
 
 class TestAdminModelViews:
