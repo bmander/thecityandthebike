@@ -8,6 +8,10 @@ on:
       - 'android/**'
       - '.github/workflows/deploy-android.yml'
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 env:
   JAVA_VERSION: '17'
 
