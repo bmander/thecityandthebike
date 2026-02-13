@@ -67,7 +67,7 @@ jobs:
       - name: Upload coverage reports
         uses: codecov/codecov-action@v5
         with:
-          file: api/coverage.xml
+          files: api/coverage.xml
           flags: backend
         if: always()
 
