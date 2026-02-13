@@ -1,41 +1,25 @@
 package com.thecityandthebike.ui.screens
 
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.DirectionsBike
-import androidx.compose.material.icons.filled.CalendarToday
-import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.automirrored.filled.Label
-import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.FilledIconButton
-import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.OutlinedIconButton
-import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedIconButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -49,17 +33,15 @@ import androidx.compose.runtime.setValue
 import kotlinx.coroutines.launch
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
-import coil.compose.AsyncImage
 import com.thecityandthebike.data.model.dto.SubmissionResponse
 import com.thecityandthebike.data.model.dto.TagResponse
-import com.thecityandthebike.ui.theme.ExtendedTheme
-import com.thecityandthebike.ui.components.BikeIdBadge
-import com.thecityandthebike.ui.components.InfoRow
 import com.thecityandthebike.ui.components.MaskPainter
+import com.thecityandthebike.ui.components.OwnerActions
+import com.thecityandthebike.ui.components.SubmissionInfo
+import com.thecityandthebike.ui.components.TagList
+import com.thecityandthebike.ui.components.TagModeControls
 import com.thecityandthebike.ui.components.ZoomableImage
 import com.thecityandthebike.ui.components.rememberMaskPainterState
 import com.thecityandthebike.util.imageUrlToUri
@@ -160,33 +142,19 @@ fun ImageDetailScreen(
                     state = maskState
                 )
 
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 8.dp),
-                    horizontalArrangement = Arrangement.SpaceEvenly
-                ) {
-                    OutlinedButton(onClick = onExitTagMode) {
-                        Text("Discard")
-                    }
-                    Button(
-                        onClick = {
-                            imageUri?.let { uri ->
-                                scope.launch {
-                                    maskState.exportComposited(context, uri)
-                                        ?.let { onCreateTag(it) }
-                                }
+                TagModeControls(
+                    hasStrokes = maskState.hasStrokes,
+                    isCreatingTag = isCreatingTag,
+                    onDiscard = onExitTagMode,
+                    onSave = {
+                        imageUri?.let { uri ->
+                            scope.launch {
+                                maskState.exportComposited(context, uri)
+                                    ?.let { onCreateTag(it) }
                             }
-                        },
-                        enabled = maskState.hasStrokes && !isCreatingTag
-                    ) {
-                        if (isCreatingTag) {
-                            CircularProgressIndicator(modifier = Modifier.size(16.dp))
-                        } else {
-                            Text("Save tag")
                         }
                     }
-                }
+                )
             } else {
                 ZoomableImage(
                     imageUri = imageUri,
@@ -196,43 +164,11 @@ fun ImageDetailScreen(
             }
 
             if (isOwner) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(top = 8.dp, end = 16.dp),
-                    contentAlignment = Alignment.CenterEnd
-                ) {
-                    if (isDeleting) {
-                        CircularProgressIndicator(modifier = Modifier.size(24.dp))
-                    } else {
-                        Row {
-                            OutlinedIconButton(
-                                onClick = onDownload,
-                                shape = RoundedCornerShape(8.dp),
-                                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Default.Download,
-                                    contentDescription = "Download photo"
-                                )
-                            }
-                            Spacer(modifier = Modifier.width(8.dp))
-                            FilledIconButton(
-                                onClick = { showDeleteDialog = true },
-                                shape = RoundedCornerShape(8.dp),
-                                colors = IconButtonDefaults.filledIconButtonColors(
-                                    containerColor = ExtendedTheme.colorScheme.destructiveAction,
-                                    contentColor = ExtendedTheme.colorScheme.onDestructiveAction
-                                )
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Default.Delete,
-                                    contentDescription = "Delete photo"
-                                )
-                            }
-                        }
-                    }
-                }
+                OwnerActions(
+                    isDeleting = isDeleting,
+                    onDownload = onDownload,
+                    onShowDeleteDialog = { showDeleteDialog = true }
+                )
             }
 
             if (isLoggedIn && !isTagMode) {
@@ -257,83 +193,20 @@ fun ImageDetailScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            Column(
-                modifier = Modifier.padding(horizontal = 32.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                submission.username?.let { username ->
-                    InfoRow(
-                        icon = Icons.Default.Person,
-                        iconDescription = "User",
-                        onClick = onUserClick?.let { { it(submission.userId) } }
-                    ) {
-                        Text(
-                            text = username,
-                            style = MaterialTheme.typography.titleMedium
-                        )
-                    }
-                }
-
-                InfoRow(
-                    icon = Icons.AutoMirrored.Filled.DirectionsBike,
-                    iconDescription = "Bike",
-                    onClick = onBikeClick?.let { { it(submission.bikeQrId) } }
-                ) {
-                    BikeIdBadge(
-                        provider = submission.provider,
-                        bikeQrId = submission.bikeQrId
-                    )
-                }
-
-                formattedDate?.let { date ->
-                    InfoRow(
-                        icon = Icons.Default.CalendarToday,
-                        iconDescription = "Date"
-                    ) {
-                        Text(
-                            text = date,
-                            style = MaterialTheme.typography.titleMedium
-                        )
-                    }
-                }
-            }
+            SubmissionInfo(
+                submission = submission,
+                formattedDate = formattedDate,
+                onUserClick = onUserClick,
+                onBikeClick = onBikeClick
+            )
 
             if (tags.isNotEmpty()) {
                 Spacer(modifier = Modifier.height(16.dp))
-                LazyRow(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    items(tags) { tag ->
-                        Box {
-                            AsyncImage(
-                                model = imageUrlToUri(tag.imageUrl),
-                                contentDescription = "Tag",
-                                modifier = Modifier
-                                    .size(80.dp)
-                                    .clip(RoundedCornerShape(8.dp)),
-                                contentScale = ContentScale.Crop
-                            )
-                            if (isTagOwner(tag)) {
-                                IconButton(
-                                    onClick = { onDeleteTag(tag.tagId) },
-                                    modifier = Modifier
-                                        .align(Alignment.TopEnd)
-                                        .size(24.dp)
-                                ) {
-                                    Icon(
-                                        Icons.Default.Close,
-                                        contentDescription = "Delete tag",
-                                        tint = MaterialTheme.colorScheme.error,
-                                        modifier = Modifier.size(16.dp)
-                                    )
-                                }
-                            }
-                        }
-                    }
-                }
+                TagList(
+                    tags = tags,
+                    isTagOwner = isTagOwner,
+                    onDeleteTag = onDeleteTag
+                )
             }
         }
     }
