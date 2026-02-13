@@ -62,7 +62,7 @@ jobs:
           pip install -r requirements.txt -r requirements-dev.txt
 
       - name: Run tests with coverage
-        run: pytest -x --cov=app --cov-report=xml --cov-report=html:coverage-html
+        run: pytest -x --cov=app --cov-report=xml
 
       - name: Upload coverage reports
         uses: codecov/codecov-action@v5
@@ -70,13 +70,6 @@ jobs:
           files: api/coverage.xml
           flags: backend
         if: always()
-
-      - name: Upload HTML coverage report
-        uses: actions/upload-artifact@v6
-        with:
-          name: coverage-report
-          path: api/coverage-html/
-        if: success()
 
   android-unit-tests:
     name: Android Unit Tests

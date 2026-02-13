@@ -17,4 +17,3 @@ To stop: `docker-compose down`
 
 - [API](api/README.md) -- local development, environment variables, and endpoints
 - [Android App](android/README.md) -- building and running
-- [Code Coverage Report](http://www.thecityandthebike.com/coverage/) -- backend test coverage
