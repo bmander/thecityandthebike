@@ -9,11 +9,12 @@ on:
       - 'web/**'
       - '.github/workflows/deploy-web.yml'
   workflow_run:
-    workflows: ["Deploy Backend"]
+    workflows: ["Deploy Backend", "Integration Tests"]
     types: [completed]
     branches: [main]
 
 permissions:
+  actions: read
   pages: write
   id-token: write
 
@@ -38,6 +39,16 @@ jobs:
 
       - name: Inject API URL
         run: sed -i 's|__API_BASE_URL__|${{ vars.API_BASE_URL }}|g' web/config.js
+
+      - name: Download coverage report
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          RUN_ID=$(gh run list --workflow="Integration Tests" --branch=main --status=success --limit=1 --json databaseId -q '.[0].databaseId')
+          if [ -n "$RUN_ID" ]; then
+            gh run download "$RUN_ID" --name coverage-report --dir web/coverage
+          fi
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
