@@ -1,8 +1,7 @@
-from datetime import date, datetime, timedelta, timezone
-from unittest.mock import patch
+from datetime import datetime, timedelta, timezone
 
 from app.dependencies import get_password_hash
-from app.models import User, Bike, FenderSubmission
+from app.models import User, FenderSubmission
 
 
 class TestGetLeaderboard:

@@ -157,7 +157,6 @@ class TestDeleteStoredImage:
         """Local file is deleted when STORAGE_BUCKET is not set."""
         monkeypatch.setattr(settings, "STORAGE_BUCKET", None)
         import app.routers.uploads as uploads_module
-        original_dir = uploads_module.UPLOAD_DIR
         monkeypatch.setattr(uploads_module, "UPLOAD_DIR", str(tmp_path))
 
         images_dir = tmp_path / "images"

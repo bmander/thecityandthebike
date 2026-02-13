@@ -18,7 +18,7 @@ from app.dependencies import (
     create_refresh_token,
     rotate_refresh_token,
 )
-from app.models import User, RefreshToken
+from app.models import RefreshToken
 
 
 class TestPasswordHashing:

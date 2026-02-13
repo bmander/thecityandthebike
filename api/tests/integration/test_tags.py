@@ -45,7 +45,7 @@ class TestListTags:
         self, client, db_session, test_submission, test_user
     ):
         """Multiple tags are returned newest-first."""
-        from datetime import datetime, timezone, timedelta
+        from datetime import datetime, timezone
 
         older = Tag(
             submission_id=test_submission.submission_id,
