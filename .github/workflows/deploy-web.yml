@@ -40,7 +40,7 @@ jobs:
         run: sed -i 's|__API_BASE_URL__|${{ vars.API_BASE_URL }}|g' web/config.js
 
       - name: Upload Pages artifact
-        uses: actions/upload-pages-artifact@v3
+        uses: actions/upload-pages-artifact@v4
         with:
           path: web
 
