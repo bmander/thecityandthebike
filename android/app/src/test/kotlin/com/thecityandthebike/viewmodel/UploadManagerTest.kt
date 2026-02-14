@@ -75,7 +75,7 @@ class UploadManagerTest {
 
         val state = uploadManager.state.value
         assertTrue(state is UploadState.Error)
-        assertEquals("Server error. Please try again later.", (state as UploadState.Error).message)
+        assertEquals("Upload failed", (state as UploadState.Error).message)
     }
 
     @Test

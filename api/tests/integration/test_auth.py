@@ -1,3 +1,4 @@
+import logging
 from datetime import datetime, timedelta, timezone
 
 import jwt
@@ -189,6 +190,99 @@ class TestRegister:
             },
         )
         assert response.status_code == 201
+
+
+class TestRegisterValidationLogging:
+    """Tests for validation error logging on registration endpoint."""
+
+    def test_validation_error_is_logged(self, client, caplog):
+        """Validation errors on registration should produce a warning log."""
+        with caplog.at_level(logging.WARNING, logger="app.main"):
+            client.post(
+                "/auth/register",
+                json={
+                    "username": "ab",
+                    "email": "test@example.com",
+                    "password": "password123",
+                },
+            )
+        assert any(
+            "Validation error on POST /auth/register" in record.message
+            for record in caplog.records
+        )
+
+    def test_validation_log_contains_field_name(self, client, caplog):
+        """Logged validation error should identify the failing field."""
+        with caplog.at_level(logging.WARNING, logger="app.main"):
+            client.post(
+                "/auth/register",
+                json={
+                    "username": "ab",
+                    "email": "test@example.com",
+                    "password": "password123",
+                },
+            )
+        log_messages = " ".join(r.message for r in caplog.records)
+        assert "username" in log_messages
+
+    def test_validation_log_redacts_password(self, client, caplog):
+        """Logged validation error must not include the raw password value."""
+        with caplog.at_level(logging.WARNING, logger="app.main"):
+            client.post(
+                "/auth/register",
+                json={
+                    "username": "validuser",
+                    "email": "test@example.com",
+                    "password": "x9y8z7",
+                },
+            )
+        log_messages = " ".join(r.message for r in caplog.records)
+        assert "x9y8z7" not in log_messages
+        assert "[REDACTED]" in log_messages
+
+    def test_validation_log_redacts_email(self, client, caplog):
+        """Logged validation error must not include the raw email value."""
+        with caplog.at_level(logging.WARNING, logger="app.main"):
+            client.post(
+                "/auth/register",
+                json={
+                    "username": "validuser",
+                    "email": "not-an-email",
+                    "password": "password123",
+                },
+            )
+        # If email validation fires, the raw value should be redacted
+        log_messages = " ".join(r.message for r in caplog.records)
+        if caplog.records:
+            assert "not-an-email" not in log_messages
+
+    def test_validation_log_does_not_redact_non_sensitive_fields(self, client, caplog):
+        """Non-sensitive field values (like username) should appear in the log."""
+        with caplog.at_level(logging.WARNING, logger="app.main"):
+            client.post(
+                "/auth/register",
+                json={
+                    "username": "a!",
+                    "email": "test@example.com",
+                    "password": "password123",
+                },
+            )
+        log_messages = " ".join(r.message for r in caplog.records)
+        assert "a!" in log_messages
+
+    def test_validation_error_still_returns_422(self, client, caplog):
+        """Validation errors should still return 422 with detail body."""
+        with caplog.at_level(logging.WARNING, logger="app.main"):
+            response = client.post(
+                "/auth/register",
+                json={
+                    "username": "ab",
+                    "email": "test@example.com",
+                    "password": "password123",
+                },
+            )
+        assert response.status_code == 422
+        assert "detail" in response.json()
 
 
 class TestLogin:
