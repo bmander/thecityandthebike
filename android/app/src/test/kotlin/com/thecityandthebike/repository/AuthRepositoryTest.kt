@@ -80,10 +80,13 @@ class AuthRepositoryTest {
     }
 
     @Test
-    fun `register conflict should return server error with user exists message`() = runTest {
+    fun `register conflict should return server error with parsed message`() = runTest {
         coEvery {
             apiService.register(RegisterRequest("user", "email@test.com", "pass"))
-        } returns Response.error(409, "{}".toResponseBody())
+        } returns Response.error(
+            409,
+            """{"detail": {"msg": "User with that username or email already exists"}}""".toResponseBody()
+        )
 
         val result = repository.register("user", "email@test.com", "pass")
 
@@ -91,6 +94,43 @@ class AuthRepositoryTest {
         val error = (result as ApiResult.Error).error
         assertTrue(error is AppError.Server)
         assertEquals(409, (error as AppError.Server).code)
+        assertEquals("User with that username or email already exists", error.displayMessage)
+    }
+
+    @Test
+    fun `register non-409 error should parse server error body`() = runTest {
+        coEvery {
+            apiService.register(RegisterRequest("user", "email@test.com", "pass"))
+        } returns Response.error(
+            400,
+            """{"detail": {"msg": "Password too short"}}""".toResponseBody()
+        )
+
+        val result = repository.register("user", "email@test.com", "pass")
+
+        assertTrue(result is ApiResult.Error)
+        val error = (result as ApiResult.Error).error
+        assertTrue(error is AppError.Server)
+        assertEquals(400, (error as AppError.Server).code)
+        assertEquals("Password too short", error.displayMessage)
+    }
+
+    @Test
+    fun `register with unparseable error body should fall back gracefully`() = runTest {
+        coEvery {
+            apiService.register(RegisterRequest("user", "email@test.com", "pass"))
+        } returns Response.error(
+            422,
+            """{"detail": [{"loc": ["body", "email"], "msg": "invalid email", "type": "value_error"}]}""".toResponseBody()
+        )
+
+        val result = repository.register("user", "email@test.com", "pass")
+
+        assertTrue(result is ApiResult.Error)
+        val error = (result as ApiResult.Error).error
+        assertTrue(error is AppError.Server)
+        assertEquals(422, (error as AppError.Server).code)
+        assertEquals("Registration failed", error.displayMessage)
     }
 
     @Test

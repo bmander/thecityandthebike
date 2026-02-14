@@ -12,7 +12,7 @@ sealed class AppError {
         is Network -> "Network error. Check your connection and try again."
         is Auth -> message
         is Validation -> message
-        is Server -> "Server error. Please try again later."
+        is Server -> message
         is RateLimit -> "Too many attempts. Please try again later."
         is Unknown -> "An unexpected error occurred."
     }

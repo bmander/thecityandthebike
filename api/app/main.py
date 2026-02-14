@@ -1,6 +1,8 @@
+import logging
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Request
+from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from slowapi.errors import RateLimitExceeded
@@ -11,6 +13,8 @@ from .config import API_VERSION, settings
 from .database import engine
 from .rate_limit import limiter, rate_limit_exceeded_handler
 from .routers import auth_router, users_router, submissions_router, bikes_router, uploads_router, leaderboard_router, tags_router
+
+logger = logging.getLogger(__name__)
 
 
 class SecurityHeadersMiddleware(BaseHTTPMiddleware):
@@ -44,6 +48,33 @@ if settings.cors_origins_list:
     )
 
 app.add_exception_handler(RateLimitExceeded, rate_limit_exceeded_handler)
+
+SENSITIVE_FIELDS = {"password", "email"}
+
+
+@app.exception_handler(RequestValidationError)
+async def validation_exception_handler(request: Request, exc: RequestValidationError):
+    sanitized_errors = []
+    for error in exc.errors():
+        sanitized = {k: v for k, v in error.items() if k != "input"}
+        field_names = {str(loc).lower() for loc in error.get("loc", [])}
+        if field_names & SENSITIVE_FIELDS:
+            sanitized["input"] = "[REDACTED]"
+        else:
+            sanitized["input"] = error.get("input")
+        sanitized_errors.append(sanitized)
+
+    logger.warning(
+        "Validation error on %s %s: %s",
+        request.method,
+        request.url.path,
+        sanitized_errors,
+    )
+
+    return JSONResponse(
+        status_code=422,
+        content={"detail": exc.errors()},
+    )
 
 
 @app.exception_handler(Exception)

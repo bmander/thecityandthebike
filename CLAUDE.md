@@ -14,10 +14,10 @@ All new behavior must be covered by a test case. Do not consider a task complete
 
 ### Python Tests
 
-Always run tests with the `-x` flag to stop on the first error:
+Always run tests with the `-x` flag to stop on the first error, and `-q` for minimal output to keep context clean:
 
 ```bash
-cd api && source venv/bin/activate && pytest -x
+cd api && source venv/bin/activate && pytest -x -q 2>&1 | tail -10
 ```
 
 This prevents overwhelming output when there are multiple failures from the same root cause.
