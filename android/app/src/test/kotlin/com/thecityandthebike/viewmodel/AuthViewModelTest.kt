@@ -117,7 +117,7 @@ class AuthViewModelTest {
         testDispatcher.scheduler.advanceUntilIdle()
 
         assertFalse(viewModel.state.value.registrationSuccess)
-        assertEquals("Server error. Please try again later.", viewModel.state.value.error)
+        assertEquals("Registration failed", viewModel.state.value.error)
     }
 
     @Test

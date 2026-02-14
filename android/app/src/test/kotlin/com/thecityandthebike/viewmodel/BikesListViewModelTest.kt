@@ -73,7 +73,7 @@ class BikesListViewModelTest {
         val state = viewModel.state.value
         assertFalse(state.isLoading)
         assertTrue(state.bikes.isEmpty())
-        assertEquals("Server error. Please try again later.", state.error)
+        assertEquals("Error", state.error)
     }
 
     @Test

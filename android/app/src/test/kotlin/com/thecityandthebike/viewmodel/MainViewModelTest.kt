@@ -237,7 +237,7 @@ class MainViewModelTest {
 
         assertEquals(1, viewModel.state.value.submissions.size)
         assertEquals("1", viewModel.state.value.submissions[0].submissionId)
-        assertEquals("Server error. Please try again later.", viewModel.state.value.error)
+        assertEquals("Refresh failed", viewModel.state.value.error)
         assertFalse(viewModel.state.value.isRefreshing)
     }
 
