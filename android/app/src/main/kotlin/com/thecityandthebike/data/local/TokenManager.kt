@@ -2,6 +2,7 @@ package com.thecityandthebike.data.local
 
 import android.content.Context
 import android.content.SharedPreferences
+import androidx.core.content.edit
 import android.util.Base64
 import androidx.security.crypto.EncryptedSharedPreferences
 import androidx.security.crypto.MasterKey
@@ -25,7 +26,7 @@ class TokenManager @Inject constructor(
         createEncryptedPrefs()
     } catch (e: Exception) {
         // Corrupted prefs (e.g. signing key changed) — clear and retry
-        context.getSharedPreferences(PREFS_FILENAME, Context.MODE_PRIVATE).edit().clear().apply()
+        context.getSharedPreferences(PREFS_FILENAME, Context.MODE_PRIVATE).edit { clear() }
         createEncryptedPrefs()
     }
 
@@ -41,14 +42,14 @@ class TokenManager @Inject constructor(
     val isLoggedIn: StateFlow<Boolean> = _isLoggedIn.asStateFlow()
 
     fun saveToken(token: String) {
-        sharedPreferences.edit().putString(KEY_TOKEN, token).apply()
+        sharedPreferences.edit { putString(KEY_TOKEN, token) }
     }
 
     fun saveTokens(accessToken: String, refreshToken: String) {
-        sharedPreferences.edit()
-            .putString(KEY_TOKEN, accessToken)
-            .putString(KEY_REFRESH_TOKEN, refreshToken)
-            .apply()
+        sharedPreferences.edit {
+            putString(KEY_TOKEN, accessToken)
+            putString(KEY_REFRESH_TOKEN, refreshToken)
+        }
         _isLoggedIn.value = true
     }
 
@@ -61,10 +62,10 @@ class TokenManager @Inject constructor(
     }
 
     fun clearToken() {
-        sharedPreferences.edit()
-            .remove(KEY_TOKEN)
-            .remove(KEY_REFRESH_TOKEN)
-            .apply()
+        sharedPreferences.edit {
+            remove(KEY_TOKEN)
+            remove(KEY_REFRESH_TOKEN)
+        }
         _isLoggedIn.value = false
     }
 
