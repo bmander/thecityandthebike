@@ -5,12 +5,14 @@ import com.thecityandthebike.data.local.TokenManager
 import com.thecityandthebike.data.model.ApiResult
 import com.thecityandthebike.data.model.AppError
 import com.thecityandthebike.data.model.dto.MessageResponse
+import com.thecityandthebike.data.model.dto.ProcessedMaskResponse
 import com.thecityandthebike.data.model.dto.SubmissionResponse
 import com.thecityandthebike.data.model.dto.TagResponse
 import com.thecityandthebike.data.repository.SubmissionRepository
 import com.thecityandthebike.data.repository.TagRepository
 import com.thecityandthebike.ui.viewmodel.ImageDetailViewModel
 import io.mockk.coEvery
+import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.Dispatchers
@@ -292,7 +294,7 @@ class ImageDetailViewModelTest {
     @Test
     fun `createTag success adds tag to list and exits tag mode`() = runTest {
         coEvery { submissionRepository.getSubmission(testSubmissionId) } returns ApiResult.Success(testSubmission)
-        coEvery { tagRepository.createTag(testSubmissionId, any()) } returns ApiResult.Success(testTag)
+        coEvery { tagRepository.createTag(testSubmissionId, any(), any(), any(), any()) } returns ApiResult.Success(testTag)
         every { tokenManager.getUserId() } returns "user1"
 
         val viewModel = createViewModel()
@@ -314,7 +316,7 @@ class ImageDetailViewModelTest {
     @Test
     fun `createTag failure sets error and stays in tag mode`() = runTest {
         coEvery { submissionRepository.getSubmission(testSubmissionId) } returns ApiResult.Success(testSubmission)
-        coEvery { tagRepository.createTag(testSubmissionId, any()) } returns ApiResult.Error(AppError.Server(500, "Error"))
+        coEvery { tagRepository.createTag(testSubmissionId, any(), any(), any(), any()) } returns ApiResult.Error(AppError.Server(500, "Error"))
         every { tokenManager.getUserId() } returns "user1"
 
         val viewModel = createViewModel()
@@ -337,7 +339,7 @@ class ImageDetailViewModelTest {
         every { tokenManager.getUserId() } returns "user1"
 
         val deferred = kotlinx.coroutines.CompletableDeferred<ApiResult<TagResponse>>()
-        coEvery { tagRepository.createTag(testSubmissionId, any()) } coAnswers { deferred.await() }
+        coEvery { tagRepository.createTag(testSubmissionId, any(), any(), any(), any()) } coAnswers { deferred.await() }
 
         val viewModel = createViewModel()
         testDispatcher.scheduler.advanceUntilIdle()
@@ -429,5 +431,194 @@ class ImageDetailViewModelTest {
         val viewModel = createViewModel()
 
         assertFalse(viewModel.isTagOwner(testTag))
+    }
+
+    // --- processMask tests ---
+
+    private val testRing = listOf(listOf(0f, 0f), listOf(100f, 0f), listOf(100f, 100f), listOf(0f, 0f))
+    private val testProcessedMaskResponse = ProcessedMaskResponse(
+        ring = testRing,
+        width = 200,
+        height = 200
+    )
+
+    @Test
+    fun `processMask success sets ring data in state`() = runTest {
+        coEvery { submissionRepository.getSubmission(testSubmissionId) } returns ApiResult.Success(testSubmission)
+        coEvery { tagRepository.processMask(testSubmissionId, any()) } returns ApiResult.Success(testProcessedMaskResponse)
+        every { tokenManager.getUserId() } returns "user1"
+
+        val viewModel = createViewModel()
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        val tempFile = File.createTempFile("mask", ".png")
+        tempFile.deleteOnExit()
+        viewModel.processMask(tempFile)
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        val state = viewModel.state.value
+        assertFalse(state.isProcessingMask)
+        assertEquals(testRing, state.processedRing)
+        assertEquals(200, state.processedMaskWidth)
+        assertEquals(200, state.processedMaskHeight)
+    }
+
+    @Test
+    fun `processMask failure sets error and clears processing flag`() = runTest {
+        coEvery { submissionRepository.getSubmission(testSubmissionId) } returns ApiResult.Success(testSubmission)
+        coEvery { tagRepository.processMask(testSubmissionId, any()) } returns ApiResult.Error(AppError.Server(422, "No contours"))
+        every { tokenManager.getUserId() } returns "user1"
+
+        val viewModel = createViewModel()
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        val tempFile = File.createTempFile("mask", ".png")
+        tempFile.deleteOnExit()
+        viewModel.processMask(tempFile)
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        val state = viewModel.state.value
+        assertFalse(state.isProcessingMask)
+        assertNull(state.processedRing)
+        assertEquals("Failed to process mask", state.error)
+    }
+
+    @Test
+    fun `processMask sets isProcessingMask while in progress`() = runTest {
+        coEvery { submissionRepository.getSubmission(testSubmissionId) } returns ApiResult.Success(testSubmission)
+        every { tokenManager.getUserId() } returns "user1"
+
+        val deferred = kotlinx.coroutines.CompletableDeferred<ApiResult<ProcessedMaskResponse>>()
+        coEvery { tagRepository.processMask(testSubmissionId, any()) } coAnswers { deferred.await() }
+
+        val viewModel = createViewModel()
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        val tempFile = File.createTempFile("mask", ".png")
+        tempFile.deleteOnExit()
+        viewModel.processMask(tempFile)
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        assertTrue(viewModel.state.value.isProcessingMask)
+
+        deferred.complete(ApiResult.Success(testProcessedMaskResponse))
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        assertFalse(viewModel.state.value.isProcessingMask)
+    }
+
+    // --- goBackToDrawing tests ---
+
+    @Test
+    fun `goBackToDrawing clears processed ring data`() = runTest {
+        coEvery { submissionRepository.getSubmission(testSubmissionId) } returns ApiResult.Success(testSubmission)
+        coEvery { tagRepository.processMask(testSubmissionId, any()) } returns ApiResult.Success(testProcessedMaskResponse)
+        every { tokenManager.getUserId() } returns "user1"
+
+        val viewModel = createViewModel()
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        // First process a mask to populate ring data
+        val tempFile = File.createTempFile("mask", ".png")
+        tempFile.deleteOnExit()
+        viewModel.processMask(tempFile)
+        testDispatcher.scheduler.advanceUntilIdle()
+        assertNotNull(viewModel.state.value.processedRing)
+
+        // Go back to drawing
+        viewModel.goBackToDrawing()
+
+        val state = viewModel.state.value
+        assertNull(state.processedRing)
+        assertEquals(0, state.processedMaskWidth)
+        assertEquals(0, state.processedMaskHeight)
+    }
+
+    // --- exitTagMode clears ring data ---
+
+    @Test
+    fun `exitTagMode clears processed ring data`() = runTest {
+        coEvery { submissionRepository.getSubmission(testSubmissionId) } returns ApiResult.Success(testSubmission)
+        coEvery { tagRepository.processMask(testSubmissionId, any()) } returns ApiResult.Success(testProcessedMaskResponse)
+        every { tokenManager.getUserId() } returns "user1"
+
+        val viewModel = createViewModel()
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        viewModel.enterTagMode()
+
+        val tempFile = File.createTempFile("mask", ".png")
+        tempFile.deleteOnExit()
+        viewModel.processMask(tempFile)
+        testDispatcher.scheduler.advanceUntilIdle()
+        assertNotNull(viewModel.state.value.processedRing)
+
+        viewModel.exitTagMode()
+
+        val state = viewModel.state.value
+        assertFalse(state.isTagMode)
+        assertNull(state.processedRing)
+        assertEquals(0, state.processedMaskWidth)
+        assertEquals(0, state.processedMaskHeight)
+    }
+
+    // --- createTag passes ring data ---
+
+    @Test
+    fun `createTag passes processed ring data to repository`() = runTest {
+        coEvery { submissionRepository.getSubmission(testSubmissionId) } returns ApiResult.Success(testSubmission)
+        coEvery { tagRepository.processMask(testSubmissionId, any()) } returns ApiResult.Success(testProcessedMaskResponse)
+        coEvery { tagRepository.createTag(testSubmissionId, any(), any(), any(), any()) } returns ApiResult.Success(testTag)
+        every { tokenManager.getUserId() } returns "user1"
+
+        val viewModel = createViewModel()
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        // Process mask first to populate ring state
+        val maskFile = File.createTempFile("mask", ".png")
+        maskFile.deleteOnExit()
+        viewModel.processMask(maskFile)
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        // Now create the tag
+        val tagFile = File.createTempFile("tag", ".png")
+        tagFile.deleteOnExit()
+        viewModel.createTag(tagFile)
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        coVerify {
+            tagRepository.createTag(
+                testSubmissionId,
+                any(),
+                testRing,
+                200,
+                200
+            )
+        }
+    }
+
+    @Test
+    fun `createTag passes null ring when no mask was processed`() = runTest {
+        coEvery { submissionRepository.getSubmission(testSubmissionId) } returns ApiResult.Success(testSubmission)
+        coEvery { tagRepository.createTag(testSubmissionId, any(), any(), any(), any()) } returns ApiResult.Success(testTag)
+        every { tokenManager.getUserId() } returns "user1"
+
+        val viewModel = createViewModel()
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        val tagFile = File.createTempFile("tag", ".png")
+        tagFile.deleteOnExit()
+        viewModel.createTag(tagFile)
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        coVerify {
+            tagRepository.createTag(
+                testSubmissionId,
+                any(),
+                null,
+                null,
+                null
+            )
+        }
     }
 }

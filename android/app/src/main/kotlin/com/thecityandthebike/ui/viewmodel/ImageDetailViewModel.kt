@@ -27,6 +27,10 @@ data class ImageDetailState(
     val isTagMode: Boolean = false,
     val isCreatingTag: Boolean = false,
     val isDeletingTag: Boolean = false,
+    val isProcessingMask: Boolean = false,
+    val processedRing: List<List<Float>>? = null,
+    val processedMaskWidth: Int = 0,
+    val processedMaskHeight: Int = 0,
 )
 
 @HiltViewModel
@@ -113,17 +117,62 @@ class ImageDetailViewModel @Inject constructor(
     }
 
     fun exitTagMode() {
-        _state.value = _state.value.copy(isTagMode = false)
+        _state.value = _state.value.copy(
+            isTagMode = false,
+            processedRing = null,
+            processedMaskWidth = 0,
+            processedMaskHeight = 0
+        )
+    }
+
+    fun processMask(imageFile: java.io.File) {
+        viewModelScope.launch {
+            _state.value = _state.value.copy(isProcessingMask = true)
+            when (val result = tagRepository.processMask(submissionId, imageFile)) {
+                is ApiResult.Success -> {
+                    _state.value = _state.value.copy(
+                        isProcessingMask = false,
+                        processedRing = result.data.ring,
+                        processedMaskWidth = result.data.width,
+                        processedMaskHeight = result.data.height
+                    )
+                }
+                is ApiResult.Error -> {
+                    _state.value = _state.value.copy(
+                        isProcessingMask = false,
+                        error = "Failed to process mask"
+                    )
+                }
+            }
+        }
+    }
+
+    fun goBackToDrawing() {
+        _state.value = _state.value.copy(
+            processedRing = null,
+            processedMaskWidth = 0,
+            processedMaskHeight = 0
+        )
     }
 
     fun createTag(imageFile: java.io.File) {
         viewModelScope.launch {
             _state.value = _state.value.copy(isCreatingTag = true)
-            when (val result = tagRepository.createTag(submissionId, imageFile)) {
+            val currentState = _state.value
+            when (val result = tagRepository.createTag(
+                submissionId,
+                imageFile,
+                ring = currentState.processedRing,
+                ringWidth = currentState.processedMaskWidth.takeIf { it > 0 },
+                ringHeight = currentState.processedMaskHeight.takeIf { it > 0 }
+            )) {
                 is ApiResult.Success -> {
                     _state.value = _state.value.copy(
                         isCreatingTag = false,
                         isTagMode = false,
+                        processedRing = null,
+                        processedMaskWidth = 0,
+                        processedMaskHeight = 0,
                         tags = listOf(result.data) + _state.value.tags
                     )
                 }

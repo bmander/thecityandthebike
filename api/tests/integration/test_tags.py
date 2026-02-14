@@ -1,8 +1,9 @@
 import io
+import json
 import os
 import uuid
 
-from PIL import Image
+from PIL import Image, ImageDraw
 
 from app.models import Tag
 from tests.conftest import create_test_image
@@ -137,6 +138,106 @@ class TestCreateTag:
         )
         assert response.status_code == 400
 
+    def test_create_tag_with_ring(self, client, auth_headers, test_submission):
+        """Ring data is stored when provided alongside the image."""
+        png_buf = create_test_png()
+        ring = [[0.0, 0.0], [100.0, 0.0], [100.0, 100.0], [0.0, 100.0], [0.0, 0.0]]
+        response = client.post(
+            f"/submissions/{test_submission.submission_id}/tags",
+            headers=auth_headers,
+            files={"image": ("tag.png", png_buf, "image/png")},
+            data={
+                "ring": json.dumps(ring),
+                "ring_width": "200",
+                "ring_height": "200",
+            },
+        )
+        assert response.status_code == 201
+        data = response.json()
+        assert data["ring"] == ring
+        assert data["ring_width"] == 200
+        assert data["ring_height"] == 200
+
+    def test_create_tag_without_ring(self, client, auth_headers, test_submission):
+        """Ring fields are null when not provided."""
+        png_buf = create_test_png()
+        response = client.post(
+            f"/submissions/{test_submission.submission_id}/tags",
+            headers=auth_headers,
+            files={"image": ("tag.png", png_buf, "image/png")},
+        )
+        assert response.status_code == 201
+        data = response.json()
+        assert data["ring"] is None
+        assert data["ring_width"] is None
+        assert data["ring_height"] is None
+
+    def test_create_tag_invalid_ring_json(self, client, auth_headers, test_submission):
+        """Invalid ring JSON should return 400."""
+        png_buf = create_test_png()
+        response = client.post(
+            f"/submissions/{test_submission.submission_id}/tags",
+            headers=auth_headers,
+            files={"image": ("tag.png", png_buf, "image/png")},
+            data={"ring": "not-valid-json"},
+        )
+        assert response.status_code == 400
+
+    def test_create_tag_ring_without_dimensions(self, client, auth_headers, test_submission):
+        """Sending ring without ring_width/ring_height stores ring but null dimensions."""
+        png_buf = create_test_png()
+        ring = [[0.0, 0.0], [50.0, 0.0], [50.0, 50.0], [0.0, 0.0]]
+        response = client.post(
+            f"/submissions/{test_submission.submission_id}/tags",
+            headers=auth_headers,
+            files={"image": ("tag.png", png_buf, "image/png")},
+            data={"ring": json.dumps(ring)},
+        )
+        assert response.status_code == 201
+        data = response.json()
+        assert data["ring"] == ring
+        assert data["ring_width"] is None
+        assert data["ring_height"] is None
+
+    def test_create_tag_dimensions_without_ring(self, client, auth_headers, test_submission):
+        """Sending ring_width/ring_height without ring stores dimensions but null ring."""
+        png_buf = create_test_png()
+        response = client.post(
+            f"/submissions/{test_submission.submission_id}/tags",
+            headers=auth_headers,
+            files={"image": ("tag.png", png_buf, "image/png")},
+            data={"ring_width": "200", "ring_height": "200"},
+        )
+        assert response.status_code == 201
+        data = response.json()
+        assert data["ring"] is None
+        assert data["ring_width"] == 200
+        assert data["ring_height"] == 200
+
+    def test_list_tags_includes_ring(
+        self, client, auth_headers, test_submission
+    ):
+        """Ring data is included in the list tags response."""
+        png_buf = create_test_png()
+        ring = [[10.0, 20.0], [30.0, 40.0], [50.0, 60.0], [10.0, 20.0]]
+        client.post(
+            f"/submissions/{test_submission.submission_id}/tags",
+            headers=auth_headers,
+            files={"image": ("tag.png", png_buf, "image/png")},
+            data={
+                "ring": json.dumps(ring),
+                "ring_width": "100",
+                "ring_height": "100",
+            },
+        )
+        response = client.get(f"/submissions/{test_submission.submission_id}/tags")
+        assert response.status_code == 200
+        data = response.json()
+        assert len(data) == 1
+        assert data[0]["ring"] == ring
+        assert data[0]["ring_width"] == 100
+        assert data[0]["ring_height"] == 100
+
 
 class TestDeleteTag:
     def test_delete_own_tag(self, client, auth_headers, test_tag):
@@ -210,6 +311,84 @@ class TestDeleteTag:
 
         # Verify the file was removed
         assert not os.path.isfile(file_path)
+
+
+def _create_mask_png(width=200, height=200, draw_fn=None):
+    """Create a PNG mask image for testing."""
+    img = Image.new("L", (width, height), 0)
+    if draw_fn:
+        draw_fn(img)
+    else:
+        draw = ImageDraw.Draw(img)
+        draw.ellipse([50, 50, 150, 150], fill=255)
+    buf = io.BytesIO()
+    img.save(buf, format="PNG")
+    buf.seek(0)
+    return buf
+
+
+class TestProcessMask:
+    def test_process_mask_success(self, client, auth_headers, test_submission):
+        mask_buf = _create_mask_png()
+        response = client.post(
+            f"/submissions/{test_submission.submission_id}/process-mask",
+            headers=auth_headers,
+            files={"image": ("mask.png", mask_buf, "image/png")},
+        )
+        assert response.status_code == 200
+        data = response.json()
+        assert "ring" in data
+        assert "width" in data
+        assert "height" in data
+        assert data["width"] == 200
+        assert data["height"] == 200
+        assert len(data["ring"]) >= 4
+
+    def test_process_mask_no_auth(self, client, test_submission):
+        mask_buf = _create_mask_png()
+        response = client.post(
+            f"/submissions/{test_submission.submission_id}/process-mask",
+            files={"image": ("mask.png", mask_buf, "image/png")},
+        )
+        assert response.status_code == 401
+
+    def test_process_mask_nonexistent_submission(self, client, auth_headers):
+        fake_id = str(uuid.uuid4())
+        mask_buf = _create_mask_png()
+        response = client.post(
+            f"/submissions/{fake_id}/process-mask",
+            headers=auth_headers,
+            files={"image": ("mask.png", mask_buf, "image/png")},
+        )
+        assert response.status_code == 404
+
+    def test_process_mask_invalid_file_type(self, client, auth_headers, test_submission):
+        jpg_buf = create_test_image()
+        response = client.post(
+            f"/submissions/{test_submission.submission_id}/process-mask",
+            headers=auth_headers,
+            files={"image": ("mask.jpg", jpg_buf, "image/jpeg")},
+        )
+        assert response.status_code == 400
+
+    def test_process_mask_empty_mask(self, client, auth_headers, test_submission):
+        """An all-black mask should return 422."""
+        mask_buf = _create_mask_png(draw_fn=lambda img: None)
+        response = client.post(
+            f"/submissions/{test_submission.submission_id}/process-mask",
+            headers=auth_headers,
+            files={"image": ("mask.png", mask_buf, "image/png")},
+        )
+        assert response.status_code == 422
+
+    def test_process_mask_corrupt_image(self, client, auth_headers, test_submission):
+        corrupt_buf = io.BytesIO(b"not-a-real-image")
+        response = client.post(
+            f"/submissions/{test_submission.submission_id}/process-mask",
+            headers=auth_headers,
+            files={"image": ("mask.png", corrupt_buf, "image/png")},
+        )
+        assert response.status_code == 400
 
 
 class TestTagCascadeDelete:

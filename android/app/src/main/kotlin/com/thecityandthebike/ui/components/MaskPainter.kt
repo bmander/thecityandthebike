@@ -67,6 +67,49 @@ class MaskPainterState {
     }
 
     /**
+     * Export the mask as a black-and-white PNG: black background with white strokes
+     * scaled to the target dimensions. No compositing with the original image.
+     */
+    suspend fun exportMask(context: Context, targetWidth: Int, targetHeight: Int): File? = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+        if (strokes.isEmpty() || canvasSize.width <= 0 || canvasSize.height <= 0) return@withContext null
+
+        val output = Bitmap.createBitmap(targetWidth, targetHeight, Bitmap.Config.ARGB_8888)
+        val canvas = Canvas(output)
+        canvas.drawColor(android.graphics.Color.BLACK)
+
+        val scaleX = targetWidth.toFloat() / canvasSize.width
+        val scaleY = targetHeight.toFloat() / canvasSize.height
+
+        val maskPaint = Paint().apply {
+            color = android.graphics.Color.WHITE
+            style = Paint.Style.STROKE
+            strokeWidth = STROKE_WIDTH * scaleX
+            strokeCap = Paint.Cap.ROUND
+            strokeJoin = Paint.Join.ROUND
+            isAntiAlias = true
+        }
+
+        for (stroke in strokes) {
+            if (stroke.points.size >= 2) {
+                val path = Path()
+                path.moveTo(stroke.points[0].x * scaleX, stroke.points[0].y * scaleY)
+                for (i in 1 until stroke.points.size) {
+                    path.lineTo(stroke.points[i].x * scaleX, stroke.points[i].y * scaleY)
+                }
+                canvas.drawPath(path, maskPaint)
+            }
+        }
+
+        val tempFile = File(context.cacheDir, "mask_${System.currentTimeMillis()}.png")
+        FileOutputStream(tempFile).use { out ->
+            output.compress(Bitmap.CompressFormat.PNG, 100, out)
+        }
+        output.recycle()
+
+        tempFile
+    }
+
+    /**
      * Export the composited image: original pixels where the mask was painted,
      * transparent elsewhere. Uses PorterDuff.SRC_IN compositing.
      */
@@ -216,4 +259,70 @@ private fun DrawScope.drawStroke(stroke: StrokePath, blendMode: BlendMode = Blen
             blendMode = blendMode,
         )
     }
+}
+
+/**
+ * Create a composited image from ring coordinates: draws a filled polygon from the ring,
+ * then uses SRC_IN compositing with the original image to extract those pixels.
+ */
+suspend fun exportCompositedFromRing(
+    context: Context,
+    imageUri: Uri,
+    ring: List<List<Float>>,
+    maskWidth: Int,
+    maskHeight: Int
+): File? = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+    if (ring.size < 3) return@withContext null
+
+    val scheme = imageUri.scheme
+    val inputStream = if (scheme == "http" || scheme == "https") {
+        java.net.URL(imageUri.toString()).openStream()
+    } else {
+        context.contentResolver.openInputStream(imageUri)
+    } ?: return@withContext null
+    val originalBitmap = android.graphics.BitmapFactory.decodeStream(inputStream)
+    inputStream.close()
+    if (originalBitmap == null) return@withContext null
+
+    val outputWidth = originalBitmap.width
+    val outputHeight = originalBitmap.height
+    val output = Bitmap.createBitmap(outputWidth, outputHeight, Bitmap.Config.ARGB_8888)
+    val canvas = Canvas(output)
+
+    val scaleX = outputWidth.toFloat() / maskWidth
+    val scaleY = outputHeight.toFloat() / maskHeight
+
+    val fillPaint = Paint().apply {
+        color = android.graphics.Color.WHITE
+        style = Paint.Style.FILL
+        isAntiAlias = true
+    }
+
+    val path = Path()
+    path.moveTo(ring[0][0] * scaleX, ring[0][1] * scaleY)
+    for (i in 1 until ring.size) {
+        path.lineTo(ring[i][0] * scaleX, ring[i][1] * scaleY)
+    }
+    path.close()
+    canvas.drawPath(path, fillPaint)
+
+    val imagePaint = Paint().apply {
+        xfermode = PorterDuffXfermode(PorterDuff.Mode.SRC_IN)
+    }
+
+    val scaledOriginal = Bitmap.createScaledBitmap(originalBitmap, outputWidth, outputHeight, true)
+    canvas.drawBitmap(scaledOriginal, 0f, 0f, imagePaint)
+
+    if (scaledOriginal !== originalBitmap) {
+        scaledOriginal.recycle()
+    }
+    originalBitmap.recycle()
+
+    val tempFile = File(context.cacheDir, "tag_${System.currentTimeMillis()}.png")
+    FileOutputStream(tempFile).use { out ->
+        output.compress(Bitmap.CompressFormat.PNG, 100, out)
+    }
+    output.recycle()
+
+    tempFile
 }

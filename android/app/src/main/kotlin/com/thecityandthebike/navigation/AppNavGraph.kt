@@ -349,6 +349,13 @@ private fun ImageDetailRoute(
                 onCreateTag = { file -> viewModel.createTag(file) },
                 onDeleteTag = { tagId -> viewModel.deleteTag(tagId) },
                 isTagOwner = { tag -> viewModel.isTagOwner(tag) },
+                isProcessingMask = detailState.isProcessingMask,
+                processedRing = detailState.processedRing,
+                processedMaskWidth = detailState.processedMaskWidth,
+                processedMaskHeight = detailState.processedMaskHeight,
+                onProcessMask = { file -> viewModel.processMask(file) },
+                onConfirmTag = { file -> viewModel.createTag(file) },
+                onBackToDrawing = { viewModel.goBackToDrawing() },
             )
         }
         else -> {

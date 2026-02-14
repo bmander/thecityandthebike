@@ -57,9 +57,12 @@ import coil.compose.AsyncImage
 import com.thecityandthebike.data.model.dto.SubmissionResponse
 import com.thecityandthebike.data.model.dto.TagResponse
 import com.thecityandthebike.ui.theme.ExtendedTheme
+import android.graphics.BitmapFactory
 import com.thecityandthebike.ui.components.BikeIdBadge
 import com.thecityandthebike.ui.components.InfoRow
+import com.thecityandthebike.ui.components.MaskConfirmView
 import com.thecityandthebike.ui.components.MaskPainter
+import com.thecityandthebike.ui.components.exportCompositedFromRing
 import com.thecityandthebike.ui.components.ZoomableImage
 import com.thecityandthebike.ui.components.rememberMaskPainterState
 import com.thecityandthebike.util.imageUrlToUri
@@ -89,6 +92,13 @@ fun ImageDetailScreen(
     onCreateTag: (File) -> Unit = {},
     onDeleteTag: (String) -> Unit = {},
     isTagOwner: (TagResponse) -> Boolean = { false },
+    isProcessingMask: Boolean = false,
+    processedRing: List<List<Float>>? = null,
+    processedMaskWidth: Int = 0,
+    processedMaskHeight: Int = 0,
+    onProcessMask: (File) -> Unit = {},
+    onConfirmTag: (File) -> Unit = {},
+    onBackToDrawing: () -> Unit = {},
 ) {
     val imageUri = submission.imageUrl?.let { imageUrlToUri(it) }
     val thumbnailUri = submission.imageUrlThumbnail?.let { imageUrlToUri(it) }
@@ -149,10 +159,75 @@ fun ImageDetailScreen(
                 .padding(paddingValues)
                 .verticalScroll(rememberScrollState())
         ) {
-            if (isTagMode) {
+            if (isTagMode && processedRing != null) {
+                // Confirming phase: show image with polygon outline overlay
+                val context = LocalContext.current
+                val scope = rememberCoroutineScope()
+
+                MaskConfirmView(
+                    imageUri = imageUri,
+                    thumbnailUri = thumbnailUri,
+                    ring = processedRing,
+                    maskWidth = processedMaskWidth,
+                    maskHeight = processedMaskHeight
+                )
+
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 8.dp),
+                    horizontalArrangement = Arrangement.SpaceEvenly
+                ) {
+                    OutlinedButton(onClick = onBackToDrawing) {
+                        Text("Back")
+                    }
+                    Button(
+                        onClick = {
+                            imageUri?.let { uri ->
+                                scope.launch {
+                                    exportCompositedFromRing(
+                                        context, uri, processedRing,
+                                        processedMaskWidth, processedMaskHeight
+                                    )?.let { onConfirmTag(it) }
+                                }
+                            }
+                        },
+                        enabled = !isCreatingTag
+                    ) {
+                        if (isCreatingTag) {
+                            CircularProgressIndicator(modifier = Modifier.size(16.dp))
+                        } else {
+                            Text("Confirm tag")
+                        }
+                    }
+                }
+            } else if (isTagMode) {
+                // Drawing phase: mask painter + Discard/Next buttons
                 val maskState = rememberMaskPainterState()
                 val context = LocalContext.current
                 val scope = rememberCoroutineScope()
+
+                // Obtain original image dimensions for mask export
+                val imageDimensions = remember(imageUri) {
+                    imageUri?.let { uri ->
+                        try {
+                            val options = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+                            val stream = if (uri.scheme == "http" || uri.scheme == "https") {
+                                null // Skip for network URIs, will use defaults
+                            } else {
+                                context.contentResolver.openInputStream(uri)
+                            }
+                            stream?.use { BitmapFactory.decodeStream(it, null, options) }
+                            if (options.outWidth > 0 && options.outHeight > 0) {
+                                options.outWidth to options.outHeight
+                            } else {
+                                null
+                            }
+                        } catch (_: Exception) {
+                            null
+                        }
+                    }
+                }
 
                 MaskPainter(
                     imageUri = imageUri,
@@ -171,19 +246,20 @@ fun ImageDetailScreen(
                     }
                     Button(
                         onClick = {
-                            imageUri?.let { uri ->
+                            val dims = imageDimensions
+                            if (dims != null) {
                                 scope.launch {
-                                    maskState.exportComposited(context, uri)
-                                        ?.let { onCreateTag(it) }
+                                    maskState.exportMask(context, dims.first, dims.second)
+                                        ?.let { onProcessMask(it) }
                                 }
                             }
                         },
-                        enabled = maskState.hasStrokes && !isCreatingTag
+                        enabled = maskState.hasStrokes && !isProcessingMask
                     ) {
-                        if (isCreatingTag) {
+                        if (isProcessingMask) {
                             CircularProgressIndicator(modifier = Modifier.size(16.dp))
                         } else {
-                            Text("Save tag")
+                            Text("Next")
                         }
                     }
                 }

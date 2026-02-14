@@ -91,8 +91,18 @@ interface ApiService {
     @POST("submissions/{submissionId}/tags")
     suspend fun createTag(
         @Path("submissionId") submissionId: String,
-        @Part image: MultipartBody.Part
+        @Part image: MultipartBody.Part,
+        @Part("ring") ring: okhttp3.RequestBody? = null,
+        @Part("ring_width") ringWidth: okhttp3.RequestBody? = null,
+        @Part("ring_height") ringHeight: okhttp3.RequestBody? = null
     ): Response<TagResponse>
+
+    @Multipart
+    @POST("submissions/{submissionId}/process-mask")
+    suspend fun processMask(
+        @Path("submissionId") submissionId: String,
+        @Part image: MultipartBody.Part
+    ): Response<ProcessedMaskResponse>
 
     @DELETE("tags/{tagId}")
     suspend fun deleteTag(@Path("tagId") tagId: String): Response<MessageResponse>

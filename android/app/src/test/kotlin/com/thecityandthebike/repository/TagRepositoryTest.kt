@@ -4,6 +4,7 @@ import com.thecityandthebike.data.api.ApiService
 import com.thecityandthebike.data.model.ApiResult
 import com.thecityandthebike.data.model.AppError
 import com.thecityandthebike.data.model.dto.MessageResponse
+import com.thecityandthebike.data.model.dto.ProcessedMaskResponse
 import com.thecityandthebike.data.model.dto.TagResponse
 import com.thecityandthebike.data.repository.TagRepository
 import io.mockk.coEvery
@@ -87,7 +88,7 @@ class TagRepositoryTest {
 
     @Test
     fun `createTag success returns tag response`() = runTest {
-        coEvery { apiService.createTag("sub-1", any()) } returns Response.success(testTag)
+        coEvery { apiService.createTag("sub-1", any(), any(), any(), any()) } returns Response.success(testTag)
 
         val tempFile = File.createTempFile("test_tag", ".png")
         tempFile.writeBytes(byteArrayOf(0x00, 0x01))
@@ -102,7 +103,7 @@ class TagRepositoryTest {
     @Test
     fun `createTag creates multipart with correct form field and content type`() = runTest {
         val partSlot = slot<MultipartBody.Part>()
-        coEvery { apiService.createTag("sub-1", capture(partSlot)) } returns
+        coEvery { apiService.createTag("sub-1", capture(partSlot), any(), any(), any()) } returns
                 Response.success(testTag)
 
         val tempFile = File.createTempFile("test_tag", ".png")
@@ -118,7 +119,7 @@ class TagRepositoryTest {
 
     @Test
     fun `createTag HTTP 401 returns Auth error`() = runTest {
-        coEvery { apiService.createTag("sub-1", any()) } returns
+        coEvery { apiService.createTag("sub-1", any(), any(), any(), any()) } returns
                 Response.error(401, "unauthorized".toResponseBody())
 
         val tempFile = File.createTempFile("test_tag", ".png")
@@ -133,7 +134,7 @@ class TagRepositoryTest {
 
     @Test
     fun `createTag IOException returns Network error`() = runTest {
-        coEvery { apiService.createTag("sub-1", any()) } throws IOException("upload failed")
+        coEvery { apiService.createTag("sub-1", any(), any(), any(), any()) } throws IOException("upload failed")
 
         val tempFile = File.createTempFile("test_tag", ".png")
         tempFile.writeBytes(byteArrayOf(0x00))
@@ -188,5 +189,131 @@ class TagRepositoryTest {
 
         assertTrue(result is ApiResult.Error)
         assertTrue((result as ApiResult.Error).error is AppError.Network)
+    }
+
+    // --- createTag with ring data ---
+
+    @Test
+    fun `createTag with ring data sends ring as multipart parts`() = runTest {
+        coEvery { apiService.createTag("sub-1", any(), any(), any(), any()) } returns
+                Response.success(testTag)
+
+        val tempFile = File.createTempFile("test_tag", ".png")
+        tempFile.writeBytes(byteArrayOf(0x00, 0x01))
+        tempFile.deleteOnExit()
+
+        val ring = listOf(listOf(0f, 0f), listOf(100f, 0f), listOf(100f, 100f), listOf(0f, 0f))
+        val result = repository.createTag("sub-1", tempFile, ring, 200, 200)
+
+        assertTrue(result is ApiResult.Success)
+
+        coVerify {
+            apiService.createTag(
+                "sub-1",
+                any(),
+                match { body ->
+                    val content = okio.Buffer().also { body.writeTo(it) }.readUtf8()
+                    content.contains("100")
+                },
+                match { body ->
+                    val content = okio.Buffer().also { body.writeTo(it) }.readUtf8()
+                    content == "200"
+                },
+                match { body ->
+                    val content = okio.Buffer().also { body.writeTo(it) }.readUtf8()
+                    content == "200"
+                }
+            )
+        }
+    }
+
+    @Test
+    fun `createTag without ring data sends null parts`() = runTest {
+        coEvery { apiService.createTag("sub-1", any(), any(), any(), any()) } returns
+                Response.success(testTag)
+
+        val tempFile = File.createTempFile("test_tag", ".png")
+        tempFile.writeBytes(byteArrayOf(0x00, 0x01))
+        tempFile.deleteOnExit()
+
+        val result = repository.createTag("sub-1", tempFile)
+
+        assertTrue(result is ApiResult.Success)
+
+        coVerify {
+            apiService.createTag("sub-1", any(), null, null, null)
+        }
+    }
+
+    // --- processMask ---
+
+    private val testProcessedMask = ProcessedMaskResponse(
+        ring = listOf(listOf(0f, 0f), listOf(100f, 0f), listOf(100f, 100f), listOf(0f, 0f)),
+        width = 200,
+        height = 200
+    )
+
+    @Test
+    fun `processMask success returns ProcessedMaskResponse`() = runTest {
+        coEvery { apiService.processMask("sub-1", any()) } returns
+                Response.success(testProcessedMask)
+
+        val tempFile = File.createTempFile("test_mask", ".png")
+        tempFile.writeBytes(byteArrayOf(0x00, 0x01))
+        tempFile.deleteOnExit()
+
+        val result = repository.processMask("sub-1", tempFile)
+
+        assertTrue(result is ApiResult.Success)
+        val data = (result as ApiResult.Success).data
+        assertEquals(200, data.width)
+        assertEquals(200, data.height)
+        assertEquals(4, data.ring.size)
+    }
+
+    @Test
+    fun `processMask HTTP 422 returns Validation error`() = runTest {
+        coEvery { apiService.processMask("sub-1", any()) } returns
+                Response.error(422, "no contours".toResponseBody())
+
+        val tempFile = File.createTempFile("test_mask", ".png")
+        tempFile.writeBytes(byteArrayOf(0x00, 0x01))
+        tempFile.deleteOnExit()
+
+        val result = repository.processMask("sub-1", tempFile)
+
+        assertTrue(result is ApiResult.Error)
+        assertTrue((result as ApiResult.Error).error is AppError.Validation)
+    }
+
+    @Test
+    fun `processMask IOException returns Network error`() = runTest {
+        coEvery { apiService.processMask("sub-1", any()) } throws IOException("network down")
+
+        val tempFile = File.createTempFile("test_mask", ".png")
+        tempFile.writeBytes(byteArrayOf(0x00, 0x01))
+        tempFile.deleteOnExit()
+
+        val result = repository.processMask("sub-1", tempFile)
+
+        assertTrue(result is ApiResult.Error)
+        assertTrue((result as ApiResult.Error).error is AppError.Network)
+    }
+
+    @Test
+    fun `processMask creates multipart with correct form field`() = runTest {
+        val partSlot = slot<MultipartBody.Part>()
+        coEvery { apiService.processMask("sub-1", capture(partSlot)) } returns
+                Response.success(testProcessedMask)
+
+        val tempFile = File.createTempFile("test_mask", ".png")
+        tempFile.writeBytes(byteArrayOf(0x00, 0x01))
+        tempFile.deleteOnExit()
+
+        repository.processMask("sub-1", tempFile)
+
+        val disposition = partSlot.captured.headers?.get("Content-Disposition") ?: ""
+        assertTrue(disposition.contains("name=\"image\""))
+        assertTrue(disposition.contains("filename=\"${tempFile.name}\""))
     }
 }
