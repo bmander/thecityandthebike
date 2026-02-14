@@ -562,6 +562,39 @@ class ImageDetailViewModelTest {
         assertEquals(0, state.processedMaskHeight)
     }
 
+    @Test
+    fun `exitTagMode cancels in-flight processMask preventing stale state`() = runTest {
+        coEvery { submissionRepository.getSubmission(testSubmissionId) } returns ApiResult.Success(testSubmission)
+        every { tokenManager.getUserId() } returns "user1"
+
+        val deferred = kotlinx.coroutines.CompletableDeferred<ApiResult<ProcessedMaskResponse>>()
+        coEvery { tagRepository.processMask(testSubmissionId, any()) } coAnswers { deferred.await() }
+
+        val viewModel = createViewModel()
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        viewModel.enterTagMode()
+
+        val tempFile = File.createTempFile("mask", ".png")
+        tempFile.deleteOnExit()
+        viewModel.processMask(tempFile)
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        // processMask is in-flight, exit tag mode while it's still pending
+        assertTrue(viewModel.state.value.isProcessingMask)
+        viewModel.exitTagMode()
+
+        // Complete the deferred after exiting — should NOT repopulate ring state
+        deferred.complete(ApiResult.Success(testProcessedMaskResponse))
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        val state = viewModel.state.value
+        assertFalse(state.isTagMode)
+        assertNull(state.processedRing)
+        assertEquals(0, state.processedMaskWidth)
+        assertEquals(0, state.processedMaskHeight)
+    }
+
     // --- createTag passes ring data ---
 
     @Test

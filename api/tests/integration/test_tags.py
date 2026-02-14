@@ -183,6 +183,40 @@ class TestCreateTag:
         )
         assert response.status_code == 400
 
+    def test_create_tag_ring_not_a_list(self, client, auth_headers, test_submission):
+        """Ring that is a JSON object instead of list should return 400."""
+        png_buf = create_test_png()
+        response = client.post(
+            f"/submissions/{test_submission.submission_id}/tags",
+            headers=auth_headers,
+            files={"image": ("tag.png", png_buf, "image/png")},
+            data={"ring": json.dumps({"x": 1, "y": 2})},
+        )
+        assert response.status_code == 400
+        assert "coordinate pairs" in response.json()["detail"]["msg"]
+
+    def test_create_tag_ring_wrong_point_length(self, client, auth_headers, test_submission):
+        """Ring with 3-element points instead of [x, y] pairs should return 400."""
+        png_buf = create_test_png()
+        response = client.post(
+            f"/submissions/{test_submission.submission_id}/tags",
+            headers=auth_headers,
+            files={"image": ("tag.png", png_buf, "image/png")},
+            data={"ring": json.dumps([[1.0, 2.0, 3.0], [4.0, 5.0, 6.0]])},
+        )
+        assert response.status_code == 400
+
+    def test_create_tag_ring_non_numeric_values(self, client, auth_headers, test_submission):
+        """Ring with string values instead of numbers should return 400."""
+        png_buf = create_test_png()
+        response = client.post(
+            f"/submissions/{test_submission.submission_id}/tags",
+            headers=auth_headers,
+            files={"image": ("tag.png", png_buf, "image/png")},
+            data={"ring": json.dumps([["a", "b"], ["c", "d"]])},
+        )
+        assert response.status_code == 400
+
     def test_create_tag_ring_without_dimensions(self, client, auth_headers, test_submission):
         """Sending ring without ring_width/ring_height stores ring but null dimensions."""
         png_buf = create_test_png()

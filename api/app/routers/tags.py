@@ -134,7 +134,7 @@ async def create_tag(
             detail={"msg": "File is not a valid image"},
         )
 
-    # Parse ring JSON if provided
+    # Parse and validate ring JSON if provided
     parsed_ring = None
     if ring is not None:
         try:
@@ -143,6 +143,15 @@ async def create_tag(
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail={"msg": "Invalid ring JSON"},
+            )
+        # Validate shape: must be a list of [x, y] coordinate pairs
+        if not isinstance(parsed_ring, list) or not all(
+            isinstance(pt, list) and len(pt) == 2 and all(isinstance(v, (int, float)) for v in pt)
+            for pt in parsed_ring
+        ):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail={"msg": "ring must be a list of [x, y] coordinate pairs"},
             )
 
     # Save the image

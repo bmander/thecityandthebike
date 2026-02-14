@@ -31,12 +31,15 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -195,23 +198,26 @@ fun ImageDetailScreen(
                 val scope = rememberCoroutineScope()
 
                 // Obtain original image dimensions for mask export
-                val imageDimensions = remember(imageUri) {
+                var imageDimensions by remember { mutableStateOf<Pair<Int, Int>?>(null) }
+                LaunchedEffect(imageUri) {
                     imageUri?.let { uri ->
-                        try {
-                            val options = BitmapFactory.Options().apply { inJustDecodeBounds = true }
-                            val stream = if (uri.scheme == "http" || uri.scheme == "https") {
-                                null // Skip for network URIs, will use defaults
-                            } else {
-                                context.contentResolver.openInputStream(uri)
-                            }
-                            stream?.use { BitmapFactory.decodeStream(it, null, options) }
-                            if (options.outWidth > 0 && options.outHeight > 0) {
-                                options.outWidth to options.outHeight
-                            } else {
+                        imageDimensions = withContext(Dispatchers.IO) {
+                            try {
+                                val options = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+                                val stream = if (uri.scheme == "http" || uri.scheme == "https") {
+                                    java.net.URL(uri.toString()).openStream()
+                                } else {
+                                    context.contentResolver.openInputStream(uri)
+                                }
+                                stream?.use { BitmapFactory.decodeStream(it, null, options) }
+                                if (options.outWidth > 0 && options.outHeight > 0) {
+                                    options.outWidth to options.outHeight
+                                } else {
+                                    null
+                                }
+                            } catch (_: Exception) {
                                 null
                             }
-                        } catch (_: Exception) {
-                            null
                         }
                     }
                 }
@@ -241,7 +247,7 @@ fun ImageDetailScreen(
                                 }
                             }
                         },
-                        enabled = maskState.hasStrokes && !isProcessingMask
+                        enabled = maskState.hasStrokes && !isProcessingMask && imageDimensions != null
                     ) {
                         if (isProcessingMask) {
                             CircularProgressIndicator(modifier = Modifier.size(16.dp))

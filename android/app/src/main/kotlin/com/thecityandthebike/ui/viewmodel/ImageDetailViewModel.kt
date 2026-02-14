@@ -10,6 +10,7 @@ import com.thecityandthebike.data.model.dto.TagResponse
 import com.thecityandthebike.data.repository.SubmissionRepository
 import com.thecityandthebike.data.repository.TagRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -45,6 +46,7 @@ class ImageDetailViewModel @Inject constructor(
 
     private val _state = MutableStateFlow(ImageDetailState(isLoading = true))
     val state: StateFlow<ImageDetailState> = _state.asStateFlow()
+    private var processMaskJob: Job? = null
 
     init {
         loadSubmission()
@@ -117,6 +119,8 @@ class ImageDetailViewModel @Inject constructor(
     }
 
     fun exitTagMode() {
+        processMaskJob?.cancel()
+        processMaskJob = null
         _state.value = _state.value.copy(
             isTagMode = false,
             processedRing = null,
@@ -126,7 +130,7 @@ class ImageDetailViewModel @Inject constructor(
     }
 
     fun processMask(imageFile: java.io.File) {
-        viewModelScope.launch {
+        processMaskJob = viewModelScope.launch {
             _state.value = _state.value.copy(isProcessingMask = true)
             when (val result = tagRepository.processMask(submissionId, imageFile)) {
                 is ApiResult.Success -> {
