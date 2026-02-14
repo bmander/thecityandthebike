@@ -13,7 +13,8 @@ from ..dependencies import get_current_user, get_current_user_optional
 from ..models import User, Bike, FenderSubmission
 from ..schemas import PaginatedResponse, SubmissionResponse
 from ..schemas.auth import MessageResponse
-from .uploads import delete_stored_image, process_and_store_image
+from ..services.storage import delete_image
+from .uploads import process_and_store_image
 
 router = APIRouter(prefix="/submissions", tags=["submissions"])
 
@@ -74,7 +75,7 @@ def delete_submission(
     db.delete(submission)
     db.commit()
     for url in image_urls:
-        delete_stored_image(url)
+        delete_image(url)
     return MessageResponse(msg="Submission deleted")
 
 
@@ -121,8 +122,8 @@ async def create_submission(
     try:
         db.commit()
     except Exception:
-        delete_stored_image(image_url)
-        delete_stored_image(thumbnail_url)
+        delete_image(image_url)
+        delete_image(thumbnail_url)
         raise
     db.refresh(submission)
     # Force load relationships for the username and provider properties

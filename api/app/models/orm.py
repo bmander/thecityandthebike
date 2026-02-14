@@ -1,7 +1,7 @@
 from datetime import datetime, timezone
 import uuid
 
-from sqlalchemy import Boolean, Column, Index, Integer, String, Date, DateTime, Text, ForeignKey, Uuid
+from sqlalchemy import Boolean, Column, Index, Integer, JSON, String, Date, DateTime, Text, ForeignKey, Uuid
 from sqlalchemy.orm import relationship
 
 from ..database import Base
@@ -98,6 +98,9 @@ class Tag(Base):
     submission_id = Column(Uuid, ForeignKey("fender_submissions.submission_id"), nullable=False, index=True)
     user_id = Column(Uuid, ForeignKey("users.user_id"), nullable=False)
     image_url = Column(Text, nullable=False)
+    ring = Column(JSON, nullable=True)
+    ring_width = Column(Integer, nullable=True)
+    ring_height = Column(Integer, nullable=True)
     created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
 
     submission = relationship("FenderSubmission", back_populates="tags")

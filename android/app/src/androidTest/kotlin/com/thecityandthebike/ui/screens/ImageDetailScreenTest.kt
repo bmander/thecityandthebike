@@ -184,7 +184,7 @@ class ImageDetailScreenTest {
     }
 
     @Test
-    fun tagMode_showsDiscardAndSaveButtons() {
+    fun tagMode_showsDiscardAndNextButtons() {
         composeTestRule.setContentWithTheme {
             ImageDetailScreen(
                 submission = testSubmission,
@@ -195,7 +195,7 @@ class ImageDetailScreenTest {
         }
 
         composeTestRule.onNodeWithText("Discard").assertIsDisplayed()
-        composeTestRule.onNodeWithText("Save tag").assertIsDisplayed()
+        composeTestRule.onNodeWithText("Next").assertIsDisplayed()
     }
 
     @Test
@@ -232,7 +232,7 @@ class ImageDetailScreenTest {
     }
 
     @Test
-    fun tagMode_saveTagDisabledWithNoStrokes() {
+    fun tagMode_nextDisabledWithNoStrokes() {
         composeTestRule.setContentWithTheme {
             ImageDetailScreen(
                 submission = testSubmission,
@@ -242,7 +242,7 @@ class ImageDetailScreenTest {
             )
         }
 
-        composeTestRule.onNodeWithText("Save tag").assertIsNotEnabled()
+        composeTestRule.onNodeWithText("Next").assertIsNotEnabled()
     }
 
     @Test
@@ -342,5 +342,80 @@ class ImageDetailScreenTest {
         composeTestRule.onNodeWithContentDescription("Delete tag").performClick()
 
         assertTrue("onDeleteTag should be called with tag id", deletedTagId == "tag-1")
+    }
+
+    // --- Confirm phase tests ---
+
+    @Test
+    fun confirmPhase_showsBackAndConfirmButtons() {
+        composeTestRule.setContentWithTheme {
+            ImageDetailScreen(
+                submission = testSubmission,
+                onHome = {},
+                isLoggedIn = true,
+                isTagMode = true,
+                processedRing = listOf(listOf(0f, 0f), listOf(100f, 0f), listOf(100f, 100f)),
+                processedMaskWidth = 200,
+                processedMaskHeight = 200
+            )
+        }
+
+        composeTestRule.onNodeWithText("Back").assertIsDisplayed()
+        composeTestRule.onNodeWithText("Confirm tag").assertIsDisplayed()
+    }
+
+    @Test
+    fun confirmPhase_backCallsOnBackToDrawing() {
+        var backCalled = false
+
+        composeTestRule.setContentWithTheme {
+            ImageDetailScreen(
+                submission = testSubmission,
+                onHome = {},
+                isLoggedIn = true,
+                isTagMode = true,
+                processedRing = listOf(listOf(0f, 0f), listOf(100f, 0f), listOf(100f, 100f)),
+                processedMaskWidth = 200,
+                processedMaskHeight = 200,
+                onBackToDrawing = { backCalled = true }
+            )
+        }
+
+        composeTestRule.onNodeWithText("Back").performClick()
+
+        assertTrue("onBackToDrawing should be called", backCalled)
+    }
+
+    @Test
+    fun confirmPhase_showsSpinnerWhenCreatingTag() {
+        composeTestRule.setContentWithTheme {
+            ImageDetailScreen(
+                submission = testSubmission,
+                onHome = {},
+                isLoggedIn = true,
+                isTagMode = true,
+                isCreatingTag = true,
+                processedRing = listOf(listOf(0f, 0f), listOf(100f, 0f), listOf(100f, 100f)),
+                processedMaskWidth = 200,
+                processedMaskHeight = 200
+            )
+        }
+
+        composeTestRule.onNodeWithText("Confirm tag").assertDoesNotExist()
+    }
+
+    @Test
+    fun processingPhase_showsSpinnerOnNextButton() {
+        composeTestRule.setContentWithTheme {
+            ImageDetailScreen(
+                submission = testSubmission,
+                onHome = {},
+                isLoggedIn = true,
+                isTagMode = true,
+                isProcessingMask = true
+            )
+        }
+
+        composeTestRule.onNodeWithText("Next").assertDoesNotExist()
     }
 }

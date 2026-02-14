@@ -9,7 +9,7 @@ from sqlalchemy.orm import Query
 
 from app.dependencies import create_access_token, get_password_hash
 from app.models import User, Bike, FenderSubmission
-from app.routers.uploads import UPLOAD_DIR
+from app.services.storage import UPLOAD_DIR
 from tests.conftest import create_test_image
 
 
@@ -273,12 +273,12 @@ class TestCreateSubmission:
         original_dir = UPLOAD_DIR
         temp_dir = tempfile.mkdtemp()
         os.makedirs(os.path.join(temp_dir, "images"), exist_ok=True)
-        import app.routers.uploads as uploads_module
-        uploads_module.UPLOAD_DIR = temp_dir
+        import app.services.storage as storage_module
+        storage_module.UPLOAD_DIR = temp_dir
         self._temp_dir = temp_dir
         yield
         shutil.rmtree(temp_dir, ignore_errors=True)
-        uploads_module.UPLOAD_DIR = original_dir
+        storage_module.UPLOAD_DIR = original_dir
 
     def _post_submission(self, client, auth_headers, bike_qr_id, image=None, **extra_data):
         """Helper to post a multipart submission."""

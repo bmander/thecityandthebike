@@ -4,6 +4,7 @@ from .submission import PaginatedResponse, SubmissionResponse
 from .bike import BikeDetailResponse, BikeListItem, BikeResponse, Owner, UserSummary
 from .leaderboard import LeaderboardEntry, LeaderboardPeriod, LeaderboardResponse
 from .tag import TagResponse
+from .mask import ProcessedMaskResponse
 
 __all__ = [
     "UserRegister",
@@ -24,4 +25,5 @@ __all__ = [
     "LeaderboardPeriod",
     "LeaderboardResponse",
     "TagResponse",
+    "ProcessedMaskResponse",
 ]
