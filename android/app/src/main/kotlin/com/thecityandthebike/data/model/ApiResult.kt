@@ -24,6 +24,7 @@ suspend fun <T> safeApiCall(block: suspend () -> Response<T>): ApiResult<T> {
             val error = when (code) {
                 401, 403 -> AppError.Auth(code, message)
                 422 -> AppError.Validation("", message)
+                429 -> AppError.RateLimit(response.headers()["Retry-After"]?.toIntOrNull())
                 in 500..599 -> AppError.Server(code, message)
                 else -> AppError.Server(code, message)
             }

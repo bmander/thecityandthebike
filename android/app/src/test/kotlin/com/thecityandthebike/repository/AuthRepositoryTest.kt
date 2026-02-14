@@ -94,6 +94,34 @@ class AuthRepositoryTest {
     }
 
     @Test
+    fun `register rate limited should return rate limit error`() = runTest {
+        coEvery {
+            apiService.register(RegisterRequest("user", "email@test.com", "pass"))
+        } returns Response.error(429, "{}".toResponseBody())
+
+        val result = repository.register("user", "email@test.com", "pass")
+
+        assertTrue(result is ApiResult.Error)
+        val error = (result as ApiResult.Error).error
+        assertTrue(error is AppError.RateLimit)
+        assertEquals("Too many attempts. Please try again later.", error.displayMessage)
+    }
+
+    @Test
+    fun `login rate limited should return rate limit error`() = runTest {
+        coEvery {
+            apiService.login(LoginRequest("user", "pass"))
+        } returns Response.error(429, "{}".toResponseBody())
+
+        val result = repository.login("user", "pass")
+
+        assertTrue(result is ApiResult.Error)
+        val error = (result as ApiResult.Error).error
+        assertTrue(error is AppError.RateLimit)
+        assertEquals("Too many attempts. Please try again later.", error.displayMessage)
+    }
+
+    @Test
     fun `logout should clear token`() = runTest {
         coEvery { apiService.logout(any()) } returns Response.success(MessageResponse(msg = "Logged out"))
         repository.logout()

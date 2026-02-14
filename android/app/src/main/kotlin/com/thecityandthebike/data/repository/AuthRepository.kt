@@ -29,6 +29,9 @@ class AuthRepository @Inject constructor(
                     tokenManager.saveTokens(tokenResponse.accessToken, tokenResponse.refreshToken)
                     ApiResult.Success(Unit)
                 } ?: ApiResult.Error(AppError.Server(response.code(), "Empty response"))
+            } else if (response.code() == 429) {
+                val retryAfter = response.headers()["Retry-After"]?.toIntOrNull()
+                ApiResult.Error(AppError.RateLimit(retryAfter))
             } else {
                 ApiResult.Error(AppError.Auth(response.code(), "Invalid credentials"))
             }
@@ -46,6 +49,9 @@ class AuthRepository @Inject constructor(
                 ApiResult.Success(Unit)
             } else if (response.code() == 409) {
                 ApiResult.Error(AppError.Server(409, "User already exists"))
+            } else if (response.code() == 429) {
+                val retryAfter = response.headers()["Retry-After"]?.toIntOrNull()
+                ApiResult.Error(AppError.RateLimit(retryAfter))
             } else {
                 ApiResult.Error(AppError.Auth(response.code(), "Registration failed"))
             }
