@@ -277,14 +277,16 @@ class TestStoreImage:
 class TestGenerateSignedUrl:
     """Tests for generate_signed_url()."""
 
+    @patch("google.auth.transport.requests.Request")
     @patch("google.auth.default")
     @patch("app.services.storage._get_gcs_bucket")
-    def test_generates_signed_url(self, mock_get_gcs_bucket, mock_default, monkeypatch):
+    def test_generates_signed_url(self, mock_get_gcs_bucket, mock_default, mock_request, monkeypatch):
         monkeypatch.setattr(settings, "STORAGE_BUCKET", "my-bucket")
         monkeypatch.setattr(settings, "SIGNED_URL_EXPIRATION", 3600)
 
         mock_creds = MagicMock()
         mock_creds.service_account_email = "sa@project.iam.gserviceaccount.com"
+        mock_creds.token = "fake-token"
         mock_default.return_value = (mock_creds, "project-id")
 
         mock_bucket = MagicMock()
@@ -302,16 +304,19 @@ class TestGenerateSignedUrl:
             expiration=datetime.timedelta(seconds=3600),
             method="GET",
             service_account_email="sa@project.iam.gserviceaccount.com",
+            access_token="fake-token",
         )
 
+    @patch("google.auth.transport.requests.Request")
     @patch("google.auth.default")
     @patch("app.services.storage._get_gcs_bucket")
-    def test_expiration_uses_config(self, mock_get_gcs_bucket, mock_default, monkeypatch):
+    def test_expiration_uses_config(self, mock_get_gcs_bucket, mock_default, mock_request, monkeypatch):
         monkeypatch.setattr(settings, "STORAGE_BUCKET", "my-bucket")
         monkeypatch.setattr(settings, "SIGNED_URL_EXPIRATION", 7200)
 
         mock_creds = MagicMock()
         mock_creds.service_account_email = "sa@project.iam.gserviceaccount.com"
+        mock_creds.token = "fake-token"
         mock_default.return_value = (mock_creds, "project-id")
 
         mock_bucket = MagicMock()
@@ -325,6 +330,7 @@ class TestGenerateSignedUrl:
         call_kwargs = mock_blob.generate_signed_url.call_args[1]
         assert call_kwargs["expiration"] == datetime.timedelta(seconds=7200)
         assert call_kwargs["service_account_email"] == "sa@project.iam.gserviceaccount.com"
+        assert call_kwargs["access_token"] == "fake-token"
 
 
 class TestImageExists:
