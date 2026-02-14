@@ -1,6 +1,6 @@
 from .auth import UserRegister, UserLogin, Token, RefreshRequest, MessageResponse
 from .user import UserDetailResponse, UserResponse
-from .submission import PaginatedResponse, SubmissionResponse
+from .submission import CursorPaginatedResponse, PaginatedResponse, SubmissionResponse
 from .bike import BikeDetailResponse, BikeListItem, BikeResponse, Owner, UserSummary
 from .leaderboard import LeaderboardEntry, LeaderboardPeriod, LeaderboardResponse
 from .tag import TagResponse
@@ -14,6 +14,7 @@ __all__ = [
     "MessageResponse",
     "UserDetailResponse",
     "UserResponse",
+    "CursorPaginatedResponse",
     "PaginatedResponse",
     "SubmissionResponse",
     "BikeDetailResponse",

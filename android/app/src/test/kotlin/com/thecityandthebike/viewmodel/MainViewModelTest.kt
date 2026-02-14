@@ -3,7 +3,7 @@ package com.thecityandthebike.viewmodel
 import android.net.Uri
 import com.thecityandthebike.data.model.ApiResult
 import com.thecityandthebike.data.model.AppError
-import com.thecityandthebike.data.model.dto.PaginatedSubmissions
+import com.thecityandthebike.data.model.dto.CursorPaginatedSubmissions
 import com.thecityandthebike.data.model.dto.SubmissionResponse
 import com.thecityandthebike.data.repository.SubmissionRepository
 import com.thecityandthebike.ui.viewmodel.MainViewModel
@@ -66,14 +66,14 @@ class MainViewModelTest {
                 imageUrl = "http://example.com/image2.jpg"
             )
         )
-        val paginated = PaginatedSubmissions(items = submissions, total = 2, limit = 20, offset = 0)
+        val paginated = CursorPaginatedSubmissions(items = submissions, nextCursor = null, hasMore = false)
         coEvery { submissionRepository.getSubmissions(any(), any()) } returns ApiResult.Success(paginated)
 
         viewModel = createViewModel()
         testDispatcher.scheduler.advanceUntilIdle()
 
         assertEquals(2, viewModel.state.value.submissions.size)
-        assertEquals(2, viewModel.state.value.totalSubmissions)
+        assertNull(viewModel.state.value.nextCursor)
         assertFalse(viewModel.state.value.hasMorePages)
         assertFalse(viewModel.state.value.isLoading)
         assertNull(viewModel.state.value.error)
@@ -109,21 +109,22 @@ class MainViewModelTest {
             SubmissionResponse(submissionId = "1", userId = "user1", bikeQrId = "bike1"),
             SubmissionResponse(submissionId = "2", userId = "user1", bikeQrId = "bike2")
         )
-        val firstPaginated = PaginatedSubmissions(items = firstPage, total = 4, limit = 2, offset = 0)
-        coEvery { submissionRepository.getSubmissions(limit = any(), offset = 0) } returns ApiResult.Success(firstPaginated)
+        val firstPaginated = CursorPaginatedSubmissions(items = firstPage, nextCursor = "cursor-abc", hasMore = true)
+        coEvery { submissionRepository.getSubmissions(limit = any(), cursor = null) } returns ApiResult.Success(firstPaginated)
 
         viewModel = createViewModel()
         testDispatcher.scheduler.advanceUntilIdle()
 
         assertEquals(2, viewModel.state.value.submissions.size)
         assertTrue(viewModel.state.value.hasMorePages)
+        assertEquals("cursor-abc", viewModel.state.value.nextCursor)
 
         val secondPage = listOf(
             SubmissionResponse(submissionId = "3", userId = "user1", bikeQrId = "bike3"),
             SubmissionResponse(submissionId = "4", userId = "user1", bikeQrId = "bike4")
         )
-        val secondPaginated = PaginatedSubmissions(items = secondPage, total = 4, limit = 2, offset = 2)
-        coEvery { submissionRepository.getSubmissions(limit = any(), offset = 2) } returns ApiResult.Success(secondPaginated)
+        val secondPaginated = CursorPaginatedSubmissions(items = secondPage, nextCursor = null, hasMore = false)
+        coEvery { submissionRepository.getSubmissions(limit = any(), cursor = "cursor-abc") } returns ApiResult.Success(secondPaginated)
 
         viewModel.loadMoreSubmissions()
         testDispatcher.scheduler.advanceUntilIdle()
@@ -137,15 +138,15 @@ class MainViewModelTest {
 
     @Test
     fun `loadMoreSubmissions should not load when already loading`() = runTest {
-        val paginated = PaginatedSubmissions(items = emptyList(), total = 10, limit = 20, offset = 0)
+        val paginated = CursorPaginatedSubmissions(items = emptyList(), nextCursor = null, hasMore = false)
         coEvery { submissionRepository.getSubmissions(any(), any()) } returns ApiResult.Success(paginated)
 
         viewModel = createViewModel()
         testDispatcher.scheduler.advanceUntilIdle()
 
-        val fullPage = PaginatedSubmissions(
+        val fullPage = CursorPaginatedSubmissions(
             items = listOf(SubmissionResponse(submissionId = "1", userId = "u", bikeQrId = "b")),
-            total = 1, limit = 20, offset = 0
+            nextCursor = null, hasMore = false
         )
         coEvery { submissionRepository.getSubmissions(any(), any()) } returns ApiResult.Success(fullPage)
 
@@ -167,8 +168,8 @@ class MainViewModelTest {
             SubmissionResponse(submissionId = "1", userId = "user1", bikeQrId = "bike1"),
             SubmissionResponse(submissionId = "2", userId = "user1", bikeQrId = "bike2")
         )
-        val firstPaginated = PaginatedSubmissions(items = firstPage, total = 4, limit = 2, offset = 0)
-        coEvery { submissionRepository.getSubmissions(limit = any(), offset = 0) } returns ApiResult.Success(firstPaginated)
+        val firstPaginated = CursorPaginatedSubmissions(items = firstPage, nextCursor = "cursor-abc", hasMore = true)
+        coEvery { submissionRepository.getSubmissions(limit = any(), cursor = null) } returns ApiResult.Success(firstPaginated)
 
         viewModel = createViewModel()
         testDispatcher.scheduler.advanceUntilIdle()
@@ -176,7 +177,7 @@ class MainViewModelTest {
         assertEquals(2, viewModel.state.value.submissions.size)
         assertTrue(viewModel.state.value.hasMorePages)
 
-        coEvery { submissionRepository.getSubmissions(limit = any(), offset = 2) } returns ApiResult.Error(AppError.Network(java.io.IOException("Network error")))
+        coEvery { submissionRepository.getSubmissions(limit = any(), cursor = "cursor-abc") } returns ApiResult.Error(AppError.Network(java.io.IOException("Network error")))
 
         viewModel.loadMoreSubmissions()
         testDispatcher.scheduler.advanceUntilIdle()
@@ -191,8 +192,8 @@ class MainViewModelTest {
         val initialPage = listOf(
             SubmissionResponse(submissionId = "1", userId = "user1", bikeQrId = "bike1")
         )
-        val initialPaginated = PaginatedSubmissions(items = initialPage, total = 1, limit = 20, offset = 0)
-        coEvery { submissionRepository.getSubmissions(limit = any(), offset = 0) } returns ApiResult.Success(initialPaginated)
+        val initialPaginated = CursorPaginatedSubmissions(items = initialPage, nextCursor = null, hasMore = false)
+        coEvery { submissionRepository.getSubmissions(limit = any(), cursor = null) } returns ApiResult.Success(initialPaginated)
 
         viewModel = createViewModel()
         testDispatcher.scheduler.advanceUntilIdle()
@@ -204,8 +205,8 @@ class MainViewModelTest {
             SubmissionResponse(submissionId = "new-1", userId = "user1", bikeQrId = "bike1"),
             SubmissionResponse(submissionId = "new-2", userId = "user1", bikeQrId = "bike2")
         )
-        val refreshedPaginated = PaginatedSubmissions(items = refreshedPage, total = 2, limit = 20, offset = 0)
-        coEvery { submissionRepository.getSubmissions(limit = any(), offset = 0) } returns ApiResult.Success(refreshedPaginated)
+        val refreshedPaginated = CursorPaginatedSubmissions(items = refreshedPage, nextCursor = null, hasMore = false)
+        coEvery { submissionRepository.getSubmissions(limit = any(), cursor = null) } returns ApiResult.Success(refreshedPaginated)
 
         viewModel.refreshSubmissions()
         testDispatcher.scheduler.advanceUntilIdle()
@@ -222,15 +223,15 @@ class MainViewModelTest {
         val initialPage = listOf(
             SubmissionResponse(submissionId = "1", userId = "user1", bikeQrId = "bike1")
         )
-        val initialPaginated = PaginatedSubmissions(items = initialPage, total = 1, limit = 20, offset = 0)
-        coEvery { submissionRepository.getSubmissions(limit = any(), offset = 0) } returns ApiResult.Success(initialPaginated)
+        val initialPaginated = CursorPaginatedSubmissions(items = initialPage, nextCursor = null, hasMore = false)
+        coEvery { submissionRepository.getSubmissions(limit = any(), cursor = null) } returns ApiResult.Success(initialPaginated)
 
         viewModel = createViewModel()
         testDispatcher.scheduler.advanceUntilIdle()
 
         assertEquals(1, viewModel.state.value.submissions.size)
 
-        coEvery { submissionRepository.getSubmissions(limit = any(), offset = 0) } returns ApiResult.Error(AppError.Server(500, "Refresh failed"))
+        coEvery { submissionRepository.getSubmissions(limit = any(), cursor = null) } returns ApiResult.Error(AppError.Server(500, "Refresh failed"))
 
         viewModel.refreshSubmissions()
         testDispatcher.scheduler.advanceUntilIdle()
@@ -243,7 +244,7 @@ class MainViewModelTest {
 
     @Test
     fun `upload success should trigger refresh`() = runTest {
-        val paginated = PaginatedSubmissions(items = emptyList(), total = 0, limit = 20, offset = 0)
+        val paginated = CursorPaginatedSubmissions(items = emptyList(), nextCursor = null, hasMore = false)
         coEvery { submissionRepository.getSubmissions(any(), any()) } returns ApiResult.Success(paginated)
 
         viewModel = createViewModel()
@@ -252,7 +253,7 @@ class MainViewModelTest {
         val refreshedPage = listOf(
             SubmissionResponse(submissionId = "new-1", userId = "user1", bikeQrId = "bike1")
         )
-        val refreshedPaginated = PaginatedSubmissions(items = refreshedPage, total = 1, limit = 20, offset = 0)
+        val refreshedPaginated = CursorPaginatedSubmissions(items = refreshedPage, nextCursor = null, hasMore = false)
         coEvery { submissionRepository.getSubmissions(any(), any()) } returns ApiResult.Success(refreshedPaginated)
 
         uploadStateFlow.value = UploadState.Success
@@ -264,7 +265,7 @@ class MainViewModelTest {
 
     @Test
     fun `upload error should set error state`() = runTest {
-        val paginated = PaginatedSubmissions(items = emptyList(), total = 0, limit = 20, offset = 0)
+        val paginated = CursorPaginatedSubmissions(items = emptyList(), nextCursor = null, hasMore = false)
         coEvery { submissionRepository.getSubmissions(any(), any()) } returns ApiResult.Success(paginated)
 
         viewModel = createViewModel()
@@ -277,25 +278,23 @@ class MainViewModelTest {
     }
 
     @Test
-    fun `removeSubmission should remove by id and decrement totalSubmissions`() = runTest {
+    fun `removeSubmission should remove by id`() = runTest {
         val submissions = listOf(
             SubmissionResponse(submissionId = "1", userId = "user1", bikeQrId = "bike1"),
             SubmissionResponse(submissionId = "2", userId = "user1", bikeQrId = "bike2"),
             SubmissionResponse(submissionId = "3", userId = "user1", bikeQrId = "bike3")
         )
-        val paginated = PaginatedSubmissions(items = submissions, total = 3, limit = 20, offset = 0)
+        val paginated = CursorPaginatedSubmissions(items = submissions, nextCursor = null, hasMore = false)
         coEvery { submissionRepository.getSubmissions(any(), any()) } returns ApiResult.Success(paginated)
 
         viewModel = createViewModel()
         testDispatcher.scheduler.advanceUntilIdle()
 
         assertEquals(3, viewModel.state.value.submissions.size)
-        assertEquals(3, viewModel.state.value.totalSubmissions)
 
         viewModel.removeSubmission("2")
 
         assertEquals(2, viewModel.state.value.submissions.size)
-        assertEquals(2, viewModel.state.value.totalSubmissions)
         assertFalse(viewModel.state.value.submissions.any { it.submissionId == "2" })
     }
 
@@ -305,7 +304,7 @@ class MainViewModelTest {
             SubmissionResponse(submissionId = "1", userId = "user1", bikeQrId = "bike1"),
             SubmissionResponse(submissionId = "2", userId = "user1", bikeQrId = "bike2")
         )
-        val paginated = PaginatedSubmissions(items = submissions, total = 2, limit = 20, offset = 0)
+        val paginated = CursorPaginatedSubmissions(items = submissions, nextCursor = null, hasMore = false)
         coEvery { submissionRepository.getSubmissions(any(), any()) } returns ApiResult.Success(paginated)
 
         viewModel = createViewModel()
@@ -314,27 +313,11 @@ class MainViewModelTest {
         viewModel.removeSubmission("nonexistent")
 
         assertEquals(2, viewModel.state.value.submissions.size)
-        assertEquals(1, viewModel.state.value.totalSubmissions)
-    }
-
-    @Test
-    fun `removeSubmission totalSubmissions should not go below zero`() = runTest {
-        val paginated = PaginatedSubmissions(items = emptyList(), total = 0, limit = 20, offset = 0)
-        coEvery { submissionRepository.getSubmissions(any(), any()) } returns ApiResult.Success(paginated)
-
-        viewModel = createViewModel()
-        testDispatcher.scheduler.advanceUntilIdle()
-
-        assertEquals(0, viewModel.state.value.totalSubmissions)
-
-        viewModel.removeSubmission("nonexistent")
-
-        assertEquals(0, viewModel.state.value.totalSubmissions)
     }
 
     @Test
     fun `uploading state should set pendingUploadUri`() = runTest {
-        val paginated = PaginatedSubmissions(items = emptyList(), total = 0, limit = 20, offset = 0)
+        val paginated = CursorPaginatedSubmissions(items = emptyList(), nextCursor = null, hasMore = false)
         coEvery { submissionRepository.getSubmissions(any(), any()) } returns ApiResult.Success(paginated)
 
         viewModel = createViewModel()
@@ -351,7 +334,7 @@ class MainViewModelTest {
 
     @Test
     fun `upload success should clear pendingUploadUri after refresh`() = runTest {
-        val paginated = PaginatedSubmissions(items = emptyList(), total = 0, limit = 20, offset = 0)
+        val paginated = CursorPaginatedSubmissions(items = emptyList(), nextCursor = null, hasMore = false)
         coEvery { submissionRepository.getSubmissions(any(), any()) } returns ApiResult.Success(paginated)
 
         viewModel = createViewModel()
@@ -366,7 +349,7 @@ class MainViewModelTest {
         val refreshedPage = listOf(
             SubmissionResponse(submissionId = "new-1", userId = "user1", bikeQrId = "bike1")
         )
-        val refreshedPaginated = PaginatedSubmissions(items = refreshedPage, total = 1, limit = 20, offset = 0)
+        val refreshedPaginated = CursorPaginatedSubmissions(items = refreshedPage, nextCursor = null, hasMore = false)
         coEvery { submissionRepository.getSubmissions(any(), any()) } returns ApiResult.Success(refreshedPaginated)
 
         uploadStateFlow.value = UploadState.Success
@@ -378,7 +361,7 @@ class MainViewModelTest {
 
     @Test
     fun `upload error should clear pendingUploadUri`() = runTest {
-        val paginated = PaginatedSubmissions(items = emptyList(), total = 0, limit = 20, offset = 0)
+        val paginated = CursorPaginatedSubmissions(items = emptyList(), nextCursor = null, hasMore = false)
         coEvery { submissionRepository.getSubmissions(any(), any()) } returns ApiResult.Success(paginated)
 
         viewModel = createViewModel()
@@ -399,7 +382,7 @@ class MainViewModelTest {
 
     @Test
     fun `pull to refresh should not clear pendingUploadUri`() = runTest {
-        val paginated = PaginatedSubmissions(items = emptyList(), total = 0, limit = 20, offset = 0)
+        val paginated = CursorPaginatedSubmissions(items = emptyList(), nextCursor = null, hasMore = false)
         coEvery { submissionRepository.getSubmissions(any(), any()) } returns ApiResult.Success(paginated)
 
         viewModel = createViewModel()

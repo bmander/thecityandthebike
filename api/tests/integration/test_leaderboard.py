@@ -184,3 +184,43 @@ class TestGetLeaderboard:
         response = client.get("/leaderboard?period=daily")
         assert response.status_code == 200
         assert len(response.json()["entries"]) == 1
+
+    def test_boundary_late_night_vs_next_day(self, client, db_session, test_bike):
+        """Submission at 23:59:59 should count, but 00:00:00 next day should not."""
+        now = datetime.now(timezone.utc)
+        today = now.date()
+        tomorrow = today + timedelta(days=1)
+
+        user = User(
+            username="boundary_user",
+            email="boundary@example.com",
+            password_hash=get_password_hash("password123"),
+        )
+        db_session.add(user)
+        db_session.commit()
+
+        # Submission at 23:59:59 today
+        late_sub = FenderSubmission(
+            user_id=user.user_id,
+            bike_id=test_bike.id,
+            image_url="https://example.com/late.jpg",
+            captured_date=today,
+            uploaded_at=datetime(today.year, today.month, today.day, 23, 59, 59, tzinfo=timezone.utc),
+        )
+        # Submission at exactly midnight tomorrow
+        midnight_sub = FenderSubmission(
+            user_id=user.user_id,
+            bike_id=test_bike.id,
+            image_url="https://example.com/midnight.jpg",
+            captured_date=tomorrow,
+            uploaded_at=datetime(tomorrow.year, tomorrow.month, tomorrow.day, 0, 0, 0, tzinfo=timezone.utc),
+        )
+        db_session.add_all([late_sub, midnight_sub])
+        db_session.commit()
+
+        response = client.get("/leaderboard?period=daily")
+        assert response.status_code == 200
+        data = response.json()
+        # Only the 23:59:59 submission should count for today's daily leaderboard
+        assert len(data["entries"]) == 1
+        assert data["entries"][0]["submission_count"] == 1

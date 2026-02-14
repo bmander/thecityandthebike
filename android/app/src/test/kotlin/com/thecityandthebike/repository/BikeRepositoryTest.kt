@@ -4,7 +4,7 @@ import com.thecityandthebike.data.api.ApiService
 import com.thecityandthebike.data.model.ApiResult
 import com.thecityandthebike.data.model.AppError
 import com.thecityandthebike.data.model.dto.BikeDetailResponse
-import com.thecityandthebike.data.model.dto.PaginatedSubmissions
+import com.thecityandthebike.data.model.dto.CursorPaginatedSubmissions
 import com.thecityandthebike.data.model.dto.SubmissionResponse
 import com.thecityandthebike.data.repository.BikeRepository
 import io.mockk.coEvery
@@ -86,7 +86,7 @@ class BikeRepositoryTest {
 
     @Test
     fun `getBikeSubmissions success returns paginated submissions`() = runTest {
-        val submissions = PaginatedSubmissions(
+        val submissions = CursorPaginatedSubmissions(
             items = listOf(
                 SubmissionResponse(
                     submissionId = "sub1",
@@ -94,11 +94,10 @@ class BikeRepositoryTest {
                     bikeQrId = "BIKE001"
                 )
             ),
-            total = 1,
-            limit = 20,
-            offset = 0
+            nextCursor = null,
+            hasMore = false
         )
-        coEvery { apiService.getBikeSubmissions("BIKE001", limit = 20, offset = 0) } returns
+        coEvery { apiService.getBikeSubmissions("BIKE001", limit = 20, cursor = null) } returns
                 Response.success(submissions)
 
         val result = repository.getBikeSubmissions("BIKE001")
@@ -109,7 +108,7 @@ class BikeRepositoryTest {
 
     @Test
     fun `getBikeSubmissions empty body returns empty list`() = runTest {
-        coEvery { apiService.getBikeSubmissions("BIKE001", limit = 20, offset = 0) } returns
+        coEvery { apiService.getBikeSubmissions("BIKE001", limit = 20, cursor = null) } returns
                 Response.success(null)
 
         val result = repository.getBikeSubmissions("BIKE001")
@@ -117,12 +116,11 @@ class BikeRepositoryTest {
         assertTrue(result is ApiResult.Success)
         val data = (result as ApiResult.Success).data
         assertTrue(data.items.isEmpty())
-        assertEquals(0, data.total)
     }
 
     @Test
     fun `getBikeSubmissions HTTP error returns Server error`() = runTest {
-        coEvery { apiService.getBikeSubmissions("BIKE001", limit = 20, offset = 0) } returns
+        coEvery { apiService.getBikeSubmissions("BIKE001", limit = 20, cursor = null) } returns
                 Response.error(500, "Server error".toResponseBody())
 
         val result = repository.getBikeSubmissions("BIKE001")
@@ -135,7 +133,7 @@ class BikeRepositoryTest {
 
     @Test
     fun `getBikeSubmissions IOException returns Network error`() = runTest {
-        coEvery { apiService.getBikeSubmissions("BIKE001", limit = 20, offset = 0) } throws
+        coEvery { apiService.getBikeSubmissions("BIKE001", limit = 20, cursor = null) } throws
                 IOException("timeout")
 
         val result = repository.getBikeSubmissions("BIKE001")

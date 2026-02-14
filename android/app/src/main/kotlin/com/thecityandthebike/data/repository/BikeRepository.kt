@@ -5,7 +5,7 @@ import com.thecityandthebike.data.model.ApiResult
 import com.thecityandthebike.data.model.AppError
 import com.thecityandthebike.data.model.dto.BikeDetailResponse
 import com.thecityandthebike.data.model.dto.PaginatedBikes
-import com.thecityandthebike.data.model.dto.PaginatedSubmissions
+import com.thecityandthebike.data.model.dto.CursorPaginatedSubmissions
 import java.io.IOException
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -51,15 +51,15 @@ class BikeRepository @Inject constructor(
     suspend fun getBikeSubmissions(
         bikeQrId: String,
         limit: Int = 20,
-        offset: Int = 0
-    ): ApiResult<PaginatedSubmissions> {
+        cursor: String? = null
+    ): ApiResult<CursorPaginatedSubmissions> {
         return try {
-            val response = apiService.getBikeSubmissions(bikeQrId, limit = limit, offset = offset)
+            val response = apiService.getBikeSubmissions(bikeQrId, limit = limit, cursor = cursor)
             if (response.isSuccessful) {
                 response.body()?.let { paginated ->
                     ApiResult.Success(paginated)
                 } ?: ApiResult.Success(
-                    PaginatedSubmissions(items = emptyList(), total = 0, limit = limit, offset = offset)
+                    CursorPaginatedSubmissions(items = emptyList())
                 )
             } else {
                 ApiResult.Error(AppError.Server(response.code(), "Failed to fetch bike submissions"))

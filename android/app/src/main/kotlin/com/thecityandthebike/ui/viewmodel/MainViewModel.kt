@@ -22,7 +22,7 @@ data class MainState(
     val error: String? = null,
     val isLoadingMore: Boolean = false,
     val hasMorePages: Boolean = true,
-    val totalSubmissions: Int = 0,
+    val nextCursor: String? = null,
     val pendingUploadUri: Uri? = null
 )
 
@@ -84,8 +84,8 @@ class MainViewModel @Inject constructor(
                         isLoading = false,
                         isRefreshing = false,
                         submissions = result.data.items,
-                        totalSubmissions = result.data.total,
-                        hasMorePages = result.data.items.size + result.data.offset < result.data.total,
+                        hasMorePages = result.data.hasMore,
+                        nextCursor = result.data.nextCursor,
                         pendingUploadUri = if (clearPendingUpload) null else _state.value.pendingUploadUri
                     )
                 }
@@ -107,15 +107,14 @@ class MainViewModel @Inject constructor(
 
         viewModelScope.launch {
             _state.value = _state.value.copy(isLoadingMore = true)
-            val offset = _state.value.submissions.size
-            when (val result = submissionRepository.getSubmissions(offset = offset)) {
+            when (val result = submissionRepository.getSubmissions(cursor = _state.value.nextCursor)) {
                 is ApiResult.Success -> {
                     val newSubmissions = _state.value.submissions + result.data.items
                     _state.value = _state.value.copy(
                         isLoadingMore = false,
                         submissions = newSubmissions,
-                        totalSubmissions = result.data.total,
-                        hasMorePages = newSubmissions.size < result.data.total
+                        hasMorePages = result.data.hasMore,
+                        nextCursor = result.data.nextCursor
                     )
                 }
                 is ApiResult.Error -> {
@@ -130,8 +129,7 @@ class MainViewModel @Inject constructor(
 
     fun removeSubmission(submissionId: String) {
         _state.value = _state.value.copy(
-            submissions = _state.value.submissions.filter { it.submissionId != submissionId },
-            totalSubmissions = (_state.value.totalSubmissions - 1).coerceAtLeast(0)
+            submissions = _state.value.submissions.filter { it.submissionId != submissionId }
         )
     }
 

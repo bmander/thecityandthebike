@@ -20,7 +20,8 @@ data class UserState(
     val submissions: List<SubmissionResponse> = emptyList(),
     val error: String? = null,
     val isLoadingMore: Boolean = false,
-    val hasMorePages: Boolean = true
+    val hasMorePages: Boolean = true,
+    val nextCursor: String? = null
 )
 
 @HiltViewModel
@@ -60,7 +61,8 @@ class UserViewModel @Inject constructor(
                     _state.value = _state.value.copy(
                         isLoading = false,
                         submissions = subsResult.data.items,
-                        hasMorePages = subsResult.data.items.size + subsResult.data.offset < subsResult.data.total
+                        hasMorePages = subsResult.data.hasMore,
+                        nextCursor = subsResult.data.nextCursor
                     )
                 }
                 is ApiResult.Error -> {
@@ -79,15 +81,15 @@ class UserViewModel @Inject constructor(
 
         viewModelScope.launch {
             _state.value = _state.value.copy(isLoadingMore = true)
-            val offset = _state.value.submissions.size
 
-            when (val result = userRepository.getUserSubmissions(userId, offset = offset)) {
+            when (val result = userRepository.getUserSubmissions(userId, cursor = _state.value.nextCursor)) {
                 is ApiResult.Success -> {
                     val newSubmissions = _state.value.submissions + result.data.items
                     _state.value = _state.value.copy(
                         isLoadingMore = false,
                         submissions = newSubmissions,
-                        hasMorePages = newSubmissions.size < result.data.total
+                        hasMorePages = result.data.hasMore,
+                        nextCursor = result.data.nextCursor
                     )
                 }
                 is ApiResult.Error -> {

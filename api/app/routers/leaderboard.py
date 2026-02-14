@@ -13,18 +13,25 @@ from ..schemas.leaderboard import LeaderboardEntry, LeaderboardPeriod, Leaderboa
 router = APIRouter(prefix="/leaderboard", tags=["leaderboard"])
 
 
-def _get_date_range(period: LeaderboardPeriod) -> tuple[date, date]:
-    """Return (start_date, end_date) for the given period in UTC."""
+def _get_date_range(period: LeaderboardPeriod) -> tuple[datetime, datetime]:
+    """Return (start_dt, end_dt) as UTC datetimes using a half-open interval.
+
+    end_dt is midnight of the day AFTER the period ends.
+    """
     today = datetime.now(timezone.utc).date()
     if period == LeaderboardPeriod.daily:
-        return today, today
+        start = today
+        end_exclusive = today + timedelta(days=1)
     elif period == LeaderboardPeriod.weekly:
         start = today - timedelta(days=today.weekday())
-        end = start + timedelta(days=6)
-        return start, end
+        end_exclusive = start + timedelta(days=7)
     else:  # monthly
         last_day = calendar.monthrange(today.year, today.month)[1]
-        return date(today.year, today.month, 1), date(today.year, today.month, last_day)
+        start = date(today.year, today.month, 1)
+        end_exclusive = start + timedelta(days=last_day)
+    start_dt = datetime(start.year, start.month, start.day, tzinfo=timezone.utc)
+    end_dt = datetime(end_exclusive.year, end_exclusive.month, end_exclusive.day, tzinfo=timezone.utc)
+    return start_dt, end_dt
 
 
 @router.get("", response_model=LeaderboardResponse)
@@ -32,7 +39,7 @@ def get_leaderboard(
     db: Annotated[Session, Depends(get_db)],
     period: LeaderboardPeriod = Query(default=LeaderboardPeriod.weekly),
 ):
-    start_date, end_date = _get_date_range(period)
+    start_dt, end_dt = _get_date_range(period)
 
     rows = (
         db.query(
@@ -41,8 +48,8 @@ def get_leaderboard(
             func.count().label("submission_count"),
         )
         .join(User, FenderSubmission.user_id == User.user_id)
-        .filter(func.date(FenderSubmission.uploaded_at) >= start_date)
-        .filter(func.date(FenderSubmission.uploaded_at) <= end_date)
+        .filter(FenderSubmission.uploaded_at >= start_dt)
+        .filter(FenderSubmission.uploaded_at < end_dt)
         .group_by(FenderSubmission.user_id, User.username)
         .order_by(func.count().desc())
         .all()
@@ -60,7 +67,7 @@ def get_leaderboard(
 
     return LeaderboardResponse(
         period=period,
-        start_date=start_date,
-        end_date=end_date,
+        start_date=start_dt.date(),
+        end_date=(end_dt - timedelta(days=1)).date(),
         entries=entries,
     )

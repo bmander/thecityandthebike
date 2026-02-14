@@ -28,15 +28,15 @@ interface ApiService {
     @GET("users/me/submissions")
     suspend fun getMySubmissions(
         @Query("limit") limit: Int = 20,
-        @Query("offset") offset: Int = 0
-    ): Response<PaginatedSubmissions>
+        @Query("cursor") cursor: String? = null
+    ): Response<CursorPaginatedSubmissions>
 
     // Submission endpoints
     @GET("submissions")
     suspend fun getSubmissions(
         @Query("limit") limit: Int = 20,
-        @Query("offset") offset: Int = 0
-    ): Response<PaginatedSubmissions>
+        @Query("cursor") cursor: String? = null
+    ): Response<CursorPaginatedSubmissions>
 
     @Multipart
     @POST("submissions")
@@ -61,8 +61,8 @@ interface ApiService {
     suspend fun getUserSubmissions(
         @Path("userId") userId: String,
         @Query("limit") limit: Int = 20,
-        @Query("offset") offset: Int = 0
-    ): Response<PaginatedSubmissions>
+        @Query("cursor") cursor: String? = null
+    ): Response<CursorPaginatedSubmissions>
 
     // Bike endpoints
     @GET("bikes")
@@ -78,8 +78,8 @@ interface ApiService {
     suspend fun getBikeSubmissions(
         @Path("bikeQrId") bikeQrId: String,
         @Query("limit") limit: Int = 20,
-        @Query("offset") offset: Int = 0
-    ): Response<PaginatedSubmissions>
+        @Query("cursor") cursor: String? = null
+    ): Response<CursorPaginatedSubmissions>
 
     // Leaderboard endpoint
     @GET("leaderboard")

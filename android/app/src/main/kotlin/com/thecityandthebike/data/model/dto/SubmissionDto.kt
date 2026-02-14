@@ -26,6 +26,13 @@ data class PaginatedSubmissions(
 )
 
 @Serializable
+data class CursorPaginatedSubmissions(
+    val items: List<SubmissionResponse>,
+    @SerialName("next_cursor") val nextCursor: String? = null,
+    @SerialName("has_more") val hasMore: Boolean = false
+)
+
+@Serializable
 data class UploadResponse(
     val url: String,
     val filename: String,

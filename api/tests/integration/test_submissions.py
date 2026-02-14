@@ -1,7 +1,7 @@
 import os
 import shutil
 import tempfile
-from datetime import date, datetime, timezone
+from datetime import date, datetime, timedelta, timezone
 from unittest.mock import patch
 
 import pytest
@@ -14,35 +14,33 @@ from tests.conftest import create_test_image
 
 
 class TestGetSubmissions:
-    """Tests for GET /submissions endpoint."""
+    """Tests for GET /submissions endpoint (cursor-paginated)."""
 
     def test_get_submissions_empty(self, client, auth_headers):
-        """Empty database should return paginated response with no items."""
+        """Empty database should return cursor-paginated response with no items."""
         response = client.get("/submissions", headers=auth_headers)
         assert response.status_code == 200
         data = response.json()
         assert data["items"] == []
-        assert data["total"] == 0
-        assert data["limit"] == 20
-        assert data["offset"] == 0
+        assert data["has_more"] is False
+        assert data["next_cursor"] is None
 
     def test_get_submissions_with_data(
         self, client, auth_headers, test_submission
     ):
-        """Should return all submissions in paginated wrapper."""
+        """Should return all submissions in cursor-paginated wrapper."""
         response = client.get("/submissions", headers=auth_headers)
         assert response.status_code == 200
         data = response.json()
-        assert data["total"] == 1
         assert len(data["items"]) == 1
         assert data["items"][0]["submission_id"] == str(test_submission.submission_id)
         assert data["items"][0]["username"] == "testuser"
+        assert data["has_more"] is False
 
     def test_get_submissions_includes_all_users(
         self, client, auth_headers, test_submission, test_user, db_session
     ):
         """Should include submissions from all users."""
-        # Create another user with a submission
         other_user = User(
             username="otheruser",
             email="other@example.com",
@@ -67,11 +65,9 @@ class TestGetSubmissions:
         db_session.add(other_submission)
         db_session.commit()
 
-        # Should see both submissions
         response = client.get("/submissions", headers=auth_headers)
         assert response.status_code == 200
         data = response.json()
-        assert data["total"] == 2
         assert len(data["items"]) == 2
 
         user_ids = {sub["user_id"] for sub in data["items"]}
@@ -87,47 +83,58 @@ class TestGetSubmissions:
         response = client.get("/submissions")
         assert response.status_code == 200
 
-    def test_get_submissions_custom_limit_offset(
+    def test_get_submissions_cursor_traversal(
         self, client, auth_headers, test_user, test_bike, db_session
     ):
-        """Should respect custom limit and offset parameters."""
-        # Create 5 submissions
+        """Should page through all items with cursor without duplicates."""
+        now = datetime.now(timezone.utc)
         for i in range(5):
             sub = FenderSubmission(
                 user_id=test_user.user_id,
                 bike_id=test_bike.id,
                 image_url=f"https://example.com/img{i}.jpg",
                 captured_date=date.today(),
+                uploaded_at=now - timedelta(seconds=i),
             )
             db_session.add(sub)
         db_session.commit()
 
-        # Get first 2
-        response = client.get("/submissions?limit=2&offset=0", headers=auth_headers)
+        # First page
+        response = client.get("/submissions?limit=2", headers=auth_headers)
         assert response.status_code == 200
         data = response.json()
-        assert data["total"] == 5
         assert len(data["items"]) == 2
-        assert data["limit"] == 2
-        assert data["offset"] == 0
+        assert data["has_more"] is True
+        assert data["next_cursor"] is not None
 
-        # Get next 2
-        response = client.get("/submissions?limit=2&offset=2", headers=auth_headers)
+        all_ids = [item["submission_id"] for item in data["items"]]
+
+        # Second page
+        response = client.get(
+            f"/submissions?limit=2&cursor={data['next_cursor']}", headers=auth_headers
+        )
         data = response.json()
-        assert data["total"] == 5
         assert len(data["items"]) == 2
-        assert data["offset"] == 2
+        assert data["has_more"] is True
+        all_ids.extend(item["submission_id"] for item in data["items"])
 
-    def test_get_submissions_offset_beyond_total(
-        self, client, auth_headers, test_submission
-    ):
-        """Offset beyond total should return empty items with correct total."""
-        response = client.get("/submissions?offset=100", headers=auth_headers)
-        assert response.status_code == 200
+        # Third page
+        response = client.get(
+            f"/submissions?limit=2&cursor={data['next_cursor']}", headers=auth_headers
+        )
         data = response.json()
-        assert data["total"] == 1
-        assert len(data["items"]) == 0
-        assert data["offset"] == 100
+        assert len(data["items"]) == 1
+        assert data["has_more"] is False
+        assert data["next_cursor"] is None
+        all_ids.extend(item["submission_id"] for item in data["items"])
+
+        # No duplicates
+        assert len(all_ids) == len(set(all_ids)) == 5
+
+    def test_get_submissions_invalid_cursor(self, client, auth_headers):
+        """Invalid cursor should return 422."""
+        response = client.get("/submissions?cursor=not-valid", headers=auth_headers)
+        assert response.status_code == 422
 
     def test_get_submissions_invalid_limit_zero(self, client, auth_headers):
         """Limit of 0 should return 422."""
@@ -139,10 +146,37 @@ class TestGetSubmissions:
         response = client.get("/submissions?limit=101", headers=auth_headers)
         assert response.status_code == 422
 
-    def test_get_submissions_invalid_negative_offset(self, client, auth_headers):
-        """Negative offset should return 422."""
-        response = client.get("/submissions?offset=-1", headers=auth_headers)
-        assert response.status_code == 422
+    def test_get_submissions_tie_breaking(
+        self, client, auth_headers, test_user, test_bike, db_session
+    ):
+        """Items with same uploaded_at should all be returned via tie-breaking on submission_id."""
+        now = datetime.now(timezone.utc)
+        for i in range(3):
+            sub = FenderSubmission(
+                user_id=test_user.user_id,
+                bike_id=test_bike.id,
+                image_url=f"https://example.com/tie{i}.jpg",
+                captured_date=date.today(),
+                uploaded_at=now,
+            )
+            db_session.add(sub)
+        db_session.commit()
+
+        all_ids = []
+        cursor = None
+        while True:
+            url = "/submissions?limit=1"
+            if cursor:
+                url += f"&cursor={cursor}"
+            response = client.get(url, headers=auth_headers)
+            assert response.status_code == 200
+            data = response.json()
+            all_ids.extend(item["submission_id"] for item in data["items"])
+            if not data["has_more"]:
+                break
+            cursor = data["next_cursor"]
+
+        assert len(all_ids) == len(set(all_ids)) == 3
 
 
 class TestGetSubmission:

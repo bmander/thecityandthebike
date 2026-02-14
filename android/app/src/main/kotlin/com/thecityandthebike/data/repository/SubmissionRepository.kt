@@ -3,8 +3,8 @@ package com.thecityandthebike.data.repository
 import com.thecityandthebike.data.api.ApiService
 import com.thecityandthebike.data.model.ApiResult
 import com.thecityandthebike.data.model.AppError
+import com.thecityandthebike.data.model.dto.CursorPaginatedSubmissions
 import com.thecityandthebike.data.model.dto.MessageResponse
-import com.thecityandthebike.data.model.dto.PaginatedSubmissions
 import com.thecityandthebike.data.model.dto.SubmissionResponse
 import com.thecityandthebike.data.model.dto.UploadResponse
 import com.thecityandthebike.data.model.safeApiCall
@@ -21,13 +21,13 @@ import javax.inject.Singleton
 class SubmissionRepository @Inject constructor(
     private val apiService: ApiService
 ) {
-    suspend fun getSubmissions(limit: Int = 20, offset: Int = 0): ApiResult<PaginatedSubmissions> {
+    suspend fun getSubmissions(limit: Int = 20, cursor: String? = null): ApiResult<CursorPaginatedSubmissions> {
         return try {
-            val response = apiService.getSubmissions(limit = limit, offset = offset)
+            val response = apiService.getSubmissions(limit = limit, cursor = cursor)
             if (response.isSuccessful) {
                 response.body()?.let { paginated ->
                     ApiResult.Success(paginated)
-                } ?: ApiResult.Success(PaginatedSubmissions(items = emptyList(), total = 0, limit = limit, offset = offset))
+                } ?: ApiResult.Success(CursorPaginatedSubmissions(items = emptyList()))
             } else {
                 ApiResult.Error(AppError.Server(response.code(), "Failed to fetch submissions"))
             }
@@ -38,13 +38,13 @@ class SubmissionRepository @Inject constructor(
         }
     }
 
-    suspend fun getMySubmissions(limit: Int = 20, offset: Int = 0): ApiResult<PaginatedSubmissions> {
+    suspend fun getMySubmissions(limit: Int = 20, cursor: String? = null): ApiResult<CursorPaginatedSubmissions> {
         return try {
-            val response = apiService.getMySubmissions(limit = limit, offset = offset)
+            val response = apiService.getMySubmissions(limit = limit, cursor = cursor)
             if (response.isSuccessful) {
                 response.body()?.let { paginated ->
                     ApiResult.Success(paginated)
-                } ?: ApiResult.Success(PaginatedSubmissions(items = emptyList(), total = 0, limit = limit, offset = offset))
+                } ?: ApiResult.Success(CursorPaginatedSubmissions(items = emptyList()))
             } else {
                 ApiResult.Error(AppError.Server(response.code(), "Failed to fetch submissions"))
             }

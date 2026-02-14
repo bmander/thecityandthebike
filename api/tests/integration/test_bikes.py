@@ -378,22 +378,22 @@ class TestGetBikeDetail:
 
 
 class TestGetBikeSubmissions:
-    """Tests for GET /bikes/{bike_qr_id}/submissions endpoint."""
+    """Tests for GET /bikes/{bike_qr_id}/submissions endpoint (cursor-paginated)."""
 
     def test_get_bike_submissions_success(
         self, client, auth_headers, test_bike, test_submission
     ):
-        """Should return submissions for the specified bike in paginated wrapper."""
+        """Should return submissions for the specified bike in cursor-paginated wrapper."""
         response = client.get(
             f"/bikes/{test_bike.bike_qr_id}/submissions",
             headers=auth_headers,
         )
         assert response.status_code == 200
         data = response.json()
-        assert data["total"] == 1
         assert len(data["items"]) == 1
         assert data["items"][0]["bike_qr_id"] == test_bike.bike_qr_id
         assert data["items"][0]["submission_id"] == str(test_submission.submission_id)
+        assert data["has_more"] is False
 
     def test_get_bike_submissions_not_found(self, client, auth_headers):
         """Request for nonexistent bike should return 404."""
@@ -408,7 +408,6 @@ class TestGetBikeSubmissions:
         self, client, auth_headers, test_bike, test_user, db_session
     ):
         """Should return all submissions for a bike."""
-        # Create additional submissions for the same bike
         submission1 = FenderSubmission(
             user_id=test_user.user_id,
             bike_id=test_bike.id,
@@ -430,7 +429,6 @@ class TestGetBikeSubmissions:
         )
         assert response.status_code == 200
         data = response.json()
-        assert data["total"] == 2
         assert len(data["items"]) == 2
         for sub in data["items"]:
             assert sub["bike_qr_id"] == test_bike.bike_qr_id
@@ -438,7 +436,7 @@ class TestGetBikeSubmissions:
     def test_get_bike_submissions_empty(
         self, client, auth_headers, test_bike
     ):
-        """Bike with no submissions should return paginated response with no items."""
+        """Bike with no submissions should return cursor-paginated response with no items."""
         response = client.get(
             f"/bikes/{test_bike.bike_qr_id}/submissions",
             headers=auth_headers,
@@ -446,62 +444,55 @@ class TestGetBikeSubmissions:
         assert response.status_code == 200
         data = response.json()
         assert data["items"] == []
-        assert data["total"] == 0
-        assert data["limit"] == 20
-        assert data["offset"] == 0
+        assert data["has_more"] is False
+        assert data["next_cursor"] is None
 
     def test_get_bike_submissions_no_auth(self, client, test_bike):
         """Request without auth should return 200 (public endpoint)."""
         response = client.get(f"/bikes/{test_bike.bike_qr_id}/submissions")
         assert response.status_code == 200
 
-    def test_get_bike_submissions_custom_limit_offset(
+    def test_get_bike_submissions_cursor_traversal(
         self, client, auth_headers, test_bike, test_user, db_session
     ):
-        """Should respect custom limit and offset parameters."""
+        """Should page through all items with cursor without duplicates."""
+        now = datetime.now(timezone.utc)
         for i in range(5):
             sub = FenderSubmission(
                 user_id=test_user.user_id,
                 bike_id=test_bike.id,
                 image_url=f"https://example.com/img{i}.jpg",
                 captured_date=date.today(),
+                uploaded_at=now - timedelta(seconds=i),
             )
             db_session.add(sub)
         db_session.commit()
 
-        response = client.get(
-            f"/bikes/{test_bike.bike_qr_id}/submissions?limit=2&offset=0",
-            headers=auth_headers,
-        )
-        assert response.status_code == 200
-        data = response.json()
-        assert data["total"] == 5
-        assert len(data["items"]) == 2
-        assert data["limit"] == 2
-        assert data["offset"] == 0
+        all_ids = []
+        cursor = None
+        while True:
+            url = f"/bikes/{test_bike.bike_qr_id}/submissions?limit=2"
+            if cursor:
+                url += f"&cursor={cursor}"
+            response = client.get(url, headers=auth_headers)
+            assert response.status_code == 200
+            data = response.json()
+            all_ids.extend(item["submission_id"] for item in data["items"])
+            if not data["has_more"]:
+                break
+            cursor = data["next_cursor"]
 
-        response = client.get(
-            f"/bikes/{test_bike.bike_qr_id}/submissions?limit=2&offset=2",
-            headers=auth_headers,
-        )
-        data = response.json()
-        assert data["total"] == 5
-        assert len(data["items"]) == 2
-        assert data["offset"] == 2
+        assert len(all_ids) == len(set(all_ids)) == 5
 
-    def test_get_bike_submissions_offset_beyond_total(
-        self, client, auth_headers, test_bike, test_submission
+    def test_get_bike_submissions_invalid_cursor(
+        self, client, auth_headers, test_bike
     ):
-        """Offset beyond total should return empty items with correct total."""
+        """Invalid cursor should return 422."""
         response = client.get(
-            f"/bikes/{test_bike.bike_qr_id}/submissions?offset=100",
+            f"/bikes/{test_bike.bike_qr_id}/submissions?cursor=not-valid",
             headers=auth_headers,
         )
-        assert response.status_code == 200
-        data = response.json()
-        assert data["total"] == 1
-        assert len(data["items"]) == 0
-        assert data["offset"] == 100
+        assert response.status_code == 422
 
     def test_get_bike_submissions_invalid_limit_zero(
         self, client, auth_headers, test_bike
@@ -519,16 +510,6 @@ class TestGetBikeSubmissions:
         """Limit greater than 100 should return 422."""
         response = client.get(
             f"/bikes/{test_bike.bike_qr_id}/submissions?limit=101",
-            headers=auth_headers,
-        )
-        assert response.status_code == 422
-
-    def test_get_bike_submissions_invalid_negative_offset(
-        self, client, auth_headers, test_bike
-    ):
-        """Negative offset should return 422."""
-        response = client.get(
-            f"/bikes/{test_bike.bike_qr_id}/submissions?offset=-1",
             headers=auth_headers,
         )
         assert response.status_code == 422

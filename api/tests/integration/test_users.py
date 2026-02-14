@@ -1,4 +1,4 @@
-from datetime import date, datetime, timezone
+from datetime import date, datetime, timedelta, timezone
 
 from app.dependencies import get_password_hash
 from app.models import User, FenderSubmission, Bike
@@ -39,35 +39,33 @@ class TestGetProfile:
 
 
 class TestGetMySubmissions:
-    """Tests for GET /users/me/submissions endpoint."""
+    """Tests for GET /users/me/submissions endpoint (cursor-paginated)."""
 
     def test_get_my_submissions_empty(self, client, auth_headers):
-        """User with no submissions should receive paginated response with no items."""
+        """User with no submissions should receive cursor-paginated response with no items."""
         response = client.get("/users/me/submissions", headers=auth_headers)
         assert response.status_code == 200
         data = response.json()
         assert data["items"] == []
-        assert data["total"] == 0
-        assert data["limit"] == 20
-        assert data["offset"] == 0
+        assert data["has_more"] is False
+        assert data["next_cursor"] is None
 
     def test_get_my_submissions_with_data(
         self, client, auth_headers, test_submission, test_user
     ):
-        """User should see their own submissions in paginated wrapper."""
+        """User should see their own submissions in cursor-paginated wrapper."""
         response = client.get("/users/me/submissions", headers=auth_headers)
         assert response.status_code == 200
         data = response.json()
-        assert data["total"] == 1
         assert len(data["items"]) == 1
         assert data["items"][0]["submission_id"] == str(test_submission.submission_id)
         assert data["items"][0]["user_id"] == str(test_user.user_id)
+        assert data["has_more"] is False
 
     def test_get_my_submissions_excludes_other_users(
         self, client, auth_headers, test_submission, test_user, db_session
     ):
         """User should not see submissions from other users."""
-        # Create another user with a submission
         other_user = User(
             username="otheruser",
             email="other@example.com",
@@ -92,11 +90,9 @@ class TestGetMySubmissions:
         db_session.add(other_submission)
         db_session.commit()
 
-        # Test user should only see their own submission
         response = client.get("/users/me/submissions", headers=auth_headers)
         assert response.status_code == 200
         data = response.json()
-        assert data["total"] == 1
         assert len(data["items"]) == 1
         assert data["items"][0]["user_id"] == str(test_user.user_id)
         assert data["items"][0]["submission_id"] == str(test_submission.submission_id)
@@ -106,50 +102,44 @@ class TestGetMySubmissions:
         response = client.get("/users/me/submissions")
         assert response.status_code == 401
 
-    def test_get_my_submissions_custom_limit_offset(
+    def test_get_my_submissions_cursor_traversal(
         self, client, auth_headers, test_user, test_bike, db_session
     ):
-        """Should respect custom limit and offset parameters."""
+        """Should page through all items with cursor without duplicates."""
+        now = datetime.now(timezone.utc)
         for i in range(5):
             sub = FenderSubmission(
                 user_id=test_user.user_id,
                 bike_id=test_bike.id,
                 image_url=f"https://example.com/img{i}.jpg",
                 captured_date=date.today(),
+                uploaded_at=now - timedelta(seconds=i),
             )
             db_session.add(sub)
         db_session.commit()
 
-        response = client.get(
-            "/users/me/submissions?limit=2&offset=0", headers=auth_headers
-        )
-        assert response.status_code == 200
-        data = response.json()
-        assert data["total"] == 5
-        assert len(data["items"]) == 2
-        assert data["limit"] == 2
-        assert data["offset"] == 0
+        all_ids = []
+        cursor = None
+        while True:
+            url = "/users/me/submissions?limit=2"
+            if cursor:
+                url += f"&cursor={cursor}"
+            response = client.get(url, headers=auth_headers)
+            assert response.status_code == 200
+            data = response.json()
+            all_ids.extend(item["submission_id"] for item in data["items"])
+            if not data["has_more"]:
+                break
+            cursor = data["next_cursor"]
 
-        response = client.get(
-            "/users/me/submissions?limit=2&offset=2", headers=auth_headers
-        )
-        data = response.json()
-        assert data["total"] == 5
-        assert len(data["items"]) == 2
-        assert data["offset"] == 2
+        assert len(all_ids) == len(set(all_ids)) == 5
 
-    def test_get_my_submissions_offset_beyond_total(
-        self, client, auth_headers, test_submission
-    ):
-        """Offset beyond total should return empty items with correct total."""
+    def test_get_my_submissions_invalid_cursor(self, client, auth_headers):
+        """Invalid cursor should return 422."""
         response = client.get(
-            "/users/me/submissions?offset=100", headers=auth_headers
+            "/users/me/submissions?cursor=not-valid", headers=auth_headers
         )
-        assert response.status_code == 200
-        data = response.json()
-        assert data["total"] == 1
-        assert len(data["items"]) == 0
-        assert data["offset"] == 100
+        assert response.status_code == 422
 
     def test_get_my_submissions_invalid_limit_zero(self, client, auth_headers):
         """Limit of 0 should return 422."""
@@ -162,13 +152,6 @@ class TestGetMySubmissions:
         """Limit greater than 100 should return 422."""
         response = client.get(
             "/users/me/submissions?limit=101", headers=auth_headers
-        )
-        assert response.status_code == 422
-
-    def test_get_my_submissions_invalid_negative_offset(self, client, auth_headers):
-        """Negative offset should return 422."""
-        response = client.get(
-            "/users/me/submissions?offset=-1", headers=auth_headers
         )
         assert response.status_code == 422
 
@@ -229,22 +212,22 @@ class TestGetUserDetail:
 
 
 class TestGetUserSubmissions:
-    """Tests for GET /users/{user_id}/submissions endpoint."""
+    """Tests for GET /users/{user_id}/submissions endpoint (cursor-paginated)."""
 
     def test_get_user_submissions_success(
         self, client, auth_headers, test_user, test_submission
     ):
-        """Should return submissions for the specified user in paginated wrapper."""
+        """Should return submissions for the specified user in cursor-paginated wrapper."""
         response = client.get(
             f"/users/{test_user.user_id}/submissions",
             headers=auth_headers,
         )
         assert response.status_code == 200
         data = response.json()
-        assert data["total"] == 1
         assert len(data["items"]) == 1
         assert data["items"][0]["user_id"] == str(test_user.user_id)
         assert data["items"][0]["submission_id"] == str(test_submission.submission_id)
+        assert data["has_more"] is False
 
     def test_get_user_submissions_not_found(self, client, auth_headers):
         """Request for nonexistent user should return 404."""
@@ -280,7 +263,6 @@ class TestGetUserSubmissions:
         )
         assert response.status_code == 200
         data = response.json()
-        assert data["total"] == 2
         assert len(data["items"]) == 2
         for sub in data["items"]:
             assert sub["user_id"] == str(test_user.user_id)
@@ -288,7 +270,7 @@ class TestGetUserSubmissions:
     def test_get_user_submissions_empty(
         self, client, auth_headers, test_user
     ):
-        """User with no submissions should return paginated response with no items."""
+        """User with no submissions should return cursor-paginated response with no items."""
         response = client.get(
             f"/users/{test_user.user_id}/submissions",
             headers=auth_headers,
@@ -296,62 +278,55 @@ class TestGetUserSubmissions:
         assert response.status_code == 200
         data = response.json()
         assert data["items"] == []
-        assert data["total"] == 0
-        assert data["limit"] == 20
-        assert data["offset"] == 0
+        assert data["has_more"] is False
+        assert data["next_cursor"] is None
 
     def test_get_user_submissions_no_auth(self, client, test_user):
         """Request without auth should return 200 (public endpoint)."""
         response = client.get(f"/users/{test_user.user_id}/submissions")
         assert response.status_code == 200
 
-    def test_get_user_submissions_custom_limit_offset(
+    def test_get_user_submissions_cursor_traversal(
         self, client, auth_headers, test_user, test_bike, db_session
     ):
-        """Should respect custom limit and offset parameters."""
+        """Should page through all items with cursor without duplicates."""
+        now = datetime.now(timezone.utc)
         for i in range(5):
             sub = FenderSubmission(
                 user_id=test_user.user_id,
                 bike_id=test_bike.id,
                 image_url=f"https://example.com/img{i}.jpg",
                 captured_date=date.today(),
+                uploaded_at=now - timedelta(seconds=i),
             )
             db_session.add(sub)
         db_session.commit()
 
-        response = client.get(
-            f"/users/{test_user.user_id}/submissions?limit=2&offset=0",
-            headers=auth_headers,
-        )
-        assert response.status_code == 200
-        data = response.json()
-        assert data["total"] == 5
-        assert len(data["items"]) == 2
-        assert data["limit"] == 2
-        assert data["offset"] == 0
+        all_ids = []
+        cursor = None
+        while True:
+            url = f"/users/{test_user.user_id}/submissions?limit=2"
+            if cursor:
+                url += f"&cursor={cursor}"
+            response = client.get(url, headers=auth_headers)
+            assert response.status_code == 200
+            data = response.json()
+            all_ids.extend(item["submission_id"] for item in data["items"])
+            if not data["has_more"]:
+                break
+            cursor = data["next_cursor"]
 
-        response = client.get(
-            f"/users/{test_user.user_id}/submissions?limit=2&offset=2",
-            headers=auth_headers,
-        )
-        data = response.json()
-        assert data["total"] == 5
-        assert len(data["items"]) == 2
-        assert data["offset"] == 2
+        assert len(all_ids) == len(set(all_ids)) == 5
 
-    def test_get_user_submissions_offset_beyond_total(
-        self, client, auth_headers, test_user, test_submission
+    def test_get_user_submissions_invalid_cursor(
+        self, client, auth_headers, test_user
     ):
-        """Offset beyond total should return empty items with correct total."""
+        """Invalid cursor should return 422."""
         response = client.get(
-            f"/users/{test_user.user_id}/submissions?offset=100",
+            f"/users/{test_user.user_id}/submissions?cursor=not-valid",
             headers=auth_headers,
         )
-        assert response.status_code == 200
-        data = response.json()
-        assert data["total"] == 1
-        assert len(data["items"]) == 0
-        assert data["offset"] == 100
+        assert response.status_code == 422
 
     def test_get_user_submissions_invalid_limit_zero(
         self, client, auth_headers, test_user
@@ -369,16 +344,6 @@ class TestGetUserSubmissions:
         """Limit greater than 100 should return 422."""
         response = client.get(
             f"/users/{test_user.user_id}/submissions?limit=101",
-            headers=auth_headers,
-        )
-        assert response.status_code == 422
-
-    def test_get_user_submissions_invalid_negative_offset(
-        self, client, auth_headers, test_user
-    ):
-        """Negative offset should return 422."""
-        response = client.get(
-            f"/users/{test_user.user_id}/submissions?offset=-1",
             headers=auth_headers,
         )
         assert response.status_code == 422

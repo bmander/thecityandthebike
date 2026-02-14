@@ -1,13 +1,14 @@
 from typing import Annotated, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
-from sqlalchemy import func, select
+from sqlalchemy import and_, func, or_, select
 from sqlalchemy.orm import Session, joinedload
 
+from ..cursor import decode_cursor, encode_cursor
 from ..database import get_db
 from ..dependencies import get_current_user_optional
 from ..models import User, Bike, FenderSubmission
-from ..schemas import BikeDetailResponse, BikeListItem, Owner, PaginatedResponse, SubmissionResponse, UserSummary
+from ..schemas import BikeDetailResponse, BikeListItem, CursorPaginatedResponse, Owner, PaginatedResponse, SubmissionResponse, UserSummary
 
 router = APIRouter(prefix="/bikes", tags=["bikes"])
 
@@ -156,13 +157,13 @@ def get_bike_detail(
     )
 
 
-@router.get("/{bike_qr_id}/submissions", response_model=PaginatedResponse[SubmissionResponse])
+@router.get("/{bike_qr_id}/submissions", response_model=CursorPaginatedResponse[SubmissionResponse])
 def get_bike_submissions(
     bike_qr_id: str,
     db: Annotated[Session, Depends(get_db)],
     current_user: Annotated[Optional[User], Depends(get_current_user_optional)] = None,
     limit: int = Query(default=20, ge=1, le=100),
-    offset: int = Query(default=0, ge=0),
+    cursor: Optional[str] = Query(default=None),
 ):
     bike = db.query(Bike).filter(Bike.bike_qr_id == bike_qr_id).first()
     if not bike:
@@ -171,18 +172,31 @@ def get_bike_submissions(
             detail={"msg": "Bike not found"},
         )
 
-    total = db.execute(
-        select(func.count())
-        .select_from(FenderSubmission)
-        .where(FenderSubmission.bike_id == bike.id)
-    ).scalar()
-    submissions = (
+    query = (
         db.query(FenderSubmission)
         .options(joinedload(FenderSubmission.user), joinedload(FenderSubmission.bike))
         .filter(FenderSubmission.bike_id == bike.id)
-        .order_by(FenderSubmission.uploaded_at.desc())
-        .offset(offset)
-        .limit(limit)
+    )
+    if cursor is not None:
+        try:
+            c = decode_cursor(cursor)
+        except ValueError:
+            raise HTTPException(status_code=422, detail="Invalid cursor")
+        query = query.filter(
+            or_(
+                FenderSubmission.uploaded_at < c.uploaded_at,
+                and_(
+                    FenderSubmission.uploaded_at == c.uploaded_at,
+                    FenderSubmission.submission_id < c.submission_id,
+                ),
+            )
+        )
+    submissions = (
+        query.order_by(FenderSubmission.uploaded_at.desc(), FenderSubmission.submission_id.desc())
+        .limit(limit + 1)
         .all()
     )
-    return PaginatedResponse(items=submissions, total=total, limit=limit, offset=offset)
+    has_more = len(submissions) > limit
+    items = submissions[:limit]
+    next_cursor = encode_cursor(items[-1].uploaded_at, items[-1].submission_id) if has_more else None
+    return CursorPaginatedResponse(items=items, next_cursor=next_cursor, has_more=has_more)

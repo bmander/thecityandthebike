@@ -3,8 +3,8 @@ package com.thecityandthebike.repository
 import com.thecityandthebike.data.api.ApiService
 import com.thecityandthebike.data.model.ApiResult
 import com.thecityandthebike.data.model.AppError
+import com.thecityandthebike.data.model.dto.CursorPaginatedSubmissions
 import com.thecityandthebike.data.model.dto.MessageResponse
-import com.thecityandthebike.data.model.dto.PaginatedSubmissions
 import com.thecityandthebike.data.model.dto.SubmissionResponse
 import com.thecityandthebike.data.model.dto.UploadResponse
 import com.thecityandthebike.data.repository.SubmissionRepository
@@ -37,15 +37,14 @@ class SubmissionRepositoryTest {
 
     @Test
     fun `getSubmissions success returns paginated submissions`() = runTest {
-        val submissions = PaginatedSubmissions(
+        val submissions = CursorPaginatedSubmissions(
             items = listOf(
                 SubmissionResponse(submissionId = "s1", userId = "u1", bikeQrId = "b1")
             ),
-            total = 1,
-            limit = 20,
-            offset = 0
+            nextCursor = null,
+            hasMore = false
         )
-        coEvery { apiService.getSubmissions(limit = 20, offset = 0) } returns
+        coEvery { apiService.getSubmissions(limit = 20, cursor = null) } returns
                 Response.success(submissions)
 
         val result = repository.getSubmissions()
@@ -56,7 +55,7 @@ class SubmissionRepositoryTest {
 
     @Test
     fun `getSubmissions empty body returns empty list`() = runTest {
-        coEvery { apiService.getSubmissions(limit = 20, offset = 0) } returns
+        coEvery { apiService.getSubmissions(limit = 20, cursor = null) } returns
                 Response.success(null)
 
         val result = repository.getSubmissions()
@@ -67,7 +66,7 @@ class SubmissionRepositoryTest {
 
     @Test
     fun `getSubmissions HTTP error returns Server error`() = runTest {
-        coEvery { apiService.getSubmissions(limit = 20, offset = 0) } returns
+        coEvery { apiService.getSubmissions(limit = 20, cursor = null) } returns
                 Response.error(500, "error".toResponseBody())
 
         val result = repository.getSubmissions()
@@ -80,15 +79,14 @@ class SubmissionRepositoryTest {
 
     @Test
     fun `getMySubmissions success returns paginated submissions`() = runTest {
-        val submissions = PaginatedSubmissions(
+        val submissions = CursorPaginatedSubmissions(
             items = listOf(
                 SubmissionResponse(submissionId = "s1", userId = "u1", bikeQrId = "b1")
             ),
-            total = 1,
-            limit = 20,
-            offset = 0
+            nextCursor = null,
+            hasMore = false
         )
-        coEvery { apiService.getMySubmissions(limit = 20, offset = 0) } returns
+        coEvery { apiService.getMySubmissions(limit = 20, cursor = null) } returns
                 Response.success(submissions)
 
         val result = repository.getMySubmissions()
@@ -99,7 +97,7 @@ class SubmissionRepositoryTest {
 
     @Test
     fun `getMySubmissions empty body returns empty list`() = runTest {
-        coEvery { apiService.getMySubmissions(limit = 20, offset = 0) } returns
+        coEvery { apiService.getMySubmissions(limit = 20, cursor = null) } returns
                 Response.success(null)
 
         val result = repository.getMySubmissions()
@@ -110,7 +108,7 @@ class SubmissionRepositoryTest {
 
     @Test
     fun `getMySubmissions HTTP error returns Server error`() = runTest {
-        coEvery { apiService.getMySubmissions(limit = 20, offset = 0) } returns
+        coEvery { apiService.getMySubmissions(limit = 20, cursor = null) } returns
                 Response.error(403, "forbidden".toResponseBody())
 
         val result = repository.getMySubmissions()

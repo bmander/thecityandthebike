@@ -3,7 +3,7 @@ package com.thecityandthebike.viewmodel
 import androidx.lifecycle.SavedStateHandle
 import com.thecityandthebike.data.model.ApiResult
 import com.thecityandthebike.data.model.AppError
-import com.thecityandthebike.data.model.dto.PaginatedSubmissions
+import com.thecityandthebike.data.model.dto.CursorPaginatedSubmissions
 import com.thecityandthebike.data.model.dto.SubmissionResponse
 import com.thecityandthebike.data.model.dto.UserDetailResponse
 import com.thecityandthebike.data.repository.UserRepository
@@ -60,7 +60,7 @@ class UserViewModelTest {
             SubmissionResponse(submissionId = "1", userId = testUserId, bikeQrId = "BIKE-001"),
             SubmissionResponse(submissionId = "2", userId = testUserId, bikeQrId = "BIKE-002")
         )
-        val paginated = PaginatedSubmissions(items = submissions, total = 2, limit = 20, offset = 0)
+        val paginated = CursorPaginatedSubmissions(items = submissions, nextCursor = null, hasMore = false)
 
         coEvery { userRepository.getUserDetail(testUserId) } returns ApiResult.Success(testUserDetail)
         coEvery { userRepository.getUserSubmissions(testUserId, any(), any()) } returns ApiResult.Success(paginated)
@@ -75,6 +75,7 @@ class UserViewModelTest {
         assertEquals(3, state.userDetail?.submissionCount)
         assertEquals(2, state.submissions.size)
         assertFalse(state.hasMorePages)
+        assertNull(state.nextCursor)
         assertNull(state.error)
     }
 
@@ -112,23 +113,24 @@ class UserViewModelTest {
             SubmissionResponse(submissionId = "1", userId = testUserId, bikeQrId = "BIKE-001"),
             SubmissionResponse(submissionId = "2", userId = testUserId, bikeQrId = "BIKE-002")
         )
-        val firstPaginated = PaginatedSubmissions(items = firstPage, total = 4, limit = 2, offset = 0)
+        val firstPaginated = CursorPaginatedSubmissions(items = firstPage, nextCursor = "cursor-abc", hasMore = true)
 
         coEvery { userRepository.getUserDetail(testUserId) } returns ApiResult.Success(testUserDetail)
-        coEvery { userRepository.getUserSubmissions(testUserId, limit = any(), offset = 0) } returns ApiResult.Success(firstPaginated)
+        coEvery { userRepository.getUserSubmissions(testUserId, limit = any(), cursor = null) } returns ApiResult.Success(firstPaginated)
 
         val viewModel = createViewModel()
         testDispatcher.scheduler.advanceUntilIdle()
 
         assertEquals(2, viewModel.state.value.submissions.size)
         assertTrue(viewModel.state.value.hasMorePages)
+        assertEquals("cursor-abc", viewModel.state.value.nextCursor)
 
         val secondPage = listOf(
             SubmissionResponse(submissionId = "3", userId = testUserId, bikeQrId = "BIKE-003"),
             SubmissionResponse(submissionId = "4", userId = testUserId, bikeQrId = "BIKE-004")
         )
-        val secondPaginated = PaginatedSubmissions(items = secondPage, total = 4, limit = 2, offset = 2)
-        coEvery { userRepository.getUserSubmissions(testUserId, limit = any(), offset = 2) } returns ApiResult.Success(secondPaginated)
+        val secondPaginated = CursorPaginatedSubmissions(items = secondPage, nextCursor = null, hasMore = false)
+        coEvery { userRepository.getUserSubmissions(testUserId, limit = any(), cursor = "cursor-abc") } returns ApiResult.Success(secondPaginated)
 
         viewModel.loadMoreSubmissions()
         testDispatcher.scheduler.advanceUntilIdle()
@@ -143,7 +145,7 @@ class UserViewModelTest {
         val submissions = listOf(
             SubmissionResponse(submissionId = "1", userId = testUserId, bikeQrId = "BIKE-001")
         )
-        val paginated = PaginatedSubmissions(items = submissions, total = 1, limit = 20, offset = 0)
+        val paginated = CursorPaginatedSubmissions(items = submissions, nextCursor = null, hasMore = false)
 
         coEvery { userRepository.getUserDetail(testUserId) } returns ApiResult.Success(testUserDetail)
         coEvery { userRepository.getUserSubmissions(testUserId, any(), any()) } returns ApiResult.Success(paginated)
@@ -165,15 +167,15 @@ class UserViewModelTest {
             SubmissionResponse(submissionId = "1", userId = testUserId, bikeQrId = "BIKE-001"),
             SubmissionResponse(submissionId = "2", userId = testUserId, bikeQrId = "BIKE-002")
         )
-        val firstPaginated = PaginatedSubmissions(items = firstPage, total = 4, limit = 2, offset = 0)
+        val firstPaginated = CursorPaginatedSubmissions(items = firstPage, nextCursor = "cursor-abc", hasMore = true)
 
         coEvery { userRepository.getUserDetail(testUserId) } returns ApiResult.Success(testUserDetail)
-        coEvery { userRepository.getUserSubmissions(testUserId, limit = any(), offset = 0) } returns ApiResult.Success(firstPaginated)
+        coEvery { userRepository.getUserSubmissions(testUserId, limit = any(), cursor = null) } returns ApiResult.Success(firstPaginated)
 
         val viewModel = createViewModel()
         testDispatcher.scheduler.advanceUntilIdle()
 
-        coEvery { userRepository.getUserSubmissions(testUserId, limit = any(), offset = 2) } returns ApiResult.Error(AppError.Network(java.io.IOException("Network error")))
+        coEvery { userRepository.getUserSubmissions(testUserId, limit = any(), cursor = "cursor-abc") } returns ApiResult.Error(AppError.Network(java.io.IOException("Network error")))
 
         viewModel.loadMoreSubmissions()
         testDispatcher.scheduler.advanceUntilIdle()
@@ -199,7 +201,7 @@ class UserViewModelTest {
     fun `userId should come from SavedStateHandle`() = runTest {
         coEvery { userRepository.getUserDetail(testUserId) } returns ApiResult.Success(testUserDetail)
         coEvery { userRepository.getUserSubmissions(testUserId, any(), any()) } returns
-            ApiResult.Success(PaginatedSubmissions(items = emptyList(), total = 0, limit = 20, offset = 0))
+            ApiResult.Success(CursorPaginatedSubmissions(items = emptyList(), nextCursor = null, hasMore = false))
 
         val viewModel = createViewModel()
         assertEquals(testUserId, viewModel.userId)
@@ -212,7 +214,7 @@ class UserViewModelTest {
             SubmissionResponse(submissionId = "2", userId = testUserId, bikeQrId = "BIKE-002"),
             SubmissionResponse(submissionId = "3", userId = testUserId, bikeQrId = "BIKE-003")
         )
-        val paginated = PaginatedSubmissions(items = submissions, total = 3, limit = 20, offset = 0)
+        val paginated = CursorPaginatedSubmissions(items = submissions, nextCursor = null, hasMore = false)
 
         coEvery { userRepository.getUserDetail(testUserId) } returns ApiResult.Success(testUserDetail)
         coEvery { userRepository.getUserSubmissions(testUserId, any(), any()) } returns ApiResult.Success(paginated)
@@ -235,7 +237,7 @@ class UserViewModelTest {
         val submissions = listOf(
             SubmissionResponse(submissionId = "1", userId = testUserId, bikeQrId = "BIKE-001")
         )
-        val paginated = PaginatedSubmissions(items = submissions, total = 1, limit = 20, offset = 0)
+        val paginated = CursorPaginatedSubmissions(items = submissions, nextCursor = null, hasMore = false)
 
         coEvery { userRepository.getUserDetail(testUserId) } returns ApiResult.Success(testUserDetail)
         coEvery { userRepository.getUserSubmissions(testUserId, any(), any()) } returns ApiResult.Success(paginated)

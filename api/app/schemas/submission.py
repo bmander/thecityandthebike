@@ -14,6 +14,12 @@ class PaginatedResponse(BaseModel, Generic[T]):
     offset: int
 
 
+class CursorPaginatedResponse(BaseModel, Generic[T]):
+    items: List[T]
+    next_cursor: Optional[str] = None
+    has_more: bool
+
+
 class SubmissionResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 

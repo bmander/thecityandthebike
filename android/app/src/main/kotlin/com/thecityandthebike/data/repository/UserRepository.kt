@@ -3,7 +3,7 @@ package com.thecityandthebike.data.repository
 import com.thecityandthebike.data.api.ApiService
 import com.thecityandthebike.data.model.ApiResult
 import com.thecityandthebike.data.model.AppError
-import com.thecityandthebike.data.model.dto.PaginatedSubmissions
+import com.thecityandthebike.data.model.dto.CursorPaginatedSubmissions
 import com.thecityandthebike.data.model.dto.UserDetailResponse
 import java.io.IOException
 import javax.inject.Inject
@@ -33,15 +33,15 @@ class UserRepository @Inject constructor(
     suspend fun getUserSubmissions(
         userId: String,
         limit: Int = 20,
-        offset: Int = 0
-    ): ApiResult<PaginatedSubmissions> {
+        cursor: String? = null
+    ): ApiResult<CursorPaginatedSubmissions> {
         return try {
-            val response = apiService.getUserSubmissions(userId, limit = limit, offset = offset)
+            val response = apiService.getUserSubmissions(userId, limit = limit, cursor = cursor)
             if (response.isSuccessful) {
                 response.body()?.let { paginated ->
                     ApiResult.Success(paginated)
                 } ?: ApiResult.Success(
-                    PaginatedSubmissions(items = emptyList(), total = 0, limit = limit, offset = offset)
+                    CursorPaginatedSubmissions(items = emptyList())
                 )
             } else {
                 ApiResult.Error(AppError.Server(response.code(), "Failed to fetch user submissions"))
