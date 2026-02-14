@@ -126,12 +126,15 @@ def store_tag_image(contents: bytes, ext: str) -> str:
 
 def generate_signed_url(filename: str) -> str:
     """Generate a V4 signed URL for a GCS blob with configurable expiration."""
+    from google.auth import default
+    credentials, _ = default()
     bucket = _get_gcs_bucket()
     blob = bucket.blob(f"images/{filename}")
     return blob.generate_signed_url(
         version="v4",
         expiration=datetime.timedelta(seconds=settings.SIGNED_URL_EXPIRATION),
         method="GET",
+        service_account_email=credentials.service_account_email,
     )
 
 

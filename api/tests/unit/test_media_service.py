@@ -277,10 +277,15 @@ class TestStoreImage:
 class TestGenerateSignedUrl:
     """Tests for generate_signed_url()."""
 
+    @patch("google.auth.default")
     @patch("app.services.storage._get_gcs_bucket")
-    def test_generates_signed_url(self, mock_get_gcs_bucket, monkeypatch):
+    def test_generates_signed_url(self, mock_get_gcs_bucket, mock_default, monkeypatch):
         monkeypatch.setattr(settings, "STORAGE_BUCKET", "my-bucket")
         monkeypatch.setattr(settings, "SIGNED_URL_EXPIRATION", 3600)
+
+        mock_creds = MagicMock()
+        mock_creds.service_account_email = "sa@project.iam.gserviceaccount.com"
+        mock_default.return_value = (mock_creds, "project-id")
 
         mock_bucket = MagicMock()
         mock_blob = MagicMock()
@@ -296,12 +301,18 @@ class TestGenerateSignedUrl:
             version="v4",
             expiration=datetime.timedelta(seconds=3600),
             method="GET",
+            service_account_email="sa@project.iam.gserviceaccount.com",
         )
 
+    @patch("google.auth.default")
     @patch("app.services.storage._get_gcs_bucket")
-    def test_expiration_uses_config(self, mock_get_gcs_bucket, monkeypatch):
+    def test_expiration_uses_config(self, mock_get_gcs_bucket, mock_default, monkeypatch):
         monkeypatch.setattr(settings, "STORAGE_BUCKET", "my-bucket")
         monkeypatch.setattr(settings, "SIGNED_URL_EXPIRATION", 7200)
+
+        mock_creds = MagicMock()
+        mock_creds.service_account_email = "sa@project.iam.gserviceaccount.com"
+        mock_default.return_value = (mock_creds, "project-id")
 
         mock_bucket = MagicMock()
         mock_blob = MagicMock()
@@ -313,6 +324,7 @@ class TestGenerateSignedUrl:
 
         call_kwargs = mock_blob.generate_signed_url.call_args[1]
         assert call_kwargs["expiration"] == datetime.timedelta(seconds=7200)
+        assert call_kwargs["service_account_email"] == "sa@project.iam.gserviceaccount.com"
 
 
 class TestImageExists:

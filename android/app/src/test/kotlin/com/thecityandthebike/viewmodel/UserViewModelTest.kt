@@ -88,7 +88,7 @@ class UserViewModelTest {
         val state = viewModel.state.value
         assertFalse(state.isLoading)
         assertNull(state.userDetail)
-        assertEquals("Server error. Please try again later.", state.error)
+        assertEquals("Not found", state.error)
     }
 
     @Test

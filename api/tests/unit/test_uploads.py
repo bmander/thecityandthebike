@@ -133,13 +133,18 @@ class TestGetImageGCS:
         response = client.get("/uploads/images/missing.jpg", follow_redirects=False)
         assert response.status_code == 404
 
+    @patch("google.auth.default")
     @patch("app.services.storage._get_gcs_bucket")
     def test_gcs_success_returns_redirect_to_signed_url(
-        self, mock_get_gcs_bucket, client, monkeypatch
+        self, mock_get_gcs_bucket, mock_default, client, monkeypatch
     ):
         """GCS image should return 307 redirect to a signed URL."""
         monkeypatch.setattr(settings, "STORAGE_BUCKET", "my-bucket")
         monkeypatch.setattr(settings, "SIGNED_URL_EXPIRATION", 3600)
+
+        mock_creds = MagicMock()
+        mock_creds.service_account_email = "sa@project.iam.gserviceaccount.com"
+        mock_default.return_value = (mock_creds, "project-id")
 
         mock_bucket = MagicMock()
         mock_blob = MagicMock()
@@ -154,15 +159,20 @@ class TestGetImageGCS:
         assert response.status_code == 307
         assert "storage.googleapis.com" in response.headers["location"]
 
+    @patch("google.auth.default")
     @patch("app.services.storage._get_gcs_bucket")
     def test_signed_url_expiration_uses_config(
-        self, mock_get_gcs_bucket, client, monkeypatch
+        self, mock_get_gcs_bucket, mock_default, client, monkeypatch
     ):
         """Signed URL should use SIGNED_URL_EXPIRATION from settings."""
         import datetime
 
         monkeypatch.setattr(settings, "STORAGE_BUCKET", "my-bucket")
         monkeypatch.setattr(settings, "SIGNED_URL_EXPIRATION", 7200)
+
+        mock_creds = MagicMock()
+        mock_creds.service_account_email = "sa@project.iam.gserviceaccount.com"
+        mock_default.return_value = (mock_creds, "project-id")
 
         mock_bucket = MagicMock()
         mock_blob = MagicMock()
@@ -175,6 +185,7 @@ class TestGetImageGCS:
 
         call_kwargs = mock_blob.generate_signed_url.call_args[1]
         assert call_kwargs["expiration"] == datetime.timedelta(seconds=7200)
+        assert call_kwargs["service_account_email"] == "sa@project.iam.gserviceaccount.com"
 
     def test_backslash_path_traversal_returns_404(self, client):
         """Backslash-based path traversal should return 404."""
