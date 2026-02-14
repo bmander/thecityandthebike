@@ -1,8 +1,8 @@
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
 from typing import Annotated, Optional
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, UploadFile, status
 from sqlalchemy import func, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session, joinedload
@@ -11,9 +11,9 @@ from ..bike_url_parser import parse_bike_url
 from ..database import get_db
 from ..dependencies import get_current_user, get_current_user_optional
 from ..models import User, Bike, FenderSubmission
-from ..schemas import PaginatedResponse, SubmissionCreate, SubmissionResponse
+from ..schemas import PaginatedResponse, SubmissionResponse
 from ..schemas.auth import MessageResponse
-from .uploads import delete_stored_image
+from .uploads import delete_stored_image, process_and_store_image
 
 router = APIRouter(prefix="/submissions", tags=["submissions"])
 
@@ -79,12 +79,17 @@ def delete_submission(
 
 
 @router.post("", response_model=SubmissionResponse, status_code=status.HTTP_201_CREATED)
-def create_submission(
-    data: SubmissionCreate,
+async def create_submission(
     current_user: Annotated[User, Depends(get_current_user)],
     db: Annotated[Session, Depends(get_db)],
+    image: UploadFile = File(...),
+    bike_qr_id: str = Form(...),
+    captured_date: date = Form(...),
+    user_caption: Optional[str] = Form(None),
 ):
-    parsed = parse_bike_url(data.bike_qr_id)
+    image_url, thumbnail_url = await process_and_store_image(image)
+
+    parsed = parse_bike_url(bike_qr_id)
     bike = db.query(Bike).filter(Bike.bike_qr_id == parsed.bike_id).first()
     now = datetime.now(timezone.utc)
 
@@ -107,13 +112,18 @@ def create_submission(
     submission = FenderSubmission(
         user_id=current_user.user_id,
         bike_id=bike.id,
-        image_url=data.image_url,
-        image_url_thumbnail=data.image_url_thumbnail,
-        captured_date=data.captured_date,
-        user_caption=data.user_caption,
+        image_url=image_url,
+        image_url_thumbnail=thumbnail_url,
+        captured_date=captured_date,
+        user_caption=user_caption,
     )
     db.add(submission)
-    db.commit()
+    try:
+        db.commit()
+    except Exception:
+        delete_stored_image(image_url)
+        delete_stored_image(thumbnail_url)
+        raise
     db.refresh(submission)
     # Force load relationships for the username and provider properties
     _ = submission.user

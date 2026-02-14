@@ -5,13 +5,13 @@ import com.thecityandthebike.data.model.ApiResult
 import com.thecityandthebike.data.model.AppError
 import com.thecityandthebike.data.model.dto.MessageResponse
 import com.thecityandthebike.data.model.dto.PaginatedSubmissions
-import com.thecityandthebike.data.model.dto.SubmissionCreate
 import com.thecityandthebike.data.model.dto.SubmissionResponse
 import com.thecityandthebike.data.model.dto.UploadResponse
 import com.thecityandthebike.data.model.safeApiCall
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.MultipartBody
 import okhttp3.RequestBody.Companion.asRequestBody
+import okhttp3.RequestBody.Companion.toRequestBody
 import java.io.File
 import java.io.IOException
 import javax.inject.Inject
@@ -55,8 +55,17 @@ class SubmissionRepository @Inject constructor(
         }
     }
 
-    suspend fun createSubmission(submission: SubmissionCreate): ApiResult<SubmissionResponse> {
-        return safeApiCall { apiService.createSubmission(submission) }
+    suspend fun createSubmission(
+        imageFile: File, bikeQrId: String, capturedDate: String, userCaption: String? = null
+    ): ApiResult<SubmissionResponse> {
+        return safeApiCall {
+            val requestFile = imageFile.asRequestBody("image/*".toMediaTypeOrNull())
+            val imagePart = MultipartBody.Part.createFormData("image", imageFile.name, requestFile)
+            val bikeQrIdBody = bikeQrId.toRequestBody("text/plain".toMediaTypeOrNull())
+            val capturedDateBody = capturedDate.toRequestBody("text/plain".toMediaTypeOrNull())
+            val userCaptionBody = userCaption?.toRequestBody("text/plain".toMediaTypeOrNull())
+            apiService.createSubmission(imagePart, bikeQrIdBody, capturedDateBody, userCaptionBody)
+        }
     }
 
     suspend fun getSubmission(submissionId: String): ApiResult<SubmissionResponse> {

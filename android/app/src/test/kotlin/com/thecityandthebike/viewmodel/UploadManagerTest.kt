@@ -4,7 +4,6 @@ import android.net.Uri
 import com.thecityandthebike.data.model.ApiResult
 import com.thecityandthebike.data.model.AppError
 import com.thecityandthebike.data.model.dto.SubmissionResponse
-import com.thecityandthebike.data.model.dto.UploadResponse
 import com.thecityandthebike.data.repository.SubmissionRepository
 import com.thecityandthebike.upload.UploadManager
 import com.thecityandthebike.upload.UploadState
@@ -46,20 +45,13 @@ class UploadManagerTest {
         val imageFile = mockk<File>(relaxed = true)
         coEvery { imagePreparer.prepareImageFile(uri) } returns imageFile
 
-        val uploadResponse = UploadResponse(
-            url = "http://example.com/uploaded.jpg",
-            filename = "uploaded.jpg",
-            thumbnailUrl = "http://example.com/uploaded_thumb.jpg"
-        )
-        coEvery { submissionRepository.uploadImage(imageFile) } returns ApiResult.Success(uploadResponse)
-
         val submissionResponse = SubmissionResponse(
             submissionId = "new-1",
             userId = "user1",
             bikeQrId = "bike1",
             imageUrl = "http://example.com/uploaded.jpg"
         )
-        coEvery { submissionRepository.createSubmission(any()) } returns ApiResult.Success(submissionResponse)
+        coEvery { submissionRepository.createSubmission(any<File>(), any(), any(), any()) } returns ApiResult.Success(submissionResponse)
 
         val uploadManager = createUploadManager()
         assertEquals(UploadState.Idle, uploadManager.state.value)
@@ -75,7 +67,7 @@ class UploadManagerTest {
         val uri = mockk<Uri>()
         val imageFile = mockk<File>(relaxed = true)
         coEvery { imagePreparer.prepareImageFile(uri) } returns imageFile
-        coEvery { submissionRepository.uploadImage(imageFile) } returns ApiResult.Error(AppError.Server(500, "Upload failed"))
+        coEvery { submissionRepository.createSubmission(any<File>(), any(), any(), any()) } returns ApiResult.Error(AppError.Server(500, "Upload failed"))
 
         val uploadManager = createUploadManager()
         uploadManager.uploadAndCreateSubmission(uri, "bike1")
@@ -84,28 +76,6 @@ class UploadManagerTest {
         val state = uploadManager.state.value
         assertTrue(state is UploadState.Error)
         assertEquals("Server error. Please try again later.", (state as UploadState.Error).message)
-    }
-
-    @Test
-    fun `submission creation failure should set error state`() = testScope.runTest {
-        val uri = mockk<Uri>()
-        val imageFile = mockk<File>(relaxed = true)
-        coEvery { imagePreparer.prepareImageFile(uri) } returns imageFile
-
-        val uploadResponse = UploadResponse(
-            url = "http://example.com/uploaded.jpg",
-            filename = "uploaded.jpg",
-            thumbnailUrl = "http://example.com/uploaded_thumb.jpg"
-        )
-        coEvery { submissionRepository.uploadImage(imageFile) } returns ApiResult.Success(uploadResponse)
-        coEvery { submissionRepository.createSubmission(any()) } returns ApiResult.Error(AppError.Server(500, "Create failed"))
-
-        val uploadManager = createUploadManager()
-        uploadManager.uploadAndCreateSubmission(uri, "bike1")
-        testDispatcher.scheduler.advanceUntilIdle()
-
-        val state = uploadManager.state.value
-        assertTrue(state is UploadState.Error)
     }
 
     @Test
@@ -120,7 +90,7 @@ class UploadManagerTest {
         val state = uploadManager.state.value
         assertTrue(state is UploadState.Error)
         assertEquals("Could not read image file", (state as UploadState.Error).message)
-        coVerify(exactly = 0) { submissionRepository.uploadImage(any()) }
+        coVerify(exactly = 0) { submissionRepository.createSubmission(any<File>(), any(), any(), any()) }
     }
 
     @Test

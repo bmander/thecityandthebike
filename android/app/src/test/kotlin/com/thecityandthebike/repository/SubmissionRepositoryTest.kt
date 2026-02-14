@@ -5,7 +5,6 @@ import com.thecityandthebike.data.model.ApiResult
 import com.thecityandthebike.data.model.AppError
 import com.thecityandthebike.data.model.dto.MessageResponse
 import com.thecityandthebike.data.model.dto.PaginatedSubmissions
-import com.thecityandthebike.data.model.dto.SubmissionCreate
 import com.thecityandthebike.data.model.dto.SubmissionResponse
 import com.thecityandthebike.data.model.dto.UploadResponse
 import com.thecityandthebike.data.repository.SubmissionRepository
@@ -124,19 +123,18 @@ class SubmissionRepositoryTest {
 
     @Test
     fun `createSubmission success returns submission`() = runTest {
-        val input = SubmissionCreate(
-            bikeQrId = "BIKE001",
-            imageUrl = "https://example.com/img.jpg",
-            capturedDate = "2025-01-01"
-        )
+        val tempFile = File.createTempFile("test_image", ".jpg")
+        tempFile.writeBytes(byteArrayOf(0x00, 0x01, 0x02))
+        tempFile.deleteOnExit()
+
         val response = SubmissionResponse(
             submissionId = "s1",
             userId = "u1",
             bikeQrId = "BIKE001"
         )
-        coEvery { apiService.createSubmission(input) } returns Response.success(response)
+        coEvery { apiService.createSubmission(any(), any(), any(), any()) } returns Response.success(response)
 
-        val result = repository.createSubmission(input)
+        val result = repository.createSubmission(tempFile, "BIKE001", "2025-01-01")
 
         assertTrue(result is ApiResult.Success)
         assertEquals("s1", (result as ApiResult.Success).data.submissionId)
@@ -144,15 +142,14 @@ class SubmissionRepositoryTest {
 
     @Test
     fun `createSubmission HTTP error returns error`() = runTest {
-        val input = SubmissionCreate(
-            bikeQrId = "BIKE001",
-            imageUrl = "https://example.com/img.jpg",
-            capturedDate = "2025-01-01"
-        )
-        coEvery { apiService.createSubmission(input) } returns
+        val tempFile = File.createTempFile("test_image", ".jpg")
+        tempFile.writeBytes(byteArrayOf(0x00, 0x01, 0x02))
+        tempFile.deleteOnExit()
+
+        coEvery { apiService.createSubmission(any(), any(), any(), any()) } returns
                 Response.error(422, "validation error".toResponseBody())
 
-        val result = repository.createSubmission(input)
+        val result = repository.createSubmission(tempFile, "BIKE001", "2025-01-01")
 
         assertTrue(result is ApiResult.Error)
         assertTrue((result as ApiResult.Error).error is AppError.Validation)

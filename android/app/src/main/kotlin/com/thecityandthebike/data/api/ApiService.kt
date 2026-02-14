@@ -2,6 +2,7 @@ package com.thecityandthebike.data.api
 
 import com.thecityandthebike.data.model.dto.*
 import okhttp3.MultipartBody
+import okhttp3.RequestBody
 import retrofit2.Response
 import retrofit2.http.*
 
@@ -37,8 +38,14 @@ interface ApiService {
         @Query("offset") offset: Int = 0
     ): Response<PaginatedSubmissions>
 
+    @Multipart
     @POST("submissions")
-    suspend fun createSubmission(@Body submission: SubmissionCreate): Response<SubmissionResponse>
+    suspend fun createSubmission(
+        @Part image: MultipartBody.Part,
+        @Part("bike_qr_id") bikeQrId: RequestBody,
+        @Part("captured_date") capturedDate: RequestBody,
+        @Part("user_caption") userCaption: RequestBody?
+    ): Response<SubmissionResponse>
 
     @GET("submissions/{submissionId}")
     suspend fun getSubmission(@Path("submissionId") submissionId: String): Response<SubmissionResponse>

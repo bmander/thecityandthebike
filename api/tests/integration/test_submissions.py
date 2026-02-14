@@ -1,10 +1,15 @@
+import os
+import shutil
+import tempfile
 from datetime import date, datetime, timezone
 from unittest.mock import patch
 
+import pytest
 from sqlalchemy.orm import Query
 
 from app.dependencies import create_access_token, get_password_hash
 from app.models import User, Bike, FenderSubmission
+from app.routers.uploads import UPLOAD_DIR
 from tests.conftest import create_test_image
 
 
@@ -262,26 +267,43 @@ class TestDeleteSubmission:
 class TestCreateSubmission:
     """Tests for POST /submissions endpoint."""
 
+    @pytest.fixture(autouse=True)
+    def setup_upload_dir(self):
+        """Create a temporary upload directory for tests."""
+        original_dir = UPLOAD_DIR
+        temp_dir = tempfile.mkdtemp()
+        os.makedirs(os.path.join(temp_dir, "images"), exist_ok=True)
+        import app.routers.uploads as uploads_module
+        uploads_module.UPLOAD_DIR = temp_dir
+        self._temp_dir = temp_dir
+        yield
+        shutil.rmtree(temp_dir, ignore_errors=True)
+        uploads_module.UPLOAD_DIR = original_dir
+
+    def _post_submission(self, client, auth_headers, bike_qr_id, image=None, **extra_data):
+        """Helper to post a multipart submission."""
+        if image is None:
+            image = create_test_image()
+        data = {"bike_qr_id": bike_qr_id, "captured_date": date.today().isoformat()}
+        data.update(extra_data)
+        return client.post(
+            "/submissions",
+            data=data,
+            files={"image": ("photo.jpg", image, "image/jpeg")},
+            headers=auth_headers,
+        )
+
     def test_create_submission_new_bike(self, client, auth_headers, test_user, db_session):
         """Creating submission for new bike should create the bike."""
-        submission_data = {
-            "bike_qr_id": "NEW-BIKE-001",
-            "image_url": "https://example.com/original.jpg",
-            "captured_date": date.today().isoformat(),
-            "user_caption": "My new bike submission",
-        }
-
-        response = client.post(
-            "/submissions",
-            json=submission_data,
-            headers=auth_headers,
+        response = self._post_submission(
+            client, auth_headers, "NEW-BIKE-001", user_caption="My new bike submission"
         )
         assert response.status_code == 201
         data = response.json()
         assert data["bike_qr_id"] == "NEW-BIKE-001"
         assert data["user_id"] == str(test_user.user_id)
-        assert data["image_url"] == submission_data["image_url"]
-        assert data["user_caption"] == submission_data["user_caption"]
+        assert data["image_url"].startswith("/uploads/images/")
+        assert data["user_caption"] == "My new bike submission"
         assert data["username"] == "testuser"
 
         # Verify bike was created
@@ -296,17 +318,7 @@ class TestCreateSubmission:
         """Creating submission for existing bike should update last_seen_at."""
         original_last_seen = test_bike.last_seen_at
 
-        submission_data = {
-            "bike_qr_id": test_bike.bike_qr_id,
-            "image_url": "https://example.com/new.jpg",
-            "captured_date": date.today().isoformat(),
-        }
-
-        response = client.post(
-            "/submissions",
-            json=submission_data,
-            headers=auth_headers,
-        )
+        response = self._post_submission(client, auth_headers, test_bike.bike_qr_id)
         assert response.status_code == 201
 
         # Query for updated bike to verify last_seen_at was updated
@@ -319,58 +331,38 @@ class TestCreateSubmission:
         self, client, auth_headers, test_user
     ):
         """Submission with only required fields should succeed."""
-        submission_data = {
-            "bike_qr_id": "MINIMAL-BIKE",
-            "image_url": "https://example.com/original.jpg",
-            "captured_date": date.today().isoformat(),
-        }
-
-        response = client.post(
-            "/submissions",
-            json=submission_data,
-            headers=auth_headers,
-        )
+        response = self._post_submission(client, auth_headers, "MINIMAL-BIKE")
         assert response.status_code == 201
         data = response.json()
         assert data["user_caption"] is None
 
     def test_create_submission_missing_bike_qr_id(self, client, auth_headers):
         """Submission without bike_qr_id should return 422."""
-        submission_data = {
-            "image_url": "https://example.com/original.jpg",
-            "captured_date": date.today().isoformat(),
-        }
-
+        image = create_test_image()
         response = client.post(
             "/submissions",
-            json=submission_data,
+            data={"captured_date": date.today().isoformat()},
+            files={"image": ("photo.jpg", image, "image/jpeg")},
             headers=auth_headers,
         )
         assert response.status_code == 422
 
     def test_create_submission_missing_captured_date(self, client, auth_headers):
         """Submission without captured_date should return 422."""
-        submission_data = {
-            "bike_qr_id": "TEST-BIKE",
-            "image_url": "https://example.com/original.jpg",
-        }
-
+        image = create_test_image()
         response = client.post(
             "/submissions",
-            json=submission_data,
+            data={"bike_qr_id": "TEST-BIKE"},
+            files={"image": ("photo.jpg", image, "image/jpeg")},
             headers=auth_headers,
         )
         assert response.status_code == 422
 
     def test_create_submission_lime_url(self, client, auth_headers, test_user, db_session):
         """Submitting a Lime URL should parse provider and bike ID."""
-        submission_data = {
-            "bike_qr_id": "https://lime.bike/bc/v1/G5EZAYI=",
-            "image_url": "https://example.com/original.jpg",
-            "captured_date": date.today().isoformat(),
-        }
-
-        response = client.post("/submissions", json=submission_data, headers=auth_headers)
+        response = self._post_submission(
+            client, auth_headers, "https://lime.bike/bc/v1/G5EZAYI="
+        )
         assert response.status_code == 201
         data = response.json()
         assert data["bike_qr_id"] == "G5EZAYI"
@@ -382,13 +374,9 @@ class TestCreateSubmission:
 
     def test_create_submission_bird_url(self, client, auth_headers, test_user, db_session):
         """Submitting a Bird URL should parse provider and bike ID."""
-        submission_data = {
-            "bike_qr_id": "https://ride.bird.co/bc/v1/abc123",
-            "image_url": "https://example.com/original.jpg",
-            "captured_date": date.today().isoformat(),
-        }
-
-        response = client.post("/submissions", json=submission_data, headers=auth_headers)
+        response = self._post_submission(
+            client, auth_headers, "https://ride.bird.co/bc/v1/abc123"
+        )
         assert response.status_code == 201
         data = response.json()
         assert data["bike_qr_id"] == "abc123"
@@ -396,13 +384,9 @@ class TestCreateSubmission:
 
     def test_create_submission_unknown_url(self, client, auth_headers, test_user, db_session):
         """Submitting an unknown URL should store it as-is with no provider."""
-        submission_data = {
-            "bike_qr_id": "https://unknown.com/bikes/XYZ",
-            "image_url": "https://example.com/original.jpg",
-            "captured_date": date.today().isoformat(),
-        }
-
-        response = client.post("/submissions", json=submission_data, headers=auth_headers)
+        response = self._post_submission(
+            client, auth_headers, "https://unknown.com/bikes/XYZ"
+        )
         assert response.status_code == 201
         data = response.json()
         assert data["bike_qr_id"] == "https://unknown.com/bikes/XYZ"
@@ -412,13 +396,7 @@ class TestCreateSubmission:
         self, client, auth_headers, test_user
     ):
         """Submitting a plain string should have provider=None."""
-        submission_data = {
-            "bike_qr_id": "PLAIN-BIKE-ID",
-            "image_url": "https://example.com/original.jpg",
-            "captured_date": date.today().isoformat(),
-        }
-
-        response = client.post("/submissions", json=submission_data, headers=auth_headers)
+        response = self._post_submission(client, auth_headers, "PLAIN-BIKE-ID")
         assert response.status_code == 201
         data = response.json()
         assert data["bike_qr_id"] == "PLAIN-BIKE-ID"
@@ -447,60 +425,91 @@ class TestCreateSubmission:
             return original_first(self)
 
         with patch.object(Query, "first", patched_first):
-            response = client.post(
-                "/submissions",
-                json={
-                    "bike_qr_id": "RACE-BIKE",
-                    "image_url": "https://example.com/original.jpg",
-                            "captured_date": date.today().isoformat(),
-                },
-                headers=auth_headers,
-            )
+            response = self._post_submission(client, auth_headers, "RACE-BIKE")
 
         assert response.status_code == 201
         assert response.json()["bike_qr_id"] == "RACE-BIKE"
 
-    def test_create_submission_saves_thumbnail_url(
+    def test_create_submission_generates_thumbnail(
         self, client, auth_headers, test_user
     ):
-        """Thumbnail URL should be saved to the submission."""
-        submission_data = {
-            "bike_qr_id": "THUMB-BIKE",
-            "image_url": "https://example.com/original.jpg",
-            "image_url_thumbnail": "https://example.com/thumb.jpg",
-            "captured_date": date.today().isoformat(),
-        }
-
-        response = client.post(
-            "/submissions",
-            json=submission_data,
-            headers=auth_headers,
-        )
+        """Server should generate a thumbnail for the submission."""
+        response = self._post_submission(client, auth_headers, "THUMB-BIKE")
         assert response.status_code == 201
         data = response.json()
-        assert data["image_url_thumbnail"] == "https://example.com/thumb.jpg"
+        assert data["image_url_thumbnail"] is not None
+        assert data["image_url_thumbnail"].startswith("/uploads/images/thumb_")
 
-    def test_create_submission_missing_image_url(self, client, auth_headers):
-        """Submission without image_url should return 422."""
-        submission_data = {
-            "bike_qr_id": "TEST-BIKE",
-            "captured_date": date.today().isoformat(),
-        }
-
+    def test_create_submission_missing_image(self, client, auth_headers):
+        """Submission without image file should return 422."""
         response = client.post(
             "/submissions",
-            json=submission_data,
+            data={
+                "bike_qr_id": "TEST-BIKE",
+                "captured_date": date.today().isoformat(),
+            },
             headers=auth_headers,
         )
         assert response.status_code == 422
 
     def test_create_submission_no_auth(self, client):
         """Request without auth should return 401."""
-        submission_data = {
-            "bike_qr_id": "TEST-BIKE",
-            "image_url": "https://example.com/original.jpg",
-            "captured_date": date.today().isoformat(),
-        }
-
-        response = client.post("/submissions", json=submission_data)
+        image = create_test_image()
+        response = client.post(
+            "/submissions",
+            data={
+                "bike_qr_id": "TEST-BIKE",
+                "captured_date": date.today().isoformat(),
+            },
+            files={"image": ("photo.jpg", image, "image/jpeg")},
+        )
         assert response.status_code == 401
+
+    def test_create_submission_invalid_image_returns_400(self, client, auth_headers):
+        """Sending corrupt bytes as image should return 400."""
+        import io
+        corrupt_image = io.BytesIO(b"not-an-image-at-all")
+        response = client.post(
+            "/submissions",
+            data={
+                "bike_qr_id": "TEST-BIKE",
+                "captured_date": date.today().isoformat(),
+            },
+            files={"image": ("photo.jpg", corrupt_image, "image/jpeg")},
+            headers=auth_headers,
+        )
+        assert response.status_code == 400
+
+    def test_create_submission_atomicity_db_failure_cleans_images(
+        self, client, auth_headers, test_user
+    ):
+        """If db.commit raises, stored image files should be cleaned up."""
+        from sqlalchemy.orm import Session as _Session
+
+        def failing_commit(self):
+            raise RuntimeError("simulated DB failure")
+
+        with patch.object(_Session, "commit", failing_commit):
+            with pytest.raises(RuntimeError, match="simulated DB failure"):
+                self._post_submission(client, auth_headers, "ATOMIC-BIKE")
+
+        # Verify image files were cleaned up
+        images_dir = os.path.join(self._temp_dir, "images")
+        remaining_files = os.listdir(images_dir)
+        assert len(remaining_files) == 0, f"Expected no files but found: {remaining_files}"
+
+    def test_create_submission_stored_image_is_retrievable(
+        self, client, auth_headers, test_user
+    ):
+        """Created submission's image and thumbnail should be retrievable via GET."""
+        response = self._post_submission(client, auth_headers, "RETRIEVE-BIKE")
+        assert response.status_code == 201
+        data = response.json()
+
+        # GET the image
+        img_response = client.get(data["image_url"])
+        assert img_response.status_code == 200
+
+        # GET the thumbnail
+        thumb_response = client.get(data["image_url_thumbnail"])
+        assert thumb_response.status_code == 200

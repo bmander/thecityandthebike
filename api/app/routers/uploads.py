@@ -83,11 +83,11 @@ class UploadResponse(BaseModel):
     thumbnail_url: Optional[str] = None
 
 
-@router.post("/images", response_model=UploadResponse, status_code=status.HTTP_201_CREATED)
-async def upload_image(
-    current_user: Annotated[User, Depends(get_current_user)],
-    image: UploadFile = File(...),
-):
+async def process_and_store_image(image: UploadFile) -> tuple[str, str | None]:
+    """Validate, re-encode, store an uploaded image and generate a thumbnail.
+
+    Returns (image_url, thumbnail_url). Raises HTTPException on failure.
+    """
     # Validate file extension
     ext = os.path.splitext(image.filename or "")[1].lower()
     if ext not in ALLOWED_EXTENSIONS:
@@ -164,7 +164,17 @@ async def upload_image(
 
     url = f"/uploads/images/{unique_filename}"
     thumbnail_url = f"/uploads/images/{thumb_filename}" if thumb_bytes else None
-    return UploadResponse(url=url, filename=unique_filename, thumbnail_url=thumbnail_url)
+    return url, thumbnail_url
+
+
+@router.post("/images", response_model=UploadResponse, status_code=status.HTTP_201_CREATED)
+async def upload_image(
+    current_user: Annotated[User, Depends(get_current_user)],
+    image: UploadFile = File(...),
+):
+    url, thumbnail_url = await process_and_store_image(image)
+    filename = url.rsplit("/", 1)[-1]
+    return UploadResponse(url=url, filename=filename, thumbnail_url=thumbnail_url)
 
 
 @router.get("/images/{filename}")

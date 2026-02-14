@@ -2,7 +2,6 @@ package com.thecityandthebike.upload
 
 import android.net.Uri
 import com.thecityandthebike.data.model.ApiResult
-import com.thecityandthebike.data.model.dto.SubmissionCreate
 import com.thecityandthebike.data.repository.SubmissionRepository
 import com.thecityandthebike.di.ApplicationScope
 import com.thecityandthebike.util.ImagePreparer
@@ -13,7 +12,6 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import java.time.LocalDate
 import java.time.ZoneId
-import java.util.UUID
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -45,28 +43,13 @@ class UploadManager @Inject constructor(
             }
 
             try {
-                when (val uploadResult = submissionRepository.uploadImage(imageFile)) {
+                val capturedDate = LocalDate.now(ZoneId.of("America/Los_Angeles")).toString()
+                when (val result = submissionRepository.createSubmission(imageFile, bikeQrId, capturedDate)) {
                     is ApiResult.Success -> {
-                        val imageUrl = uploadResult.data.url
-
-                        val submission = SubmissionCreate(
-                            bikeQrId = bikeQrId,
-                            imageUrl = imageUrl,
-                            imageUrlThumbnail = uploadResult.data.thumbnailUrl,
-                            capturedDate = LocalDate.now(ZoneId.of("America/Los_Angeles")).toString()
-                        )
-
-                        when (val createResult = submissionRepository.createSubmission(submission)) {
-                            is ApiResult.Success -> {
-                                _state.value = UploadState.Success
-                            }
-                            is ApiResult.Error -> {
-                                _state.value = UploadState.Error(createResult.error.displayMessage)
-                            }
-                        }
+                        _state.value = UploadState.Success
                     }
                     is ApiResult.Error -> {
-                        _state.value = UploadState.Error(uploadResult.error.displayMessage)
+                        _state.value = UploadState.Error(result.error.displayMessage)
                     }
                 }
             } finally {

@@ -14,14 +14,6 @@ class PaginatedResponse(BaseModel, Generic[T]):
     offset: int
 
 
-class SubmissionCreate(BaseModel):
-    bike_qr_id: str
-    image_url: str
-    image_url_thumbnail: Optional[str] = None
-    captured_date: date
-    user_caption: Optional[str] = None
-
-
 class SubmissionResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 

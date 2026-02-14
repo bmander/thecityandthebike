@@ -4,15 +4,6 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 @Serializable
-data class SubmissionCreate(
-    @SerialName("bike_qr_id") val bikeQrId: String,
-    @SerialName("image_url") val imageUrl: String,
-    @SerialName("image_url_thumbnail") val imageUrlThumbnail: String? = null,
-    @SerialName("captured_date") val capturedDate: String,
-    @SerialName("user_caption") val userCaption: String? = null
-)
-
-@Serializable
 data class SubmissionResponse(
     @SerialName("submission_id") val submissionId: String,
     @SerialName("user_id") val userId: String,
