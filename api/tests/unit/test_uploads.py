@@ -109,7 +109,9 @@ class TestGCSUploadURL:
 
         # Fetch the uploaded image and verify no EXIF
         filename = response.json()["filename"]
-        get_response = client.get(f"/uploads/images/{filename}")
+        get_response = client.get(
+            f"/uploads/images/{filename}", follow_redirects=False
+        )
         result_img = Image.open(io.BytesIO(get_response.content))
         result_exif = result_img.getexif()
         assert not result_exif, "EXIF data should be stripped from uploaded image"
@@ -128,27 +130,51 @@ class TestGetImageGCS:
         mock_bucket.blob.return_value = mock_blob
         mock_get_gcs_bucket.return_value = mock_bucket
 
-        response = client.get("/uploads/images/missing.jpg")
+        response = client.get("/uploads/images/missing.jpg", follow_redirects=False)
         assert response.status_code == 404
 
     @patch("app.services.storage._get_gcs_bucket")
-    def test_gcs_success_returns_content_with_type(self, mock_get_gcs_bucket, client, monkeypatch):
-        """GCS image should be returned with correct content type."""
+    def test_gcs_success_returns_redirect_to_signed_url(
+        self, mock_get_gcs_bucket, client, monkeypatch
+    ):
+        """GCS image should return 307 redirect to a signed URL."""
         monkeypatch.setattr(settings, "STORAGE_BUCKET", "my-bucket")
-
-        image_bytes = create_test_image().getvalue()
+        monkeypatch.setattr(settings, "SIGNED_URL_EXPIRATION", 3600)
 
         mock_bucket = MagicMock()
         mock_blob = MagicMock()
         mock_blob.exists.return_value = True
-        mock_blob.download_as_bytes.return_value = image_bytes
+        mock_blob.generate_signed_url.return_value = (
+            "https://storage.googleapis.com/my-bucket/images/photo.jpg?X-Goog-Signature=abc"
+        )
         mock_bucket.blob.return_value = mock_blob
         mock_get_gcs_bucket.return_value = mock_bucket
 
-        response = client.get("/uploads/images/photo.jpg")
-        assert response.status_code == 200
-        assert response.headers["content-type"] == "image/jpeg"
-        assert response.content == image_bytes
+        response = client.get("/uploads/images/photo.jpg", follow_redirects=False)
+        assert response.status_code == 307
+        assert "storage.googleapis.com" in response.headers["location"]
+
+    @patch("app.services.storage._get_gcs_bucket")
+    def test_signed_url_expiration_uses_config(
+        self, mock_get_gcs_bucket, client, monkeypatch
+    ):
+        """Signed URL should use SIGNED_URL_EXPIRATION from settings."""
+        import datetime
+
+        monkeypatch.setattr(settings, "STORAGE_BUCKET", "my-bucket")
+        monkeypatch.setattr(settings, "SIGNED_URL_EXPIRATION", 7200)
+
+        mock_bucket = MagicMock()
+        mock_blob = MagicMock()
+        mock_blob.exists.return_value = True
+        mock_blob.generate_signed_url.return_value = "https://signed"
+        mock_bucket.blob.return_value = mock_blob
+        mock_get_gcs_bucket.return_value = mock_bucket
+
+        client.get("/uploads/images/photo.jpg", follow_redirects=False)
+
+        call_kwargs = mock_blob.generate_signed_url.call_args[1]
+        assert call_kwargs["expiration"] == datetime.timedelta(seconds=7200)
 
     def test_backslash_path_traversal_returns_404(self, client):
         """Backslash-based path traversal should return 404."""
@@ -171,9 +197,6 @@ class TestFileSizeLimit:
         """A file exactly at the 10 MB limit should be accepted."""
         temp_dir = self._setup_temp_dir(monkeypatch)
         try:
-            # Create a large but valid JPEG. We'll make a wide image that
-            # compresses to under 10 MB, then pad the upload.
-            # Instead, use a valid image that fits under 10 MB.
             image_buf = create_test_image(width=800, height=600)
             response = client.post(
                 "/uploads/images",

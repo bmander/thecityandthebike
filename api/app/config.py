@@ -23,6 +23,7 @@ class Settings(BaseSettings):
     ACCOUNT_LOCKOUT_ATTEMPTS: int = 10
     ACCOUNT_LOCKOUT_DURATION: int = 900  # seconds (15 min)
     CORS_ORIGINS: str = ""  # comma-separated list of allowed origins
+    SIGNED_URL_EXPIRATION: int = 3600  # seconds (1 hour)
 
     @property
     def cors_origins_list(self) -> list[str]:

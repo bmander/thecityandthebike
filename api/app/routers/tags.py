@@ -1,6 +1,6 @@
+import asyncio
 import io
 import os
-import uuid as uuid_mod
 from typing import Annotated, List
 from uuid import UUID
 
@@ -18,24 +18,16 @@ from ..schemas.mask import ProcessedMaskResponse
 from ..schemas.auth import MessageResponse
 from ..services.mask_processing import process_mask_to_ring
 from ..services.storage import (
+    ALLOWED_TAG_EXTENSIONS,
     CHUNK_SIZE,
     MAX_FILE_SIZE,
     delete_image,
-    resolve_image_url,
-    store_image,
+    reencode_png,
+    store_tag_image,
+    validate_image,
 )
 
 router = APIRouter(tags=["tags"])
-
-ALLOWED_TAG_EXTENSIONS = {".png"}
-
-
-def _save_tag_image(contents: bytes, ext: str) -> str:
-    """Save a tag image to storage and return its URL path."""
-    file_id = str(uuid_mod.uuid4())
-    unique_filename = f"{file_id}{ext}"
-    store_image(contents, unique_filename, "image/png")
-    return resolve_image_url(unique_filename)
 
 
 @router.get(
@@ -108,9 +100,8 @@ async def create_tag(
 
     # Validate image content
     try:
-        img = Image.open(io.BytesIO(contents))
-        img.verify()
-    except Exception:
+        await asyncio.to_thread(validate_image, contents)
+    except ValueError:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail={"msg": "File is not a valid image"},
@@ -118,10 +109,7 @@ async def create_tag(
 
     # Re-encode as PNG to sanitize
     try:
-        with Image.open(io.BytesIO(contents)) as img:
-            clean = io.BytesIO()
-            img.save(clean, format="PNG")
-            contents = clean.getvalue()
+        contents = await asyncio.to_thread(reencode_png, contents)
     except Exception:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -149,7 +137,7 @@ async def create_tag(
             )
 
     # Save the image
-    image_url = _save_tag_image(contents, ext)
+    image_url = await asyncio.to_thread(store_tag_image, contents, ext)
 
     # Create tag record
     tag = Tag(
