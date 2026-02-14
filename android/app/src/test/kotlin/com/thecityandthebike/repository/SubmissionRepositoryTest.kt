@@ -12,6 +12,8 @@ import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.mockk
 import io.mockk.slot
+import io.mockk.just
+import io.mockk.Runs
 import kotlinx.coroutines.test.runTest
 import okhttp3.MultipartBody
 import okhttp3.ResponseBody.Companion.toResponseBody
@@ -75,6 +77,22 @@ class SubmissionRepositoryTest {
         assertTrue((result as ApiResult.Error).error is AppError.Server)
     }
 
+    @Test
+    fun `getSubmissions forwards cursor to ApiService`() = runTest {
+        val cursor = "abc123cursor"
+        val submissions = CursorPaginatedSubmissions(
+            items = emptyList(),
+            nextCursor = null,
+            hasMore = false
+        )
+        coEvery { apiService.getSubmissions(limit = 20, cursor = cursor) } returns
+                Response.success(submissions)
+
+        repository.getSubmissions(cursor = cursor)
+
+        coVerify { apiService.getSubmissions(limit = 20, cursor = cursor) }
+    }
+
     // --- getMySubmissions ---
 
     @Test
@@ -115,6 +133,22 @@ class SubmissionRepositoryTest {
 
         assertTrue(result is ApiResult.Error)
         assertTrue((result as ApiResult.Error).error is AppError.Server)
+    }
+
+    @Test
+    fun `getMySubmissions forwards cursor to ApiService`() = runTest {
+        val cursor = "mycursor456"
+        val submissions = CursorPaginatedSubmissions(
+            items = emptyList(),
+            nextCursor = null,
+            hasMore = false
+        )
+        coEvery { apiService.getMySubmissions(limit = 20, cursor = cursor) } returns
+                Response.success(submissions)
+
+        repository.getMySubmissions(cursor = cursor)
+
+        coVerify { apiService.getMySubmissions(limit = 20, cursor = cursor) }
     }
 
     // --- createSubmission ---

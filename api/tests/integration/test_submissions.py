@@ -146,6 +146,28 @@ class TestGetSubmissions:
         response = client.get("/submissions?limit=101", headers=auth_headers)
         assert response.status_code == 422
 
+    def test_get_submissions_descending_order(
+        self, client, auth_headers, test_user, test_bike, db_session
+    ):
+        """Items should be returned in uploaded_at DESC order."""
+        now = datetime.now(timezone.utc)
+        for i in range(3):
+            sub = FenderSubmission(
+                user_id=test_user.user_id,
+                bike_id=test_bike.id,
+                image_url=f"https://example.com/order{i}.jpg",
+                captured_date=date.today(),
+                uploaded_at=now - timedelta(seconds=i),
+            )
+            db_session.add(sub)
+        db_session.commit()
+
+        response = client.get("/submissions", headers=auth_headers)
+        assert response.status_code == 200
+        items = response.json()["items"]
+        timestamps = [item["uploaded_at"] for item in items]
+        assert timestamps == sorted(timestamps, reverse=True)
+
     def test_get_submissions_tie_breaking(
         self, client, auth_headers, test_user, test_bike, db_session
     ):

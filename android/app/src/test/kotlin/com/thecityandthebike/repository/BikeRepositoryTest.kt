@@ -8,6 +8,7 @@ import com.thecityandthebike.data.model.dto.CursorPaginatedSubmissions
 import com.thecityandthebike.data.model.dto.SubmissionResponse
 import com.thecityandthebike.data.repository.BikeRepository
 import io.mockk.coEvery
+import io.mockk.coVerify
 import io.mockk.mockk
 import kotlinx.coroutines.test.runTest
 import okhttp3.ResponseBody.Companion.toResponseBody
@@ -104,6 +105,22 @@ class BikeRepositoryTest {
 
         assertTrue(result is ApiResult.Success)
         assertEquals(1, (result as ApiResult.Success).data.items.size)
+    }
+
+    @Test
+    fun `getBikeSubmissions forwards cursor to ApiService`() = runTest {
+        val cursor = "bikecursor321"
+        val submissions = CursorPaginatedSubmissions(
+            items = emptyList(),
+            nextCursor = null,
+            hasMore = false
+        )
+        coEvery { apiService.getBikeSubmissions("BIKE001", limit = 20, cursor = cursor) } returns
+                Response.success(submissions)
+
+        repository.getBikeSubmissions("BIKE001", cursor = cursor)
+
+        coVerify { apiService.getBikeSubmissions("BIKE001", limit = 20, cursor = cursor) }
     }
 
     @Test

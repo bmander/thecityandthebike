@@ -64,3 +64,15 @@ class TestDecodeCursorInvalid:
         ).decode()
         with pytest.raises(ValueError, match="Invalid cursor"):
             decode_cursor(cursor)
+
+    def test_naive_datetime_gets_utc(self):
+        """A cursor with a naive (no-tz) timestamp should decode with UTC attached."""
+        import base64, json
+        sid = uuid4()
+        cursor = base64.urlsafe_b64encode(
+            json.dumps({"t": "2025-06-15T12:30:45", "id": str(sid)}).encode()
+        ).decode()
+        result = decode_cursor(cursor)
+        assert result.uploaded_at.tzinfo == timezone.utc
+        assert result.uploaded_at == datetime(2025, 6, 15, 12, 30, 45, tzinfo=timezone.utc)
+        assert result.submission_id == sid

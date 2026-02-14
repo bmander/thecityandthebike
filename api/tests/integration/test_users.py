@@ -102,6 +102,28 @@ class TestGetMySubmissions:
         response = client.get("/users/me/submissions")
         assert response.status_code == 401
 
+    def test_get_my_submissions_descending_order(
+        self, client, auth_headers, test_user, test_bike, db_session
+    ):
+        """Items should be returned in uploaded_at DESC order."""
+        now = datetime.now(timezone.utc)
+        for i in range(3):
+            sub = FenderSubmission(
+                user_id=test_user.user_id,
+                bike_id=test_bike.id,
+                image_url=f"https://example.com/order{i}.jpg",
+                captured_date=date.today(),
+                uploaded_at=now - timedelta(seconds=i),
+            )
+            db_session.add(sub)
+        db_session.commit()
+
+        response = client.get("/users/me/submissions", headers=auth_headers)
+        assert response.status_code == 200
+        items = response.json()["items"]
+        timestamps = [item["uploaded_at"] for item in items]
+        assert timestamps == sorted(timestamps, reverse=True)
+
     def test_get_my_submissions_cursor_traversal(
         self, client, auth_headers, test_user, test_bike, db_session
     ):
@@ -285,6 +307,30 @@ class TestGetUserSubmissions:
         """Request without auth should return 200 (public endpoint)."""
         response = client.get(f"/users/{test_user.user_id}/submissions")
         assert response.status_code == 200
+
+    def test_get_user_submissions_descending_order(
+        self, client, auth_headers, test_user, test_bike, db_session
+    ):
+        """Items should be returned in uploaded_at DESC order."""
+        now = datetime.now(timezone.utc)
+        for i in range(3):
+            sub = FenderSubmission(
+                user_id=test_user.user_id,
+                bike_id=test_bike.id,
+                image_url=f"https://example.com/order{i}.jpg",
+                captured_date=date.today(),
+                uploaded_at=now - timedelta(seconds=i),
+            )
+            db_session.add(sub)
+        db_session.commit()
+
+        response = client.get(
+            f"/users/{test_user.user_id}/submissions", headers=auth_headers
+        )
+        assert response.status_code == 200
+        items = response.json()["items"]
+        timestamps = [item["uploaded_at"] for item in items]
+        assert timestamps == sorted(timestamps, reverse=True)
 
     def test_get_user_submissions_cursor_traversal(
         self, client, auth_headers, test_user, test_bike, db_session

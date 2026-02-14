@@ -452,6 +452,30 @@ class TestGetBikeSubmissions:
         response = client.get(f"/bikes/{test_bike.bike_qr_id}/submissions")
         assert response.status_code == 200
 
+    def test_get_bike_submissions_descending_order(
+        self, client, auth_headers, test_bike, test_user, db_session
+    ):
+        """Items should be returned in uploaded_at DESC order."""
+        now = datetime.now(timezone.utc)
+        for i in range(3):
+            sub = FenderSubmission(
+                user_id=test_user.user_id,
+                bike_id=test_bike.id,
+                image_url=f"https://example.com/order{i}.jpg",
+                captured_date=date.today(),
+                uploaded_at=now - timedelta(seconds=i),
+            )
+            db_session.add(sub)
+        db_session.commit()
+
+        response = client.get(
+            f"/bikes/{test_bike.bike_qr_id}/submissions", headers=auth_headers
+        )
+        assert response.status_code == 200
+        items = response.json()["items"]
+        timestamps = [item["uploaded_at"] for item in items]
+        assert timestamps == sorted(timestamps, reverse=True)
+
     def test_get_bike_submissions_cursor_traversal(
         self, client, auth_headers, test_bike, test_user, db_session
     ):

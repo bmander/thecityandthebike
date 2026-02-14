@@ -8,6 +8,7 @@ import com.thecityandthebike.data.model.dto.SubmissionResponse
 import com.thecityandthebike.data.model.dto.UserDetailResponse
 import com.thecityandthebike.data.repository.UserRepository
 import io.mockk.coEvery
+import io.mockk.coVerify
 import io.mockk.mockk
 import kotlinx.coroutines.test.runTest
 import okhttp3.ResponseBody.Companion.toResponseBody
@@ -99,6 +100,22 @@ class UserRepositoryTest {
 
         assertTrue(result is ApiResult.Success)
         assertEquals(1, (result as ApiResult.Success).data.items.size)
+    }
+
+    @Test
+    fun `getUserSubmissions forwards cursor to ApiService`() = runTest {
+        val cursor = "usercursor789"
+        val submissions = CursorPaginatedSubmissions(
+            items = emptyList(),
+            nextCursor = null,
+            hasMore = false
+        )
+        coEvery { apiService.getUserSubmissions("u1", limit = 20, cursor = cursor) } returns
+                Response.success(submissions)
+
+        repository.getUserSubmissions("u1", cursor = cursor)
+
+        coVerify { apiService.getUserSubmissions("u1", limit = 20, cursor = cursor) }
     }
 
     @Test
