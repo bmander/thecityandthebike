@@ -195,7 +195,7 @@ class TestDeleteTag:
         tag_data = create_resp.json()
 
         # Verify the file exists on disk
-        from app.routers.uploads import UPLOAD_DIR
+        from app.services.storage import UPLOAD_DIR
 
         filename = tag_data["image_url"].rsplit("/", 1)[-1]
         file_path = os.path.join(UPLOAD_DIR, "images", filename)

@@ -8,13 +8,18 @@ from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
 from PIL import Image
 from sqlalchemy.orm import Session
 
-from ..config import settings
 from ..database import get_db
 from ..dependencies import get_current_user
 from ..models import User, FenderSubmission, Tag
 from ..schemas.tag import TagResponse
 from ..schemas.auth import MessageResponse
-from .uploads import delete_stored_image, UPLOAD_DIR, MAX_FILE_SIZE, CHUNK_SIZE
+from ..services.storage import (
+    CHUNK_SIZE,
+    MAX_FILE_SIZE,
+    delete_image,
+    resolve_image_url,
+    store_image,
+)
 
 router = APIRouter(tags=["tags"])
 
@@ -25,19 +30,8 @@ def _save_tag_image(contents: bytes, ext: str) -> str:
     """Save a tag image to storage and return its URL path."""
     file_id = str(uuid_mod.uuid4())
     unique_filename = f"{file_id}{ext}"
-
-    if settings.STORAGE_BUCKET:
-        from .uploads import _get_gcs_bucket
-        bucket = _get_gcs_bucket()
-        blob = bucket.blob(f"images/{unique_filename}")
-        blob.upload_from_string(contents, content_type="image/png")
-    else:
-        os.makedirs(os.path.join(UPLOAD_DIR, "images"), exist_ok=True)
-        file_path = os.path.join(UPLOAD_DIR, "images", unique_filename)
-        with open(file_path, "wb") as f:
-            f.write(contents)
-
-    return f"/uploads/images/{unique_filename}"
+    store_image(contents, unique_filename, "image/png")
+    return resolve_image_url(unique_filename)
 
 
 @router.get(
@@ -160,5 +154,5 @@ def delete_tag(
     image_url = tag.image_url
     db.delete(tag)
     db.commit()
-    delete_stored_image(image_url)
+    delete_image(image_url)
     return MessageResponse(msg="Tag deleted")
