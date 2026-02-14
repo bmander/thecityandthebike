@@ -1,43 +1,27 @@
-import io
+import asyncio
 import os
-import uuid as uuid_mod
 from typing import Annotated, List
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
-from PIL import Image
 from sqlalchemy.orm import Session
 
-from ..config import settings
 from ..database import get_db
 from ..dependencies import get_current_user
 from ..models import User, FenderSubmission, Tag
 from ..schemas.tag import TagResponse
 from ..schemas.auth import MessageResponse
-from .uploads import delete_stored_image, UPLOAD_DIR, MAX_FILE_SIZE, CHUNK_SIZE
+from ..services.media import (
+    ALLOWED_TAG_EXTENSIONS,
+    CHUNK_SIZE,
+    MAX_FILE_SIZE,
+    delete_stored_image,
+    reencode_png,
+    store_tag_image,
+    validate_image,
+)
 
 router = APIRouter(tags=["tags"])
-
-ALLOWED_TAG_EXTENSIONS = {".png"}
-
-
-def _save_tag_image(contents: bytes, ext: str) -> str:
-    """Save a tag image to storage and return its URL path."""
-    file_id = str(uuid_mod.uuid4())
-    unique_filename = f"{file_id}{ext}"
-
-    if settings.STORAGE_BUCKET:
-        from .uploads import _get_gcs_bucket
-        bucket = _get_gcs_bucket()
-        blob = bucket.blob(f"images/{unique_filename}")
-        blob.upload_from_string(contents, content_type="image/png")
-    else:
-        os.makedirs(os.path.join(UPLOAD_DIR, "images"), exist_ok=True)
-        file_path = os.path.join(UPLOAD_DIR, "images", unique_filename)
-        with open(file_path, "wb") as f:
-            f.write(contents)
-
-    return f"/uploads/images/{unique_filename}"
 
 
 @router.get(
@@ -107,9 +91,8 @@ async def create_tag(
 
     # Validate image content
     try:
-        img = Image.open(io.BytesIO(contents))
-        img.verify()
-    except Exception:
+        await asyncio.to_thread(validate_image, contents)
+    except ValueError:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail={"msg": "File is not a valid image"},
@@ -117,10 +100,7 @@ async def create_tag(
 
     # Re-encode as PNG to sanitize
     try:
-        with Image.open(io.BytesIO(contents)) as img:
-            clean = io.BytesIO()
-            img.save(clean, format="PNG")
-            contents = clean.getvalue()
+        contents = await asyncio.to_thread(reencode_png, contents)
     except Exception:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -128,7 +108,7 @@ async def create_tag(
         )
 
     # Save the image
-    image_url = _save_tag_image(contents, ext)
+    image_url = await asyncio.to_thread(store_tag_image, contents, ext)
 
     # Create tag record
     tag = Tag(

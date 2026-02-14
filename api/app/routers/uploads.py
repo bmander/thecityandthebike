@@ -1,80 +1,30 @@
-import io
-import logging
-import mimetypes
+import asyncio
 import os
 import uuid
 from typing import Annotated, Optional
 
 from fastapi import APIRouter, Depends, UploadFile, File, HTTPException, status
-from fastapi.responses import FileResponse, Response
-from PIL import Image
+from fastapi.responses import FileResponse, RedirectResponse
 from pydantic import BaseModel
 
 from ..config import settings
 from ..dependencies import get_current_user
 from ..models import User
-
-logger = logging.getLogger(__name__)
+from ..services import media as media_service
+from ..services.media import (
+    ALLOWED_EXTENSIONS,
+    ALLOWED_SERVE_EXTENSIONS,
+    CHUNK_SIZE,
+    MAX_FILE_SIZE,
+    blob_exists,
+    generate_signed_url,
+    generate_thumbnail,
+    reencode_jpeg,
+    store_image,
+    validate_image,
+)
 
 router = APIRouter(prefix="/uploads", tags=["uploads"])
-
-ALLOWED_EXTENSIONS = {".jpg", ".jpeg"}
-ALLOWED_SERVE_EXTENSIONS = {".jpg", ".jpeg", ".png"}
-MAX_FILE_SIZE = 10 * 1024 * 1024  # 10 MB
-CHUNK_SIZE = 64 * 1024  # 64 KB
-THUMBNAIL_MAX_SIZE = 300
-
-# Local upload dir (used when STORAGE_BUCKET is not set)
-UPLOAD_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "uploads")
-if not settings.STORAGE_BUCKET:
-    os.makedirs(os.path.join(UPLOAD_DIR, "images"), exist_ok=True)
-
-
-def _get_gcs_bucket():
-    from google.cloud import storage
-    client = storage.Client()
-    return client.bucket(settings.STORAGE_BUCKET)
-
-
-def _generate_thumbnail(contents: bytes) -> Optional[bytes]:
-    """Generate a JPEG thumbnail with max dimension of THUMBNAIL_MAX_SIZE pixels."""
-    try:
-        with Image.open(io.BytesIO(contents)) as img:
-            img.thumbnail((THUMBNAIL_MAX_SIZE, THUMBNAIL_MAX_SIZE))
-            if img.mode in ("RGBA", "P"):
-                img = img.convert("RGB")
-            buf = io.BytesIO()
-            img.save(buf, format="JPEG", quality=85)
-            return buf.getvalue()
-    except Exception:
-        logger.warning("Failed to generate thumbnail", exc_info=True)
-        return None
-
-
-def delete_stored_image(url: Optional[str]) -> None:
-    """Delete an image file from storage given its URL path (e.g. /uploads/images/abc.jpg).
-
-    Logs warnings on failure but does not raise — file deletion should not block DB deletion.
-    """
-    if url is None:
-        return
-
-    filename = url.rsplit("/", 1)[-1]
-
-    if settings.STORAGE_BUCKET:
-        try:
-            bucket = _get_gcs_bucket()
-            blob = bucket.blob(f"images/{filename}")
-            blob.delete()
-        except Exception:
-            logger.warning("Failed to delete GCS blob images/%s", filename, exc_info=True)
-    else:
-        try:
-            file_path = os.path.join(UPLOAD_DIR, "images", filename)
-            if os.path.isfile(file_path):
-                os.remove(file_path)
-        except Exception:
-            logger.warning("Failed to delete local file images/%s", filename, exc_info=True)
 
 
 class UploadResponse(BaseModel):
@@ -114,9 +64,8 @@ async def upload_image(
 
     # Validate image content
     try:
-        img = Image.open(io.BytesIO(contents))
-        img.verify()
-    except Exception:
+        await asyncio.to_thread(validate_image, contents)
+    except ValueError:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail={"msg": "File is not a valid image"},
@@ -124,12 +73,7 @@ async def upload_image(
 
     # Re-encode as JPEG (strips EXIF, neutralizes any embedded payloads)
     try:
-        with Image.open(io.BytesIO(contents)) as img:
-            if img.mode in ("RGBA", "P"):
-                img = img.convert("RGB")
-            clean = io.BytesIO()
-            img.save(clean, format="JPEG", quality=90)
-            contents = clean.getvalue()
+        contents = await asyncio.to_thread(reencode_jpeg, contents)
     except Exception:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -142,25 +86,14 @@ async def upload_image(
     thumb_filename = f"thumb_{file_id}.jpg"
 
     # Generate thumbnail
-    thumb_bytes = _generate_thumbnail(contents)
+    thumb_bytes = await asyncio.to_thread(generate_thumbnail, contents)
 
-    if settings.STORAGE_BUCKET:
-        # Upload to Google Cloud Storage
-        bucket = _get_gcs_bucket()
-        blob = bucket.blob(f"images/{unique_filename}")
-        blob.upload_from_string(contents, content_type="image/jpeg")
-        if thumb_bytes:
-            thumb_blob = bucket.blob(f"images/{thumb_filename}")
-            thumb_blob.upload_from_string(thumb_bytes, content_type="image/jpeg")
-    else:
-        # Save locally (development)
-        file_path = os.path.join(UPLOAD_DIR, "images", unique_filename)
-        with open(file_path, "wb") as f:
-            f.write(contents)
-        if thumb_bytes:
-            thumb_path = os.path.join(UPLOAD_DIR, "images", thumb_filename)
-            with open(thumb_path, "wb") as f:
-                f.write(thumb_bytes)
+    # Store original image
+    await asyncio.to_thread(store_image, contents, unique_filename, "image/jpeg")
+
+    # Store thumbnail
+    if thumb_bytes:
+        await asyncio.to_thread(store_image, thumb_bytes, thumb_filename, "image/jpeg")
 
     url = f"/uploads/images/{unique_filename}"
     thumbnail_url = f"/uploads/images/{thumb_filename}" if thumb_bytes else None
@@ -177,15 +110,13 @@ async def get_image(filename: str):
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Not found")
 
     if settings.STORAGE_BUCKET:
-        bucket = _get_gcs_bucket()
-        blob = bucket.blob(f"images/{filename}")
-        if not blob.exists():
+        exists = await asyncio.to_thread(blob_exists, filename)
+        if not exists:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Not found")
-        content = blob.download_as_bytes()
-        content_type = mimetypes.guess_type(filename)[0] or "application/octet-stream"
-        return Response(content=content, media_type=content_type)
+        signed_url = await asyncio.to_thread(generate_signed_url, filename)
+        return RedirectResponse(url=signed_url, status_code=307)
     else:
-        file_path = os.path.join(UPLOAD_DIR, "images", filename)
+        file_path = os.path.join(media_service.UPLOAD_DIR, "images", filename)
         if not os.path.isfile(file_path):
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Not found")
         return FileResponse(file_path)

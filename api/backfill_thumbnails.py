@@ -18,10 +18,10 @@ from sqlalchemy.orm import Session
 sys.path.insert(0, os.path.dirname(__file__))
 
 from app.config import settings
-from app.routers.uploads import (
+from app.services.media import (
     UPLOAD_DIR,
-    _generate_thumbnail,
-    _get_gcs_bucket,
+    generate_thumbnail,
+    get_gcs_bucket,
 )
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
@@ -42,7 +42,7 @@ def backfill():
         logger.info("Found %d submissions to backfill", len(rows))
 
         if settings.STORAGE_BUCKET:
-            bucket = _get_gcs_bucket()
+            bucket = get_gcs_bucket()
 
         updated = 0
         for submission_id, image_url in rows:
@@ -67,7 +67,7 @@ def backfill():
                         contents = f.read()
 
                 # Generate thumbnail
-                thumb_bytes = _generate_thumbnail(contents)
+                thumb_bytes = generate_thumbnail(contents)
                 if thumb_bytes is None:
                     logger.warning("Failed to generate thumbnail for %s", submission_id)
                     continue

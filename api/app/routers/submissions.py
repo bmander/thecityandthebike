@@ -13,7 +13,7 @@ from ..dependencies import get_current_user, get_current_user_optional
 from ..models import User, Bike, FenderSubmission
 from ..schemas import PaginatedResponse, SubmissionCreate, SubmissionResponse
 from ..schemas.auth import MessageResponse
-from .uploads import delete_stored_image
+from ..services.media import delete_stored_image
 
 router = APIRouter(prefix="/submissions", tags=["submissions"])
 
