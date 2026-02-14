@@ -13,7 +13,7 @@ from tests.conftest import create_test_image
 class TestGCSUploadURL:
     """Tests for GCS upload URL construction."""
 
-    @patch("app.services.media.get_gcs_bucket")
+    @patch("app.services.storage._get_gcs_bucket")
     def test_gcs_upload_returns_proxy_url(
         self, mock_get_gcs_bucket, client, auth_headers, monkeypatch
     ):
@@ -52,7 +52,7 @@ class TestGCSUploadURL:
 
         assert mock_blob.upload_from_string.call_count == 2
 
-    @patch("app.services.media.get_gcs_bucket")
+    @patch("app.services.storage._get_gcs_bucket")
     def test_gcs_thumbnail_content_type(
         self, mock_get_gcs_bucket, client, auth_headers, monkeypatch
     ):
@@ -120,7 +120,7 @@ class TestGCSUploadURL:
 class TestGetImageGCS:
     """Tests for GET /uploads/images/{filename} via GCS."""
 
-    @patch("app.services.media.get_gcs_bucket")
+    @patch("app.services.storage._get_gcs_bucket")
     def test_gcs_blob_missing_returns_404(self, mock_get_gcs_bucket, client, monkeypatch):
         """Missing GCS blob should return 404."""
         monkeypatch.setattr(settings, "STORAGE_BUCKET", "my-bucket")
@@ -133,7 +133,7 @@ class TestGetImageGCS:
         response = client.get("/uploads/images/missing.jpg", follow_redirects=False)
         assert response.status_code == 404
 
-    @patch("app.services.media.get_gcs_bucket")
+    @patch("app.services.storage._get_gcs_bucket")
     def test_gcs_success_returns_redirect_to_signed_url(
         self, mock_get_gcs_bucket, client, monkeypatch
     ):
@@ -154,7 +154,7 @@ class TestGetImageGCS:
         assert response.status_code == 307
         assert "storage.googleapis.com" in response.headers["location"]
 
-    @patch("app.services.media.get_gcs_bucket")
+    @patch("app.services.storage._get_gcs_bucket")
     def test_signed_url_expiration_uses_config(
         self, mock_get_gcs_bucket, client, monkeypatch
     ):
@@ -188,8 +188,8 @@ class TestFileSizeLimit:
     def _setup_temp_dir(self, monkeypatch):
         temp_dir = tempfile.mkdtemp()
         os.makedirs(os.path.join(temp_dir, "images"), exist_ok=True)
-        import app.services.media as media_module
-        monkeypatch.setattr(media_module, "UPLOAD_DIR", temp_dir)
+        import app.services.storage as storage_module
+        monkeypatch.setattr(storage_module, "UPLOAD_DIR", temp_dir)
         monkeypatch.setattr(settings, "STORAGE_BUCKET", None)
         return temp_dir
 

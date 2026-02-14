@@ -6,7 +6,7 @@ import tempfile
 import pytest
 from PIL import Image
 
-from app.services.media import UPLOAD_DIR
+from app.services.storage import UPLOAD_DIR
 from tests.conftest import create_test_image
 
 
@@ -22,14 +22,14 @@ class TestUploadsRouter:
         # Create temp dir with images subdirectory
         temp_dir = tempfile.mkdtemp()
         os.makedirs(os.path.join(temp_dir, "images"), exist_ok=True)
-        import app.services.media as media_module
-        media_module.UPLOAD_DIR = temp_dir
+        import app.services.storage as storage_module
+        storage_module.UPLOAD_DIR = temp_dir
 
         yield
 
         # Cleanup
         shutil.rmtree(temp_dir, ignore_errors=True)
-        media_module.UPLOAD_DIR = original_dir
+        storage_module.UPLOAD_DIR = original_dir
 
     def test_upload_image_success(self, client, auth_headers):
         """Test successful image upload returns url, filename, and thumbnail_url."""

@@ -10,16 +10,17 @@ from pydantic import BaseModel
 from ..config import settings
 from ..dependencies import get_current_user
 from ..models import User
-from ..services import media as media_service
-from ..services.media import (
+from ..services import storage as storage_service
+from ..services.storage import (
     ALLOWED_EXTENSIONS,
     ALLOWED_SERVE_EXTENSIONS,
     CHUNK_SIZE,
     MAX_FILE_SIZE,
-    blob_exists,
     generate_signed_url,
     generate_thumbnail,
+    image_exists,
     reencode_jpeg,
+    resolve_image_url,
     store_image,
     validate_image,
 )
@@ -95,8 +96,8 @@ async def upload_image(
     if thumb_bytes:
         await asyncio.to_thread(store_image, thumb_bytes, thumb_filename, "image/jpeg")
 
-    url = f"/uploads/images/{unique_filename}"
-    thumbnail_url = f"/uploads/images/{thumb_filename}" if thumb_bytes else None
+    url = resolve_image_url(unique_filename)
+    thumbnail_url = resolve_image_url(thumb_filename) if thumb_bytes else None
     return UploadResponse(url=url, filename=unique_filename, thumbnail_url=thumbnail_url)
 
 
@@ -110,13 +111,13 @@ async def get_image(filename: str):
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Not found")
 
     if settings.STORAGE_BUCKET:
-        exists = await asyncio.to_thread(blob_exists, filename)
+        exists = await asyncio.to_thread(image_exists, filename)
         if not exists:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Not found")
         signed_url = await asyncio.to_thread(generate_signed_url, filename)
         return RedirectResponse(url=signed_url, status_code=307)
     else:
-        file_path = os.path.join(media_service.UPLOAD_DIR, "images", filename)
+        file_path = os.path.join(storage_service.UPLOAD_DIR, "images", filename)
         if not os.path.isfile(file_path):
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Not found")
         return FileResponse(file_path)

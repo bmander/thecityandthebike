@@ -108,8 +108,8 @@ class TestBackfill:
         images_dir.mkdir()
         (images_dir / "photo.jpg").write_bytes(_create_jpeg_bytes())
 
-        import app.services.media as media_module
-        monkeypatch.setattr(media_module, "UPLOAD_DIR", str(tmp_path))
+        import app.services.storage as storage_module
+        monkeypatch.setattr(storage_module, "UPLOAD_DIR", str(tmp_path))
         monkeypatch.setattr("app.config.settings.STORAGE_BUCKET", None)
 
         from backfill_thumbnails import backfill
@@ -136,8 +136,8 @@ class TestBackfill:
         images_dir.mkdir()
         # Deliberately do NOT create gone.jpg
 
-        import app.services.media as media_module
-        monkeypatch.setattr(media_module, "UPLOAD_DIR", str(tmp_path))
+        import app.services.storage as storage_module
+        monkeypatch.setattr(storage_module, "UPLOAD_DIR", str(tmp_path))
         monkeypatch.setattr("app.config.settings.STORAGE_BUCKET", None)
 
         from backfill_thumbnails import backfill
@@ -164,8 +164,8 @@ class TestBackfill:
         # Write non-image bytes so _generate_thumbnail returns None
         (images_dir / "bad.jpg").write_bytes(b"not a real image")
 
-        import app.services.media as media_module
-        monkeypatch.setattr(media_module, "UPLOAD_DIR", str(tmp_path))
+        import app.services.storage as storage_module
+        monkeypatch.setattr(storage_module, "UPLOAD_DIR", str(tmp_path))
         monkeypatch.setattr("app.config.settings.STORAGE_BUCKET", None)
 
         from backfill_thumbnails import backfill
@@ -191,8 +191,8 @@ class TestBackfill:
         images_dir.mkdir()
         (images_dir / "err.jpg").write_bytes(_create_jpeg_bytes())
 
-        import app.services.media as media_module
-        monkeypatch.setattr(media_module, "UPLOAD_DIR", str(tmp_path))
+        import app.services.storage as storage_module
+        monkeypatch.setattr(storage_module, "UPLOAD_DIR", str(tmp_path))
         monkeypatch.setattr("app.config.settings.STORAGE_BUCKET", None)
 
         from backfill_thumbnails import backfill

@@ -11,4 +11,7 @@ class TagResponse(BaseModel):
     submission_id: UUID
     user_id: UUID
     image_url: str
+    ring: list[list[float]] | None = None
+    ring_width: int | None = None
+    ring_height: int | None = None
     created_at: datetime

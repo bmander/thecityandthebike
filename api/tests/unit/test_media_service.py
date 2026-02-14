@@ -7,11 +7,11 @@ import pytest
 from PIL import Image
 
 from app.config import settings
-from app.services.media import (
-    blob_exists,
-    delete_stored_image,
+from app.services.storage import (
+    delete_image,
     generate_signed_url,
     generate_thumbnail,
+    image_exists,
     reencode_jpeg,
     reencode_png,
     store_image,
@@ -169,13 +169,13 @@ class TestGenerateThumbnail:
         assert thumb.format == "JPEG"
 
 
-class TestDeleteStoredImage:
-    """Tests for delete_stored_image()."""
+class TestDeleteImage:
+    """Tests for delete_image()."""
 
     def test_url_none_is_noop(self):
-        delete_stored_image(None)  # should not raise
+        delete_image(None)  # should not raise
 
-    @patch("app.services.media.get_gcs_bucket")
+    @patch("app.services.storage._get_gcs_bucket")
     def test_gcs_delete_success(self, mock_get_gcs_bucket, monkeypatch):
         monkeypatch.setattr(settings, "STORAGE_BUCKET", "my-bucket")
         mock_bucket = MagicMock()
@@ -183,12 +183,12 @@ class TestDeleteStoredImage:
         mock_bucket.blob.return_value = mock_blob
         mock_get_gcs_bucket.return_value = mock_bucket
 
-        delete_stored_image("/uploads/images/abc123.jpg")
+        delete_image("/uploads/images/abc123.jpg")
 
         mock_bucket.blob.assert_called_once_with("images/abc123.jpg")
         mock_blob.delete.assert_called_once()
 
-    @patch("app.services.media.get_gcs_bucket")
+    @patch("app.services.storage._get_gcs_bucket")
     def test_gcs_delete_failure_logs_warning(self, mock_get_gcs_bucket, monkeypatch, caplog):
         monkeypatch.setattr(settings, "STORAGE_BUCKET", "my-bucket")
         mock_bucket = MagicMock()
@@ -198,38 +198,38 @@ class TestDeleteStoredImage:
         mock_get_gcs_bucket.return_value = mock_bucket
 
         with caplog.at_level(logging.WARNING):
-            delete_stored_image("/uploads/images/abc123.jpg")
+            delete_image("/uploads/images/abc123.jpg")
 
         assert "Failed to delete GCS blob" in caplog.text
 
     def test_local_delete_success(self, monkeypatch, tmp_path):
         monkeypatch.setattr(settings, "STORAGE_BUCKET", None)
-        import app.services.media as media_module
-        monkeypatch.setattr(media_module, "UPLOAD_DIR", str(tmp_path))
+        import app.services.storage as storage_module
+        monkeypatch.setattr(storage_module, "UPLOAD_DIR", str(tmp_path))
 
         images_dir = tmp_path / "images"
         images_dir.mkdir()
         test_file = images_dir / "abc123.jpg"
         test_file.write_bytes(b"fake image")
 
-        delete_stored_image("/uploads/images/abc123.jpg")
+        delete_image("/uploads/images/abc123.jpg")
 
         assert not test_file.exists()
 
     def test_local_missing_file_no_error(self, monkeypatch, tmp_path):
         monkeypatch.setattr(settings, "STORAGE_BUCKET", None)
-        import app.services.media as media_module
-        monkeypatch.setattr(media_module, "UPLOAD_DIR", str(tmp_path))
+        import app.services.storage as storage_module
+        monkeypatch.setattr(storage_module, "UPLOAD_DIR", str(tmp_path))
 
         images_dir = tmp_path / "images"
         images_dir.mkdir()
 
-        delete_stored_image("/uploads/images/nonexistent.jpg")  # should not raise
+        delete_image("/uploads/images/nonexistent.jpg")  # should not raise
 
     def test_local_delete_failure_logs_warning(self, monkeypatch, tmp_path, caplog):
         monkeypatch.setattr(settings, "STORAGE_BUCKET", None)
-        import app.services.media as media_module
-        monkeypatch.setattr(media_module, "UPLOAD_DIR", str(tmp_path))
+        import app.services.storage as storage_module
+        monkeypatch.setattr(storage_module, "UPLOAD_DIR", str(tmp_path))
 
         images_dir = tmp_path / "images"
         images_dir.mkdir()
@@ -238,7 +238,7 @@ class TestDeleteStoredImage:
 
         with patch("os.remove", side_effect=PermissionError("denied")):
             with caplog.at_level(logging.WARNING):
-                delete_stored_image("/uploads/images/abc123.jpg")
+                delete_image("/uploads/images/abc123.jpg")
 
         assert "Failed to delete local file" in caplog.text
 
@@ -248,8 +248,8 @@ class TestStoreImage:
 
     def test_local_store(self, monkeypatch, tmp_path):
         monkeypatch.setattr(settings, "STORAGE_BUCKET", None)
-        import app.services.media as media_module
-        monkeypatch.setattr(media_module, "UPLOAD_DIR", str(tmp_path))
+        import app.services.storage as storage_module
+        monkeypatch.setattr(storage_module, "UPLOAD_DIR", str(tmp_path))
 
         images_dir = tmp_path / "images"
         images_dir.mkdir()
@@ -258,7 +258,7 @@ class TestStoreImage:
 
         assert (images_dir / "test.jpg").read_bytes() == b"fake image data"
 
-    @patch("app.services.media.get_gcs_bucket")
+    @patch("app.services.storage._get_gcs_bucket")
     def test_gcs_store(self, mock_get_gcs_bucket, monkeypatch):
         monkeypatch.setattr(settings, "STORAGE_BUCKET", "my-bucket")
         mock_bucket = MagicMock()
@@ -277,7 +277,7 @@ class TestStoreImage:
 class TestGenerateSignedUrl:
     """Tests for generate_signed_url()."""
 
-    @patch("app.services.media.get_gcs_bucket")
+    @patch("app.services.storage._get_gcs_bucket")
     def test_generates_signed_url(self, mock_get_gcs_bucket, monkeypatch):
         monkeypatch.setattr(settings, "STORAGE_BUCKET", "my-bucket")
         monkeypatch.setattr(settings, "SIGNED_URL_EXPIRATION", 3600)
@@ -298,7 +298,7 @@ class TestGenerateSignedUrl:
             method="GET",
         )
 
-    @patch("app.services.media.get_gcs_bucket")
+    @patch("app.services.storage._get_gcs_bucket")
     def test_expiration_uses_config(self, mock_get_gcs_bucket, monkeypatch):
         monkeypatch.setattr(settings, "STORAGE_BUCKET", "my-bucket")
         monkeypatch.setattr(settings, "SIGNED_URL_EXPIRATION", 7200)
@@ -315,11 +315,11 @@ class TestGenerateSignedUrl:
         assert call_kwargs["expiration"] == datetime.timedelta(seconds=7200)
 
 
-class TestBlobExists:
-    """Tests for blob_exists()."""
+class TestImageExists:
+    """Tests for image_exists()."""
 
-    @patch("app.services.media.get_gcs_bucket")
-    def test_blob_exists_true(self, mock_get_gcs_bucket, monkeypatch):
+    @patch("app.services.storage._get_gcs_bucket")
+    def test_exists_true(self, mock_get_gcs_bucket, monkeypatch):
         monkeypatch.setattr(settings, "STORAGE_BUCKET", "my-bucket")
         mock_bucket = MagicMock()
         mock_blob = MagicMock()
@@ -327,11 +327,11 @@ class TestBlobExists:
         mock_bucket.blob.return_value = mock_blob
         mock_get_gcs_bucket.return_value = mock_bucket
 
-        assert blob_exists("photo.jpg") is True
+        assert image_exists("photo.jpg") is True
         mock_bucket.blob.assert_called_once_with("images/photo.jpg")
 
-    @patch("app.services.media.get_gcs_bucket")
-    def test_blob_exists_false(self, mock_get_gcs_bucket, monkeypatch):
+    @patch("app.services.storage._get_gcs_bucket")
+    def test_exists_false(self, mock_get_gcs_bucket, monkeypatch):
         monkeypatch.setattr(settings, "STORAGE_BUCKET", "my-bucket")
         mock_bucket = MagicMock()
         mock_blob = MagicMock()
@@ -339,4 +339,4 @@ class TestBlobExists:
         mock_bucket.blob.return_value = mock_blob
         mock_get_gcs_bucket.return_value = mock_bucket
 
-        assert blob_exists("missing.jpg") is False
+        assert image_exists("missing.jpg") is False

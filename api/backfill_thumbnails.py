@@ -18,10 +18,11 @@ from sqlalchemy.orm import Session
 sys.path.insert(0, os.path.dirname(__file__))
 
 from app.config import settings
-from app.services.media import (
-    UPLOAD_DIR,
+from app.services.storage import (
     generate_thumbnail,
-    get_gcs_bucket,
+    resolve_image_url,
+    retrieve_image,
+    store_image,
 )
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
@@ -41,9 +42,6 @@ def backfill():
 
         logger.info("Found %d submissions to backfill", len(rows))
 
-        if settings.STORAGE_BUCKET:
-            bucket = get_gcs_bucket()
-
         updated = 0
         for submission_id, image_url in rows:
             filename = image_url.rsplit("/", 1)[-1]
@@ -52,19 +50,10 @@ def backfill():
 
             try:
                 # Read the original image
-                if settings.STORAGE_BUCKET:
-                    blob = bucket.blob(f"images/{filename}")
-                    if not blob.exists():
-                        logger.warning("Missing GCS blob for %s, skipping", submission_id)
-                        continue
-                    contents = blob.download_as_bytes()
-                else:
-                    file_path = os.path.join(UPLOAD_DIR, "images", filename)
-                    if not os.path.isfile(file_path):
-                        logger.warning("Missing local file for %s, skipping", submission_id)
-                        continue
-                    with open(file_path, "rb") as f:
-                        contents = f.read()
+                contents = retrieve_image(filename)
+                if contents is None:
+                    logger.warning("Missing file for %s, skipping", submission_id)
+                    continue
 
                 # Generate thumbnail
                 thumb_bytes = generate_thumbnail(contents)
@@ -73,16 +62,10 @@ def backfill():
                     continue
 
                 # Save thumbnail
-                if settings.STORAGE_BUCKET:
-                    thumb_blob = bucket.blob(f"images/{thumb_filename}")
-                    thumb_blob.upload_from_string(thumb_bytes, content_type="image/jpeg")
-                else:
-                    thumb_path = os.path.join(UPLOAD_DIR, "images", thumb_filename)
-                    with open(thumb_path, "wb") as f:
-                        f.write(thumb_bytes)
+                store_image(thumb_bytes, thumb_filename, "image/jpeg")
 
                 # Update database
-                thumbnail_url = f"/uploads/images/{thumb_filename}"
+                thumbnail_url = resolve_image_url(thumb_filename)
                 session.execute(
                     text(
                         "UPDATE fender_submissions SET image_url_thumbnail = :url "
