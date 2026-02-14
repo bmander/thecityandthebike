@@ -2,6 +2,8 @@ package com.thecityandthebike.ui.components
 
 import android.content.Context
 import android.graphics.Bitmap
+import androidx.core.graphics.createBitmap
+import androidx.core.graphics.scale
 import android.graphics.Canvas
 import android.graphics.Paint
 import android.graphics.Path
@@ -128,7 +130,7 @@ class MaskPainterState {
 
         val outputWidth = originalBitmap.width
         val outputHeight = originalBitmap.height
-        val output = Bitmap.createBitmap(outputWidth, outputHeight, Bitmap.Config.ARGB_8888)
+        val output = createBitmap(outputWidth, outputHeight, Bitmap.Config.ARGB_8888)
         val canvas = Canvas(output)
 
         val scaleX = outputWidth.toFloat() / canvasSize.width
@@ -158,7 +160,7 @@ class MaskPainterState {
             xfermode = PorterDuffXfermode(PorterDuff.Mode.SRC_IN)
         }
 
-        val scaledOriginal = Bitmap.createScaledBitmap(originalBitmap, outputWidth, outputHeight, true)
+        val scaledOriginal = originalBitmap.scale(outputWidth, outputHeight, true)
         canvas.drawBitmap(scaledOriginal, 0f, 0f, imagePaint)
 
         if (scaledOriginal !== originalBitmap) {

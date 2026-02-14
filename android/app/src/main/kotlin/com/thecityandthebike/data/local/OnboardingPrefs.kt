@@ -2,6 +2,7 @@ package com.thecityandthebike.data.local
 
 import android.content.Context
 import android.content.SharedPreferences
+import androidx.core.content.edit
 import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -18,7 +19,7 @@ class OnboardingPrefs @Inject constructor(
     }
 
     fun setOnboardingCompleted() {
-        sharedPreferences.edit().putBoolean(KEY_COMPLETED, true).apply()
+        sharedPreferences.edit { putBoolean(KEY_COMPLETED, true) }
     }
 
     companion object {

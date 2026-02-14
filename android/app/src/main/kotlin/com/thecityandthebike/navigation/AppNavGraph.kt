@@ -1,6 +1,7 @@
 package com.thecityandthebike.navigation
 
 import android.app.DownloadManager
+import androidx.core.net.toUri
 import android.content.Context
 import android.os.Environment
 import androidx.compose.animation.EnterTransition
@@ -254,7 +255,7 @@ fun AppNavGraph(onboardingPrefs: OnboardingPrefs) {
                 navController.popBackStack()
                 return@composable
             }
-            val photoUri = android.net.Uri.parse(route.photoUri)
+            val photoUri = route.photoUri.toUri()
             val viewModel: PhotoPreviewViewModel = hiltViewModel()
             PhotoPreviewScreen(
                 photoUri = photoUri,
