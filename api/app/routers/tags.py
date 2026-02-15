@@ -69,6 +69,8 @@ async def create_tag(
     )
     if submission is None:
         raise HTTPException(status_code=404, detail="Submission not found")
+    if submission.user_id != current_user.user_id:
+        raise HTTPException(status_code=403, detail="Not authorized to create tags on this submission")
 
     # Validate file extension
     ext = os.path.splitext(image.filename or "")[1].lower()

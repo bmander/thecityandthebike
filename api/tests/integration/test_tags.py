@@ -89,6 +89,31 @@ class TestCreateTag:
         assert "tag_id" in data
         assert data["image_url"].endswith(".png")
 
+    def test_create_tag_non_owner(self, client, test_submission, db_session):
+        """A different user should not be able to create tags on another user's submission."""
+        from app.dependencies import get_password_hash, create_access_token
+        from app.models import User
+
+        other_user = User(
+            username="otheruser",
+            email="other@example.com",
+            password_hash=get_password_hash("password123"),
+        )
+        db_session.add(other_user)
+        db_session.commit()
+        db_session.refresh(other_user)
+
+        other_token = create_access_token(subject=str(other_user.user_id))
+        other_headers = {"Authorization": f"Bearer {other_token}"}
+
+        png_buf = create_test_png()
+        response = client.post(
+            f"/submissions/{test_submission.submission_id}/tags",
+            headers=other_headers,
+            files={"image": ("tag.png", png_buf, "image/png")},
+        )
+        assert response.status_code == 403
+
     def test_create_tag_no_auth(self, client, test_submission):
         png_buf = create_test_png()
         response = client.post(
