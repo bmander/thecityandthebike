@@ -3,7 +3,6 @@ package com.thecityandthebike.data.repository
 import com.thecityandthebike.data.api.ApiService
 import com.thecityandthebike.data.model.ApiResult
 import com.thecityandthebike.data.model.dto.MessageResponse
-import com.thecityandthebike.data.model.dto.ProcessedMaskResponse
 import com.thecityandthebike.data.model.dto.TagResponse
 import com.thecityandthebike.data.model.safeApiCall
 import kotlinx.serialization.json.Json
@@ -39,14 +38,6 @@ class TagRepository @Inject constructor(
             val ringWidthBody = ringWidth?.let { it.toString().toRequestBody(textMediaType) }
             val ringHeightBody = ringHeight?.let { it.toString().toRequestBody(textMediaType) }
             apiService.createTag(submissionId, body, ringBody, ringWidthBody, ringHeightBody)
-        }
-    }
-
-    suspend fun processMask(submissionId: String, imageFile: File): ApiResult<ProcessedMaskResponse> {
-        return safeApiCall {
-            val requestFile = imageFile.asRequestBody("image/png".toMediaTypeOrNull())
-            val body = MultipartBody.Part.createFormData("image", imageFile.name, requestFile)
-            apiService.processMask(submissionId, body)
         }
     }
 

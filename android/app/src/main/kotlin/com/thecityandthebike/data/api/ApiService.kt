@@ -104,13 +104,6 @@ interface ApiService {
         @Part("ring_height") ringHeight: okhttp3.RequestBody? = null
     ): Response<TagResponse>
 
-    @Multipart
-    @POST("submissions/{submissionId}/process-mask")
-    suspend fun processMask(
-        @Path("submissionId") submissionId: String,
-        @Part image: MultipartBody.Part
-    ): Response<ProcessedMaskResponse>
-
     @DELETE("tags/{tagId}")
     suspend fun deleteTag(@Path("tagId") tagId: String): Response<MessageResponse>
 }

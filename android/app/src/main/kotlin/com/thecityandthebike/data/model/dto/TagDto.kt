@@ -14,10 +14,3 @@ data class TagResponse(
     @SerialName("ring_height") val ringHeight: Int? = null,
     @SerialName("created_at") val createdAt: String
 )
-
-@Serializable
-data class ProcessedMaskResponse(
-    val ring: List<List<Float>>,
-    val width: Int,
-    val height: Int
-)

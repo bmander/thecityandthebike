@@ -7,6 +7,7 @@ import com.thecityandthebike.data.local.TokenManager
 import com.thecityandthebike.data.model.ApiResult
 import com.thecityandthebike.data.model.dto.SubmissionResponse
 import com.thecityandthebike.data.model.dto.TagResponse
+import com.thecityandthebike.data.processing.MaskProcessor
 import com.thecityandthebike.data.repository.SubmissionRepository
 import com.thecityandthebike.data.repository.TagRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -39,6 +40,7 @@ class ImageDetailViewModel @Inject constructor(
     private val submissionRepository: SubmissionRepository,
     private val tagRepository: TagRepository,
     private val tokenManager: TokenManager,
+    private val maskProcessor: MaskProcessor,
     savedStateHandle: SavedStateHandle
 ) : ViewModel() {
 
@@ -132,21 +134,19 @@ class ImageDetailViewModel @Inject constructor(
     fun processMask(imageFile: java.io.File) {
         processMaskJob = viewModelScope.launch {
             _state.value = _state.value.copy(isProcessingMask = true)
-            when (val result = tagRepository.processMask(submissionId, imageFile)) {
-                is ApiResult.Success -> {
-                    _state.value = _state.value.copy(
-                        isProcessingMask = false,
-                        processedRing = result.data.ring,
-                        processedMaskWidth = result.data.width,
-                        processedMaskHeight = result.data.height
-                    )
-                }
-                is ApiResult.Error -> {
-                    _state.value = _state.value.copy(
-                        isProcessingMask = false,
-                        error = "Failed to process mask"
-                    )
-                }
+            try {
+                val result = maskProcessor.process(imageFile)
+                _state.value = _state.value.copy(
+                    isProcessingMask = false,
+                    processedRing = result.ring,
+                    processedMaskWidth = result.width,
+                    processedMaskHeight = result.height
+                )
+            } catch (_: IllegalArgumentException) {
+                _state.value = _state.value.copy(
+                    isProcessingMask = false,
+                    error = "Failed to process mask"
+                )
             }
         }
     }

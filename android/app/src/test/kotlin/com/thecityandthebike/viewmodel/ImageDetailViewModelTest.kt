@@ -5,9 +5,10 @@ import com.thecityandthebike.data.local.TokenManager
 import com.thecityandthebike.data.model.ApiResult
 import com.thecityandthebike.data.model.AppError
 import com.thecityandthebike.data.model.dto.MessageResponse
-import com.thecityandthebike.data.model.dto.ProcessedMaskResponse
 import com.thecityandthebike.data.model.dto.SubmissionResponse
 import com.thecityandthebike.data.model.dto.TagResponse
+import com.thecityandthebike.data.processing.MaskProcessor
+import com.thecityandthebike.data.processing.ProcessedMaskResult
 import com.thecityandthebike.data.repository.SubmissionRepository
 import com.thecityandthebike.data.repository.TagRepository
 import com.thecityandthebike.ui.viewmodel.ImageDetailViewModel
@@ -34,6 +35,7 @@ class ImageDetailViewModelTest {
     private lateinit var submissionRepository: SubmissionRepository
     private lateinit var tagRepository: TagRepository
     private lateinit var tokenManager: TokenManager
+    private lateinit var maskProcessor: MaskProcessor
     private lateinit var savedStateHandle: SavedStateHandle
 
     private val testSubmissionId = "test-submission-001"
@@ -60,6 +62,7 @@ class ImageDetailViewModelTest {
         submissionRepository = mockk()
         tagRepository = mockk()
         tokenManager = mockk()
+        maskProcessor = mockk()
         savedStateHandle = SavedStateHandle(mapOf("submissionId" to testSubmissionId))
         // Default: tags load empty
         coEvery { tagRepository.getTags(testSubmissionId) } returns ApiResult.Success(emptyList())
@@ -71,7 +74,7 @@ class ImageDetailViewModelTest {
     }
 
     private fun createViewModel(): ImageDetailViewModel {
-        return ImageDetailViewModel(submissionRepository, tagRepository, tokenManager, savedStateHandle)
+        return ImageDetailViewModel(submissionRepository, tagRepository, tokenManager, maskProcessor, savedStateHandle)
     }
 
     @Test
@@ -436,7 +439,7 @@ class ImageDetailViewModelTest {
     // --- processMask tests ---
 
     private val testRing = listOf(listOf(0f, 0f), listOf(100f, 0f), listOf(100f, 100f), listOf(0f, 0f))
-    private val testProcessedMaskResponse = ProcessedMaskResponse(
+    private val testProcessedMaskResult = ProcessedMaskResult(
         ring = testRing,
         width = 200,
         height = 200
@@ -445,7 +448,7 @@ class ImageDetailViewModelTest {
     @Test
     fun `processMask success sets ring data in state`() = runTest {
         coEvery { submissionRepository.getSubmission(testSubmissionId) } returns ApiResult.Success(testSubmission)
-        coEvery { tagRepository.processMask(testSubmissionId, any()) } returns ApiResult.Success(testProcessedMaskResponse)
+        coEvery { maskProcessor.process(any()) } returns testProcessedMaskResult
         every { tokenManager.getUserId() } returns "user1"
 
         val viewModel = createViewModel()
@@ -466,7 +469,7 @@ class ImageDetailViewModelTest {
     @Test
     fun `processMask failure sets error and clears processing flag`() = runTest {
         coEvery { submissionRepository.getSubmission(testSubmissionId) } returns ApiResult.Success(testSubmission)
-        coEvery { tagRepository.processMask(testSubmissionId, any()) } returns ApiResult.Error(AppError.Server(422, "No contours"))
+        coEvery { maskProcessor.process(any()) } throws IllegalArgumentException("No contours found in mask")
         every { tokenManager.getUserId() } returns "user1"
 
         val viewModel = createViewModel()
@@ -488,8 +491,8 @@ class ImageDetailViewModelTest {
         coEvery { submissionRepository.getSubmission(testSubmissionId) } returns ApiResult.Success(testSubmission)
         every { tokenManager.getUserId() } returns "user1"
 
-        val deferred = kotlinx.coroutines.CompletableDeferred<ApiResult<ProcessedMaskResponse>>()
-        coEvery { tagRepository.processMask(testSubmissionId, any()) } coAnswers { deferred.await() }
+        val deferred = kotlinx.coroutines.CompletableDeferred<ProcessedMaskResult>()
+        coEvery { maskProcessor.process(any()) } coAnswers { deferred.await() }
 
         val viewModel = createViewModel()
         testDispatcher.scheduler.advanceUntilIdle()
@@ -501,7 +504,7 @@ class ImageDetailViewModelTest {
 
         assertTrue(viewModel.state.value.isProcessingMask)
 
-        deferred.complete(ApiResult.Success(testProcessedMaskResponse))
+        deferred.complete(testProcessedMaskResult)
         testDispatcher.scheduler.advanceUntilIdle()
 
         assertFalse(viewModel.state.value.isProcessingMask)
@@ -512,7 +515,7 @@ class ImageDetailViewModelTest {
     @Test
     fun `goBackToDrawing clears processed ring data`() = runTest {
         coEvery { submissionRepository.getSubmission(testSubmissionId) } returns ApiResult.Success(testSubmission)
-        coEvery { tagRepository.processMask(testSubmissionId, any()) } returns ApiResult.Success(testProcessedMaskResponse)
+        coEvery { maskProcessor.process(any()) } returns testProcessedMaskResult
         every { tokenManager.getUserId() } returns "user1"
 
         val viewModel = createViewModel()
@@ -539,7 +542,7 @@ class ImageDetailViewModelTest {
     @Test
     fun `exitTagMode clears processed ring data`() = runTest {
         coEvery { submissionRepository.getSubmission(testSubmissionId) } returns ApiResult.Success(testSubmission)
-        coEvery { tagRepository.processMask(testSubmissionId, any()) } returns ApiResult.Success(testProcessedMaskResponse)
+        coEvery { maskProcessor.process(any()) } returns testProcessedMaskResult
         every { tokenManager.getUserId() } returns "user1"
 
         val viewModel = createViewModel()
@@ -567,8 +570,8 @@ class ImageDetailViewModelTest {
         coEvery { submissionRepository.getSubmission(testSubmissionId) } returns ApiResult.Success(testSubmission)
         every { tokenManager.getUserId() } returns "user1"
 
-        val deferred = kotlinx.coroutines.CompletableDeferred<ApiResult<ProcessedMaskResponse>>()
-        coEvery { tagRepository.processMask(testSubmissionId, any()) } coAnswers { deferred.await() }
+        val deferred = kotlinx.coroutines.CompletableDeferred<ProcessedMaskResult>()
+        coEvery { maskProcessor.process(any()) } coAnswers { deferred.await() }
 
         val viewModel = createViewModel()
         testDispatcher.scheduler.advanceUntilIdle()
@@ -585,7 +588,7 @@ class ImageDetailViewModelTest {
         viewModel.exitTagMode()
 
         // Complete the deferred after exiting — should NOT repopulate ring state
-        deferred.complete(ApiResult.Success(testProcessedMaskResponse))
+        deferred.complete(testProcessedMaskResult)
         testDispatcher.scheduler.advanceUntilIdle()
 
         val state = viewModel.state.value
@@ -600,7 +603,7 @@ class ImageDetailViewModelTest {
     @Test
     fun `createTag passes processed ring data to repository`() = runTest {
         coEvery { submissionRepository.getSubmission(testSubmissionId) } returns ApiResult.Success(testSubmission)
-        coEvery { tagRepository.processMask(testSubmissionId, any()) } returns ApiResult.Success(testProcessedMaskResponse)
+        coEvery { maskProcessor.process(any()) } returns testProcessedMaskResult
         coEvery { tagRepository.createTag(testSubmissionId, any(), any(), any(), any()) } returns ApiResult.Success(testTag)
         every { tokenManager.getUserId() } returns "user1"
 
