@@ -1,5 +1,4 @@
 import asyncio
-import io
 import os
 from typing import Annotated, List
 from uuid import UUID
@@ -7,16 +6,13 @@ from uuid import UUID
 import json
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile, status
-from PIL import Image
 from sqlalchemy.orm import Session
 
 from ..database import get_db
 from ..dependencies import get_current_user
 from ..models import User, FenderSubmission, Tag
 from ..schemas.tag import TagResponse
-from ..schemas.mask import ProcessedMaskResponse
 from ..schemas.auth import MessageResponse
-from ..services.mask_processing import process_mask_to_ring
 from ..services.storage import (
     ALLOWED_TAG_EXTENSIONS,
     CHUNK_SIZE,
@@ -152,71 +148,6 @@ async def create_tag(
     db.commit()
     db.refresh(tag)
     return tag
-
-
-@router.post(
-    "/submissions/{submission_id}/process-mask",
-    response_model=ProcessedMaskResponse,
-)
-async def process_mask(
-    submission_id: UUID,
-    current_user: Annotated[User, Depends(get_current_user)],
-    db: Annotated[Session, Depends(get_db)],
-    image: UploadFile = File(...),
-):
-    # Verify submission exists
-    submission = (
-        db.query(FenderSubmission)
-        .filter(FenderSubmission.submission_id == submission_id)
-        .first()
-    )
-    if submission is None:
-        raise HTTPException(status_code=404, detail="Submission not found")
-
-    # Validate file extension
-    ext = os.path.splitext(image.filename or "")[1].lower()
-    if ext not in ALLOWED_TAG_EXTENSIONS:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail={"msg": f"File type not allowed. Allowed types: {', '.join(ALLOWED_TAG_EXTENSIONS)}"},
-        )
-
-    # Read file contents with size limit
-    chunks = []
-    total = 0
-    while True:
-        chunk = await image.read(CHUNK_SIZE)
-        if not chunk:
-            break
-        total += len(chunk)
-        if total > MAX_FILE_SIZE:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail={"msg": f"File too large. Maximum size: {MAX_FILE_SIZE // (1024 * 1024)} MB"},
-            )
-        chunks.append(chunk)
-    contents = b"".join(chunks)
-
-    # Validate image content
-    try:
-        img = Image.open(io.BytesIO(contents))
-        img.verify()
-    except Exception:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail={"msg": "File is not a valid image"},
-        )
-
-    # Process mask to ring geometry
-    try:
-        result = process_mask_to_ring(contents)
-    except ValueError as e:
-        raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-            detail={"msg": str(e)},
-        )
-
-    return ProcessedMaskResponse(**result)
 
 
 @router.delete(

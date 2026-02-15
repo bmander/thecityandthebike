@@ -3,7 +3,7 @@ import json
 import os
 import uuid
 
-from PIL import Image, ImageDraw
+from PIL import Image
 
 from app.models import Tag
 from tests.conftest import create_test_image
@@ -345,84 +345,6 @@ class TestDeleteTag:
 
         # Verify the file was removed
         assert not os.path.isfile(file_path)
-
-
-def _create_mask_png(width=200, height=200, draw_fn=None):
-    """Create a PNG mask image for testing."""
-    img = Image.new("L", (width, height), 0)
-    if draw_fn:
-        draw_fn(img)
-    else:
-        draw = ImageDraw.Draw(img)
-        draw.ellipse([50, 50, 150, 150], fill=255)
-    buf = io.BytesIO()
-    img.save(buf, format="PNG")
-    buf.seek(0)
-    return buf
-
-
-class TestProcessMask:
-    def test_process_mask_success(self, client, auth_headers, test_submission):
-        mask_buf = _create_mask_png()
-        response = client.post(
-            f"/submissions/{test_submission.submission_id}/process-mask",
-            headers=auth_headers,
-            files={"image": ("mask.png", mask_buf, "image/png")},
-        )
-        assert response.status_code == 200
-        data = response.json()
-        assert "ring" in data
-        assert "width" in data
-        assert "height" in data
-        assert data["width"] == 200
-        assert data["height"] == 200
-        assert len(data["ring"]) >= 4
-
-    def test_process_mask_no_auth(self, client, test_submission):
-        mask_buf = _create_mask_png()
-        response = client.post(
-            f"/submissions/{test_submission.submission_id}/process-mask",
-            files={"image": ("mask.png", mask_buf, "image/png")},
-        )
-        assert response.status_code == 401
-
-    def test_process_mask_nonexistent_submission(self, client, auth_headers):
-        fake_id = str(uuid.uuid4())
-        mask_buf = _create_mask_png()
-        response = client.post(
-            f"/submissions/{fake_id}/process-mask",
-            headers=auth_headers,
-            files={"image": ("mask.png", mask_buf, "image/png")},
-        )
-        assert response.status_code == 404
-
-    def test_process_mask_invalid_file_type(self, client, auth_headers, test_submission):
-        jpg_buf = create_test_image()
-        response = client.post(
-            f"/submissions/{test_submission.submission_id}/process-mask",
-            headers=auth_headers,
-            files={"image": ("mask.jpg", jpg_buf, "image/jpeg")},
-        )
-        assert response.status_code == 400
-
-    def test_process_mask_empty_mask(self, client, auth_headers, test_submission):
-        """An all-black mask should return 422."""
-        mask_buf = _create_mask_png(draw_fn=lambda img: None)
-        response = client.post(
-            f"/submissions/{test_submission.submission_id}/process-mask",
-            headers=auth_headers,
-            files={"image": ("mask.png", mask_buf, "image/png")},
-        )
-        assert response.status_code == 422
-
-    def test_process_mask_corrupt_image(self, client, auth_headers, test_submission):
-        corrupt_buf = io.BytesIO(b"not-a-real-image")
-        response = client.post(
-            f"/submissions/{test_submission.submission_id}/process-mask",
-            headers=auth_headers,
-            files={"image": ("mask.png", corrupt_buf, "image/png")},
-        )
-        assert response.status_code == 400
 
 
 class TestTagCascadeDelete:
