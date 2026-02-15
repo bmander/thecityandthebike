@@ -5,6 +5,7 @@ import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
+import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import com.thecityandthebike.data.model.dto.SubmissionResponse
@@ -246,13 +247,16 @@ class ImageDetailScreenTest {
     }
 
     @Test
-    fun tagList_showsTagThumbnails() {
+    fun tagOutlineOverlay_renderedWhenTagsHaveRingData() {
         val tags = listOf(
             TagResponse(
                 tagId = "tag-1",
                 submissionId = "sub-1",
                 userId = "user-1",
                 imageUrl = "/uploads/images/tag1.png",
+                ring = listOf(listOf(0f, 0f), listOf(100f, 0f), listOf(100f, 100f)),
+                ringWidth = 200,
+                ringHeight = 200,
                 createdAt = "2026-01-01T00:00:00Z"
             )
         )
@@ -265,83 +269,7 @@ class ImageDetailScreenTest {
             )
         }
 
-        composeTestRule.onNodeWithContentDescription("Tag").assertIsDisplayed()
-    }
-
-    @Test
-    fun tagList_showsDeleteButtonForOwnedTags() {
-        val tags = listOf(
-            TagResponse(
-                tagId = "tag-1",
-                submissionId = "sub-1",
-                userId = "user-1",
-                imageUrl = "/uploads/images/tag1.png",
-                createdAt = "2026-01-01T00:00:00Z"
-            )
-        )
-
-        composeTestRule.setContentWithTheme {
-            ImageDetailScreen(
-                submission = testSubmission,
-                onHome = {},
-                tags = tags,
-                isTagOwner = { true }
-            )
-        }
-
-        composeTestRule.onNodeWithContentDescription("Delete tag").assertIsDisplayed()
-    }
-
-    @Test
-    fun tagList_hidesDeleteButtonForOtherUsersTags() {
-        val tags = listOf(
-            TagResponse(
-                tagId = "tag-1",
-                submissionId = "sub-1",
-                userId = "other-user",
-                imageUrl = "/uploads/images/tag1.png",
-                createdAt = "2026-01-01T00:00:00Z"
-            )
-        )
-
-        composeTestRule.setContentWithTheme {
-            ImageDetailScreen(
-                submission = testSubmission,
-                onHome = {},
-                tags = tags,
-                isTagOwner = { false }
-            )
-        }
-
-        composeTestRule.onNodeWithContentDescription("Delete tag").assertDoesNotExist()
-    }
-
-    @Test
-    fun tagList_deleteButtonCallsOnDeleteTag() {
-        var deletedTagId: String? = null
-        val tags = listOf(
-            TagResponse(
-                tagId = "tag-1",
-                submissionId = "sub-1",
-                userId = "user-1",
-                imageUrl = "/uploads/images/tag1.png",
-                createdAt = "2026-01-01T00:00:00Z"
-            )
-        )
-
-        composeTestRule.setContentWithTheme {
-            ImageDetailScreen(
-                submission = testSubmission,
-                onHome = {},
-                tags = tags,
-                isTagOwner = { true },
-                onDeleteTag = { deletedTagId = it }
-            )
-        }
-
-        composeTestRule.onNodeWithContentDescription("Delete tag").performClick()
-
-        assertTrue("onDeleteTag should be called with tag id", deletedTagId == "tag-1")
+        composeTestRule.onNodeWithTag("tagOutlineOverlay").assertIsDisplayed()
     }
 
     // --- Confirm phase tests ---

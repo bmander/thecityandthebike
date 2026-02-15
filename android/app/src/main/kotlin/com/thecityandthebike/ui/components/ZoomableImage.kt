@@ -32,7 +32,8 @@ import com.thecityandthebike.ui.gestures.detectPinchGestures
 fun ZoomableImage(
     imageUri: Uri?,
     thumbnailUri: Uri?,
-    contentDescription: String
+    contentDescription: String,
+    overlay: @Composable () -> Unit = {},
 ) {
     var scale by remember { mutableFloatStateOf(1f) }
     var offsetX by remember { mutableFloatStateOf(0f) }
@@ -106,5 +107,7 @@ fun ZoomableImage(
             contentScale = ContentScale.Crop,
             error = ColorPainter(MaterialTheme.colorScheme.errorContainer)
         )
+
+        overlay()
     }
 }

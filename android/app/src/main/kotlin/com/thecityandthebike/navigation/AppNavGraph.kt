@@ -348,8 +348,6 @@ private fun ImageDetailRoute(
                 onEnterTagMode = { viewModel.enterTagMode() },
                 onExitTagMode = { viewModel.exitTagMode() },
                 onCreateTag = { file -> viewModel.createTag(file) },
-                onDeleteTag = { tagId -> viewModel.deleteTag(tagId) },
-                isTagOwner = { tag -> viewModel.isTagOwner(tag) },
                 isProcessingMask = detailState.isProcessingMask,
                 processedRing = detailState.processedRing,
                 processedMaskWidth = detailState.processedMaskWidth,

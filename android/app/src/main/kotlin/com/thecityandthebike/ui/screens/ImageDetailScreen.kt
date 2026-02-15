@@ -51,7 +51,7 @@ import com.thecityandthebike.ui.components.MaskConfirmView
 import com.thecityandthebike.ui.components.MaskPainter
 import com.thecityandthebike.ui.components.OwnerActions
 import com.thecityandthebike.ui.components.SubmissionInfo
-import com.thecityandthebike.ui.components.TagList
+import com.thecityandthebike.ui.components.TagOutlineOverlay
 import com.thecityandthebike.ui.components.exportCompositedFromRing
 import com.thecityandthebike.ui.components.ZoomableImage
 import com.thecityandthebike.ui.components.rememberMaskPainterState
@@ -80,8 +80,6 @@ fun ImageDetailScreen(
     onEnterTagMode: () -> Unit = {},
     onExitTagMode: () -> Unit = {},
     onCreateTag: (File) -> Unit = {},
-    onDeleteTag: (String) -> Unit = {},
-    isTagOwner: (TagResponse) -> Boolean = { false },
     isProcessingMask: Boolean = false,
     processedRing: List<List<Float>>? = null,
     processedMaskWidth: Int = 0,
@@ -260,7 +258,8 @@ fun ImageDetailScreen(
                 ZoomableImage(
                     imageUri = imageUri,
                     thumbnailUri = thumbnailUri,
-                    contentDescription = "Submission photo"
+                    contentDescription = "Submission photo",
+                    overlay = { TagOutlineOverlay(tags = tags) }
                 )
             }
 
@@ -301,14 +300,6 @@ fun ImageDetailScreen(
                 onBikeClick = onBikeClick
             )
 
-            if (tags.isNotEmpty()) {
-                Spacer(modifier = Modifier.height(16.dp))
-                TagList(
-                    tags = tags,
-                    isTagOwner = isTagOwner,
-                    onDeleteTag = onDeleteTag
-                )
-            }
         }
     }
 }
