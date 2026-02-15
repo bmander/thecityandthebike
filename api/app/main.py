@@ -1,4 +1,5 @@
 import logging
+import uuid
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Request
@@ -15,6 +16,15 @@ from .rate_limit import limiter, rate_limit_exceeded_handler
 from .routers import auth_router, users_router, submissions_router, bikes_router, uploads_router, leaderboard_router, tags_router
 
 logger = logging.getLogger(__name__)
+
+
+class RequestIDMiddleware(BaseHTTPMiddleware):
+    async def dispatch(self, request, call_next):
+        request_id = str(uuid.uuid4())
+        request.state.request_id = request_id
+        response = await call_next(request)
+        response.headers["X-Request-ID"] = request_id
+        return response
 
 
 class SecurityHeadersMiddleware(BaseHTTPMiddleware):
@@ -39,6 +49,7 @@ async def lifespan(app: FastAPI):
 app = FastAPI(title="The City and the Bike API", lifespan=lifespan)
 app.state.limiter = limiter
 app.add_middleware(SecurityHeadersMiddleware)
+app.add_middleware(RequestIDMiddleware)
 if settings.cors_origins_list:
     app.add_middleware(
         CORSMiddleware,
@@ -81,10 +92,29 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
 async def generic_exception_handler(request: Request, exc: Exception):
     if request.url.path.startswith("/admin"):
         raise exc
-    return JSONResponse(
-        status_code=500,
-        content={"msg": "Internal server error"},
+
+    request_id = getattr(request.state, "request_id", None)
+
+    logger.error(
+        "Unhandled exception on %s %s",
+        request.method,
+        request.url.path,
+        extra={
+            "request_id": request_id,
+            "method": request.method,
+            "path": request.url.path,
+            "exception_class": type(exc).__name__,
+        },
+        exc_info=True,
     )
+
+    response = JSONResponse(
+        status_code=500,
+        content={"msg": "Internal server error", "request_id": request_id},
+    )
+    if request_id:
+        response.headers["X-Request-ID"] = request_id
+    return response
 
 
 @app.get("/health")

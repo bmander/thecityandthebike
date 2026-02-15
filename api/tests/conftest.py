@@ -25,7 +25,7 @@ from app.admin import setup_admin
 from app.database import Base, get_db
 from app.dependencies import get_password_hash, create_access_token
 from app.models import User, Bike, FenderSubmission, Tag
-from app.main import SecurityHeadersMiddleware, validation_exception_handler
+from app.main import RequestIDMiddleware, SecurityHeadersMiddleware, validation_exception_handler
 from app.rate_limit import AccountLockout, get_account_lockout, limiter, rate_limit_exceeded_handler
 from app.routers import auth_router, users_router, submissions_router, bikes_router, uploads_router, leaderboard_router, tags_router
 
@@ -63,6 +63,7 @@ async def test_lifespan(app: FastAPI):
 test_app = FastAPI(title="The City and the Bike API - Test", lifespan=test_lifespan)
 test_app.state.limiter = limiter
 test_app.add_middleware(SecurityHeadersMiddleware)
+test_app.add_middleware(RequestIDMiddleware)
 test_app.include_router(auth_router)
 test_app.include_router(users_router)
 test_app.include_router(submissions_router)
