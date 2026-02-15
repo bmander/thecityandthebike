@@ -343,7 +343,7 @@ private fun isFormValid(
             email.isNotBlank() &&
             email.contains("@") &&
             password.isNotBlank() &&
-            password.length >= 6 &&
+            password.length >= 8 &&
             password == confirmPassword &&
             readUnderstood &&
             agreedToLicense

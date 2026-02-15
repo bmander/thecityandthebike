@@ -124,6 +124,35 @@ class RegisterScreenTest {
     }
 
     @Test
+    fun registerScreen_shortPasswordKeepsButtonDisabled() {
+        composeTestRule.setContentWithTheme {
+            RegisterScreen(
+                state = AuthState(),
+                onRegister = { _, _, _ -> },
+                onNavigateBack = {},
+                onClearError = {},
+                onClearRegistrationSuccess = {}
+            )
+        }
+
+        composeTestRule.onNodeWithText("Username").performTextInput("testuser")
+        composeTestRule.onNodeWithText("Email").performTextInput("test@example.com")
+        composeTestRule.onNodeWithText("Password").performTextInput("short7x")
+        composeTestRule.onNodeWithText("Confirm Password").performTextInput("short7x")
+
+        composeTestRule.onNodeWithText("I've read this and I understand")
+            .performScrollTo()
+            .performClick()
+        composeTestRule.onNodeWithText("I agree to license my photos under CC BY-NC 4.0")
+            .performScrollTo()
+            .performClick()
+
+        composeTestRule.onNode(hasText("Create Account") and hasClickAction())
+            .performScrollTo()
+            .assertIsNotEnabled()
+    }
+
+    @Test
     fun registerScreen_passwordMismatchShowsError() {
         composeTestRule.setContentWithTheme {
             RegisterScreen(
