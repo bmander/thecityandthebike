@@ -6,6 +6,7 @@ import android.net.Uri
 import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.camera.core.Camera
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.resolutionselector.AspectRatioStrategy
@@ -16,7 +17,9 @@ import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.view.PreviewView
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -25,6 +28,9 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.FlashAuto
+import androidx.compose.material.icons.filled.FlashOn
+import androidx.compose.material.icons.filled.FlashOff
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
@@ -65,6 +71,8 @@ import java.util.concurrent.Executors
 
 @Composable
 fun PhotoCaptureScreen(
+    side: String,
+    onSideChanged: (String) -> Unit,
     onPhotoCaptured: (Uri) -> Unit,
     onBack: () -> Unit
 ) {
@@ -116,6 +124,8 @@ fun PhotoCaptureScreen(
     if (!hasCameraPermission) return
 
     var isCapturing by remember { mutableStateOf(false) }
+    var flashMode by remember { mutableStateOf(ImageCapture.FLASH_MODE_AUTO) }
+    var camera by remember { mutableStateOf<Camera?>(null) }
     val cameraProviderFuture = remember { ProcessCameraProvider.getInstance(context) }
     val cameraExecutor = remember { Executors.newSingleThreadExecutor() }
     val imageCapture = remember {
@@ -127,6 +137,14 @@ fun PhotoCaptureScreen(
                     .build()
             )
             .build()
+    }
+
+    LaunchedEffect(flashMode) {
+        imageCapture.flashMode = flashMode
+    }
+
+    LaunchedEffect(flashMode, camera) {
+        camera?.cameraControl?.enableTorch(flashMode == ImageCapture.FLASH_MODE_ON)
     }
 
     DisposableEffect(Unit) {
@@ -157,7 +175,7 @@ fun PhotoCaptureScreen(
                         try {
                             val cameraProvider = cameraProviderFuture.get()
                             cameraProvider.unbindAll()
-                            cameraProvider.bindToLifecycle(
+                            camera = cameraProvider.bindToLifecycle(
                                 lifecycleOwner,
                                 CameraSelector.DEFAULT_BACK_CAMERA,
                                 preview,
@@ -188,10 +206,11 @@ fun PhotoCaptureScreen(
                 val overlayWidth = fenderVector.viewportWidth * scale
                 val offsetX = (size.width - overlayWidth) / 2
                 val offsetY = (size.height - overlayHeight) / 2
+                val mirrorScaleX = if (side == "left") -1f else 1f
 
                 withTransform({
                     translate(left = offsetX, top = offsetY)
-                    scale(scaleX = scale, scaleY = scale, pivot = Offset.Zero)
+                    scale(scaleX = scale * mirrorScaleX, scaleY = scale, pivot = Offset(fenderVector.viewportWidth / 2f, 0f))
                 }) {
                     fenderPaths.forEach { path ->
                         drawPath(
@@ -201,6 +220,41 @@ fun PhotoCaptureScreen(
                         )
                     }
                 }
+            }
+        }
+
+        // Side toggle buttons
+        Row(
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .padding(bottom = 140.dp),
+            horizontalArrangement = Arrangement.spacedBy(24.dp)
+        ) {
+            Button(
+                onClick = { onSideChanged("left") },
+                modifier = Modifier
+                    .size(48.dp)
+                    .semantics { contentDescription = "Left side" }
+                    .testTag("side_left"),
+                shape = CircleShape,
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = if (side == "left") Color.White else Color.Gray
+                )
+            ) {
+                Text("L", color = if (side == "left") Color.Black else Color.LightGray)
+            }
+            Button(
+                onClick = { onSideChanged("right") },
+                modifier = Modifier
+                    .size(48.dp)
+                    .semantics { contentDescription = "Right side" }
+                    .testTag("side_right"),
+                shape = CircleShape,
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = if (side == "right") Color.White else Color.Gray
+                )
+            ) {
+                Text("R", color = if (side == "right") Color.Black else Color.LightGray)
             }
         }
 
@@ -260,6 +314,34 @@ fun PhotoCaptureScreen(
             Icon(
                 imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                 contentDescription = "Back",
+                tint = Color.White
+            )
+        }
+
+        // Flash toggle button
+        IconButton(
+            onClick = {
+                flashMode = when (flashMode) {
+                    ImageCapture.FLASH_MODE_AUTO -> ImageCapture.FLASH_MODE_ON
+                    ImageCapture.FLASH_MODE_ON -> ImageCapture.FLASH_MODE_OFF
+                    else -> ImageCapture.FLASH_MODE_AUTO
+                }
+            },
+            modifier = Modifier
+                .align(Alignment.TopEnd)
+                .padding(16.dp)
+        ) {
+            Icon(
+                imageVector = when (flashMode) {
+                    ImageCapture.FLASH_MODE_AUTO -> Icons.Filled.FlashAuto
+                    ImageCapture.FLASH_MODE_ON -> Icons.Filled.FlashOn
+                    else -> Icons.Filled.FlashOff
+                },
+                contentDescription = when (flashMode) {
+                    ImageCapture.FLASH_MODE_AUTO -> "Flash auto"
+                    ImageCapture.FLASH_MODE_ON -> "Flash on"
+                    else -> "Flash off"
+                },
                 tint = Color.White
             )
         }

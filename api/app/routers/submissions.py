@@ -7,7 +7,7 @@ from sqlalchemy import or_, and_, tuple_
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session, joinedload
 
-from ..bike_url_parser import parse_bike_url
+from ..bike_url_parser import WHITELISTED_PROVIDERS, parse_bike_url
 from ..cursor import decode_cursor, encode_cursor
 from ..database import get_db
 from ..dependencies import get_current_user, get_current_user_optional
@@ -103,10 +103,13 @@ async def create_submission(
     bike_qr_id: str = Form(...),
     captured_date: date = Form(...),
     user_caption: Optional[str] = Form(None),
+    side: Optional[str] = Form(None),
 ):
-    image_url, thumbnail_url = await process_and_store_image(image)
-
     parsed = parse_bike_url(bike_qr_id)
+    if parsed.provider not in WHITELISTED_PROVIDERS:
+        raise HTTPException(status_code=422, detail="Unrecognized bike provider")
+
+    image_url, thumbnail_url = await process_and_store_image(image)
     bike = db.query(Bike).filter(Bike.bike_qr_id == parsed.bike_id).first()
     now = datetime.now(timezone.utc)
 
@@ -133,6 +136,7 @@ async def create_submission(
         image_url_thumbnail=thumbnail_url,
         captured_date=captured_date,
         user_caption=user_caption,
+        side=side,
     )
     db.add(submission)
     try:

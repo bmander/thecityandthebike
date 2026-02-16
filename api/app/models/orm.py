@@ -72,6 +72,7 @@ class FenderSubmission(Base):
     captured_date = Column(Date, nullable=False)
     uploaded_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), index=True)
     user_caption = Column(Text)
+    side = Column(Text, nullable=True)
 
     user = relationship("User", back_populates="submissions")
     bike = relationship("Bike", back_populates="submissions")

@@ -32,4 +32,5 @@ class SubmissionResponse(BaseModel):
     captured_date: Optional[date] = None
     uploaded_at: Optional[datetime] = None
     user_caption: Optional[str] = None
+    side: Optional[str] = None
     username: Optional[str] = None
