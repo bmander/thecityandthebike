@@ -26,6 +26,8 @@ class PhotoCaptureScreenTest {
     fun photoCaptureScreen_opensWithoutCrash() {
         composeTestRule.setContentWithTheme {
             PhotoCaptureScreen(
+                side = "left",
+                onSideChanged = {},
                 onPhotoCaptured = {},
                 onBack = {}
             )
@@ -38,6 +40,8 @@ class PhotoCaptureScreenTest {
     fun photoCaptureScreen_displaysBackButton() {
         composeTestRule.setContentWithTheme {
             PhotoCaptureScreen(
+                side = "left",
+                onSideChanged = {},
                 onPhotoCaptured = {},
                 onBack = {}
             )
@@ -52,6 +56,8 @@ class PhotoCaptureScreenTest {
     fun photoCaptureScreen_displaysCaptureButton() {
         composeTestRule.setContentWithTheme {
             PhotoCaptureScreen(
+                side = "left",
+                onSideChanged = {},
                 onPhotoCaptured = {},
                 onBack = {}
             )
@@ -66,6 +72,8 @@ class PhotoCaptureScreenTest {
     fun photoCaptureScreen_displaysTemplateOverlay() {
         composeTestRule.setContentWithTheme {
             PhotoCaptureScreen(
+                side = "left",
+                onSideChanged = {},
                 onPhotoCaptured = {},
                 onBack = {}
             )
@@ -80,6 +88,8 @@ class PhotoCaptureScreenTest {
     fun photoCaptureScreen_displaysCameraPreview() {
         composeTestRule.setContentWithTheme {
             PhotoCaptureScreen(
+                side = "left",
+                onSideChanged = {},
                 onPhotoCaptured = {},
                 onBack = {}
             )
@@ -96,6 +106,8 @@ class PhotoCaptureScreenTest {
 
         composeTestRule.setContentWithTheme {
             PhotoCaptureScreen(
+                side = "left",
+                onSideChanged = {},
                 onPhotoCaptured = {},
                 onBack = { backCalled = true }
             )
@@ -112,6 +124,8 @@ class PhotoCaptureScreenTest {
     fun displaysFlashButton() {
         composeTestRule.setContentWithTheme {
             PhotoCaptureScreen(
+                side = "left",
+                onSideChanged = {},
                 onPhotoCaptured = {},
                 onBack = {}
             )
@@ -126,6 +140,8 @@ class PhotoCaptureScreenTest {
     fun flashToggle_cyclesToOn() {
         composeTestRule.setContentWithTheme {
             PhotoCaptureScreen(
+                side = "left",
+                onSideChanged = {},
                 onPhotoCaptured = {},
                 onBack = {}
             )
@@ -144,6 +160,8 @@ class PhotoCaptureScreenTest {
     fun flashToggle_cyclesToOff() {
         composeTestRule.setContentWithTheme {
             PhotoCaptureScreen(
+                side = "left",
+                onSideChanged = {},
                 onPhotoCaptured = {},
                 onBack = {}
             )
@@ -166,6 +184,8 @@ class PhotoCaptureScreenTest {
     fun flashToggle_cyclesBackToAuto() {
         composeTestRule.setContentWithTheme {
             PhotoCaptureScreen(
+                side = "left",
+                onSideChanged = {},
                 onPhotoCaptured = {},
                 onBack = {}
             )

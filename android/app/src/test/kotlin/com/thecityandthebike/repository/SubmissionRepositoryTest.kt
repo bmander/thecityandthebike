@@ -164,7 +164,7 @@ class SubmissionRepositoryTest {
             userId = "u1",
             bikeQrId = "BIKE001"
         )
-        coEvery { apiService.createSubmission(any(), any(), any(), any()) } returns Response.success(response)
+        coEvery { apiService.createSubmission(any(), any(), any(), any(), any()) } returns Response.success(response)
 
         val result = repository.createSubmission(tempFile, "BIKE001", "2025-01-01")
 
@@ -178,7 +178,7 @@ class SubmissionRepositoryTest {
         tempFile.writeBytes(byteArrayOf(0x00, 0x01, 0x02))
         tempFile.deleteOnExit()
 
-        coEvery { apiService.createSubmission(any(), any(), any(), any()) } returns
+        coEvery { apiService.createSubmission(any(), any(), any(), any(), any()) } returns
                 Response.error(422, "validation error".toResponseBody())
 
         val result = repository.createSubmission(tempFile, "BIKE001", "2025-01-01")

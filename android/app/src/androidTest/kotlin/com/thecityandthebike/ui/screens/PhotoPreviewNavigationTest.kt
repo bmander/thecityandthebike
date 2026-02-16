@@ -48,6 +48,8 @@ class PhotoPreviewNavigationTest {
                     val route = backStackEntry.toRoute<PhotoCapture>()
                     Text("Capture Screen")
                     PhotoCaptureScreen(
+                        side = "left",
+                        onSideChanged = {},
                         onPhotoCaptured = { uri ->
                             navController.navigate(PhotoPreview(route.qrId, uri.toString())) {
                                 popUpTo<PhotoCapture> { inclusive = true }

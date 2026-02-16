@@ -48,6 +48,8 @@ class PhotoCaptureNavigationTest {
                 composable<PhotoCapture> { backStackEntry ->
                     val route = backStackEntry.toRoute<PhotoCapture>()
                     PhotoCaptureScreen(
+                        side = "left",
+                        onSideChanged = {},
                         onPhotoCaptured = {},
                         onBack = { navController.popBackStack() }
                     )
@@ -83,6 +85,8 @@ class PhotoCaptureNavigationTest {
                 }
                 composable<PhotoCapture> {
                     PhotoCaptureScreen(
+                        side = "left",
+                        onSideChanged = {},
                         onPhotoCaptured = {},
                         onBack = { navController.popBackStack() }
                     )
@@ -118,6 +122,8 @@ class PhotoCaptureNavigationTest {
                 }
                 composable<PhotoCapture> {
                     PhotoCaptureScreen(
+                        side = "left",
+                        onSideChanged = {},
                         onPhotoCaptured = {},
                         onBack = { navController.popBackStack() }
                     )
@@ -153,6 +159,8 @@ class PhotoCaptureNavigationTest {
                 }
                 composable<PhotoCapture> {
                     PhotoCaptureScreen(
+                        side = "left",
+                        onSideChanged = {},
                         onPhotoCaptured = {},
                         onBack = { navController.popBackStack() }
                     )
@@ -189,6 +197,8 @@ class PhotoCaptureNavigationTest {
                 }
                 composable<PhotoCapture> {
                     PhotoCaptureScreen(
+                        side = "left",
+                        onSideChanged = {},
                         onPhotoCaptured = {},
                         onBack = { navController.popBackStack() }
                     )
