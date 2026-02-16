@@ -17,9 +17,11 @@ import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.view.PreviewView
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
@@ -27,6 +29,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.FlashAuto
@@ -50,6 +53,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.withTransform
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -250,18 +254,25 @@ fun PhotoCaptureScreen(
                 .padding(bottom = 140.dp),
             horizontalArrangement = Arrangement.spacedBy(24.dp)
         ) {
+            val sideIcon = ImageVector.vectorResource(R.drawable.side_toggle_icon)
             Button(
                 onClick = { onSideChanged("left") },
                 modifier = Modifier
                     .size(48.dp)
                     .semantics { contentDescription = "Left side" }
                     .testTag("side_left"),
-                shape = CircleShape,
+                shape = RoundedCornerShape(8.dp),
                 colors = ButtonDefaults.buttonColors(
                     containerColor = if (side == "left") Color.White else Color.Gray
-                )
+                ),
+                contentPadding = PaddingValues(6.dp)
             ) {
-                Text("L", color = if (side == "left") Color.Black else Color.LightGray)
+                Image(
+                    imageVector = sideIcon,
+                    contentDescription = null,
+                    modifier = Modifier.graphicsLayer(scaleX = -1f),
+                    alpha = if (side == "left") 1f else 0.4f
+                )
             }
             Button(
                 onClick = { onSideChanged("right") },
@@ -269,12 +280,17 @@ fun PhotoCaptureScreen(
                     .size(48.dp)
                     .semantics { contentDescription = "Right side" }
                     .testTag("side_right"),
-                shape = CircleShape,
+                shape = RoundedCornerShape(8.dp),
                 colors = ButtonDefaults.buttonColors(
                     containerColor = if (side == "right") Color.White else Color.Gray
-                )
+                ),
+                contentPadding = PaddingValues(6.dp)
             ) {
-                Text("R", color = if (side == "right") Color.Black else Color.LightGray)
+                Image(
+                    imageVector = sideIcon,
+                    contentDescription = null,
+                    alpha = if (side == "right") 1f else 0.4f
+                )
             }
         }
 

@@ -9,6 +9,7 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.test.rule.GrantPermissionRule
 import com.thecityandthebike.setContentWithTheme
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
@@ -178,6 +179,78 @@ class PhotoCaptureScreenTest {
         composeTestRule
             .onNodeWithContentDescription("Flash off")
             .assertIsDisplayed()
+    }
+
+    @Test
+    fun sideToggle_displaysLeftButton() {
+        composeTestRule.setContentWithTheme {
+            PhotoCaptureScreen(
+                side = "left",
+                onSideChanged = {},
+                onPhotoCaptured = {},
+                onBack = {}
+            )
+        }
+
+        composeTestRule
+            .onNodeWithTag("side_left")
+            .assertIsDisplayed()
+    }
+
+    @Test
+    fun sideToggle_displaysRightButton() {
+        composeTestRule.setContentWithTheme {
+            PhotoCaptureScreen(
+                side = "right",
+                onSideChanged = {},
+                onPhotoCaptured = {},
+                onBack = {}
+            )
+        }
+
+        composeTestRule
+            .onNodeWithTag("side_right")
+            .assertIsDisplayed()
+    }
+
+    @Test
+    fun sideToggle_leftButtonCallsCallback() {
+        var selectedSide = ""
+
+        composeTestRule.setContentWithTheme {
+            PhotoCaptureScreen(
+                side = "right",
+                onSideChanged = { selectedSide = it },
+                onPhotoCaptured = {},
+                onBack = {}
+            )
+        }
+
+        composeTestRule
+            .onNodeWithContentDescription("Left side")
+            .performClick()
+
+        assertEquals("left", selectedSide)
+    }
+
+    @Test
+    fun sideToggle_rightButtonCallsCallback() {
+        var selectedSide = ""
+
+        composeTestRule.setContentWithTheme {
+            PhotoCaptureScreen(
+                side = "left",
+                onSideChanged = { selectedSide = it },
+                onPhotoCaptured = {},
+                onBack = {}
+            )
+        }
+
+        composeTestRule
+            .onNodeWithContentDescription("Right side")
+            .performClick()
+
+        assertEquals("right", selectedSide)
     }
 
     @Test
