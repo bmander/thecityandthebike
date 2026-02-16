@@ -26,6 +26,7 @@ import androidx.navigation.toRoute
 import com.thecityandthebike.data.local.OnboardingPrefs
 import com.thecityandthebike.ui.screens.BikeScreen
 import com.thecityandthebike.ui.screens.ImageDetailScreen
+import com.thecityandthebike.ui.screens.TagScreen
 import com.thecityandthebike.ui.screens.LoginScreen
 import com.thecityandthebike.ui.screens.MainScreen
 import com.thecityandthebike.ui.screens.OnboardingScreen
@@ -46,6 +47,7 @@ import com.thecityandthebike.ui.viewmodel.LeaderboardViewModel
 import com.thecityandthebike.ui.viewmodel.MainViewModel
 import com.thecityandthebike.ui.viewmodel.MeViewModel
 import com.thecityandthebike.ui.viewmodel.PhotoPreviewViewModel
+import com.thecityandthebike.ui.viewmodel.TagViewModel
 import com.thecityandthebike.ui.viewmodel.UserViewModel
 
 @Composable
@@ -185,7 +187,8 @@ fun AppNavGraph(onboardingPrefs: OnboardingPrefs) {
                 onHome = { navController.popBackStack<Main>(inclusive = false) },
                 onDeleted = navController.handleDeletion(),
                 onBikeClick = { bikeQrId -> navController.navigate(Bike(bikeQrId)) },
-                onUserClick = { userId -> navController.navigate(User(userId)) }
+                onUserClick = { userId -> navController.navigate(User(userId)) },
+                onTagClick = { tagId -> navController.navigate(TagDetail(tagId)) }
             )
         }
 
@@ -211,7 +214,36 @@ fun AppNavGraph(onboardingPrefs: OnboardingPrefs) {
             ImageDetailRoute(
                 onHome = { navController.popBackStack<Main>(inclusive = false) },
                 onDeleted = navController.handleDeletion(),
+                onUserClick = { userId -> navController.navigate(User(userId)) },
+                onTagClick = { tagId -> navController.navigate(TagDetail(tagId)) }
+            )
+        }
+
+        composable<TagDetail> { backStackEntry ->
+            val tagViewModel: TagViewModel = hiltViewModel()
+            ObserveDeletion(backStackEntry) { tagViewModel.removeSubmission(it) }
+            TagScreen(
+                viewModel = tagViewModel,
+                onBack = { navController.popBackStack() },
+                onImageClick = { submissionId ->
+                    navController.navigate(TagImageDetail(submissionId))
+                },
                 onUserClick = { userId -> navController.navigate(User(userId)) }
+            )
+        }
+
+        composable<TagImageDetail>(
+            enterTransition = { EnterTransition.None },
+            exitTransition = { ExitTransition.None },
+            popEnterTransition = { EnterTransition.None },
+            popExitTransition = { ExitTransition.None }
+        ) {
+            ImageDetailRoute(
+                onHome = { navController.popBackStack<Main>(inclusive = false) },
+                onDeleted = navController.handleDeletion(),
+                onBikeClick = { bikeQrId -> navController.navigate(Bike(bikeQrId)) },
+                onUserClick = { userId -> navController.navigate(User(userId)) },
+                onTagClick = { tagId -> navController.navigate(TagDetail(tagId)) }
             )
         }
 
@@ -236,7 +268,8 @@ fun AppNavGraph(onboardingPrefs: OnboardingPrefs) {
             ImageDetailRoute(
                 onHome = { navController.popBackStack<Main>(inclusive = false) },
                 onDeleted = navController.handleDeletion(),
-                onBikeClick = { bikeQrId -> navController.navigate(Bike(bikeQrId)) }
+                onBikeClick = { bikeQrId -> navController.navigate(Bike(bikeQrId)) },
+                onTagClick = { tagId -> navController.navigate(TagDetail(tagId)) }
             )
         }
 
@@ -329,7 +362,8 @@ private fun ImageDetailRoute(
     onHome: () -> Unit,
     onDeleted: (String) -> Unit,
     onBikeClick: ((String) -> Unit)? = null,
-    onUserClick: ((String) -> Unit)? = null
+    onUserClick: ((String) -> Unit)? = null,
+    onTagClick: ((String) -> Unit)? = null
 ) {
     val viewModel: ImageDetailViewModel = hiltViewModel()
     val detailState by viewModel.state.collectAsStateWithLifecycle()
@@ -387,6 +421,7 @@ private fun ImageDetailRoute(
                 onProcessMask = { file -> viewModel.processMask(file) },
                 onConfirmTag = { file -> viewModel.createTag(file) },
                 onBackToDrawing = { viewModel.goBackToDrawing() },
+                onTagClick = onTagClick,
             )
         }
         else -> {

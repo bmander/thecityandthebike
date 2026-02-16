@@ -14,3 +14,15 @@ data class TagResponse(
     @SerialName("ring_height") val ringHeight: Int? = null,
     @SerialName("created_at") val createdAt: String
 )
+
+@Serializable
+data class TagDetailResponse(
+    @SerialName("tag_id") val tagId: String,
+    @SerialName("image_url") val imageUrl: String,
+    @SerialName("created_at") val createdAt: String,
+    @SerialName("submission_count") val submissionCount: Int,
+    @SerialName("first_captured_at") val firstCapturedAt: String? = null,
+    @SerialName("last_captured_at") val lastCapturedAt: String? = null,
+    @SerialName("first_captured_by") val firstCapturedBy: UserSummary? = null,
+    @SerialName("last_captured_by") val lastCapturedBy: UserSummary? = null
+)
