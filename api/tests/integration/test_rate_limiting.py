@@ -3,8 +3,9 @@ from fastapi.testclient import TestClient
 
 from app.config import settings
 from app.database import get_db
+from app.models.orm import LoginAttempt
 from app.rate_limit import AccountLockout, get_account_lockout, limiter
-from tests.conftest import test_app, get_test_db
+from tests.conftest import test_app, get_test_db, TestingSessionLocal
 
 
 @pytest.fixture()
@@ -206,5 +207,25 @@ class TestAccountLockout:
         resp = lockout_client.post(
             "/auth/login",
             json={"username": "user_b", "password": "password123"},
+        )
+        assert resp.status_code == 200
+
+    def test_foreign_ip_failures_dont_lock_current_client(self, lockout_client):
+        """Failed attempts from a foreign IP should not lock the test client."""
+        _register_user(lockout_client)
+
+        # Insert login failures from a foreign IP directly in the DB
+        db = TestingSessionLocal()
+        try:
+            for _ in range(5):
+                db.add(LoginAttempt(username="locktest", ip_address="99.99.99.99"))
+            db.commit()
+        finally:
+            db.close()
+
+        # The test client (IP "testclient") should still be able to log in
+        resp = lockout_client.post(
+            "/auth/login",
+            json={"username": "locktest", "password": "password123"},
         )
         assert resp.status_code == 200

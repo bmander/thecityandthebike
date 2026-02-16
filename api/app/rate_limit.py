@@ -1,3 +1,4 @@
+import logging
 import time
 from datetime import datetime, timedelta, timezone
 
@@ -10,46 +11,52 @@ from sqlalchemy.orm import Session
 
 from .models.orm import LoginAttempt
 
+logger = logging.getLogger(__name__)
 
 limiter = Limiter(key_func=get_remote_address)
 
 
 class AccountLockout:
-    """Tracks consecutive failed login attempts per username using the database.
+    """Tracks consecutive failed login attempts per (username, IP) pair.
 
-    After ``max_attempts`` failures within ``duration`` seconds the account is
-    considered locked until the window expires or the record is cleared (e.g.
-    on a successful login).
-
-    .. warning::
-
-        The lockout is keyed on **username only**.  An attacker can therefore
-        lock any account by deliberately sending failed login attempts.
-        Possible mitigations include:
-
-        * Requiring a CAPTCHA after N consecutive failures.
-        * Keying the lockout on a (username, IP) pair so that only the
-          attacker's own IP is penalized.
-        * Using progressive delays (exponential back-off) instead of a hard
-          lockout.
+    After ``max_attempts`` failures from the same IP within ``duration``
+    seconds, further login attempts for that username **from that IP** are
+    blocked until the window expires or the record is cleared (e.g. on a
+    successful login, which clears attempts from *all* IPs).
     """
 
     def __init__(self, max_attempts: int = 10, duration: int = 900):
         self.max_attempts = max_attempts
         self.duration = duration
 
-    def record_failure(self, username: str, db: Session) -> None:
-        db.add(LoginAttempt(username=username))
+    def record_failure(self, username: str, ip_address: str, db: Session) -> None:
+        db.add(LoginAttempt(username=username, ip_address=ip_address))
         db.commit()
+        logger.info("Login failure recorded", extra={"username": username, "ip_address": ip_address})
 
-    def is_locked(self, username: str, db: Session) -> bool:
+    def is_locked(self, username: str, ip_address: str, db: Session) -> bool:
         cutoff = datetime.now(timezone.utc) - timedelta(seconds=self.duration)
         count = (
             db.query(LoginAttempt)
-            .filter(LoginAttempt.username == username, LoginAttempt.attempted_at >= cutoff)
+            .filter(
+                LoginAttempt.username == username,
+                LoginAttempt.ip_address == ip_address,
+                LoginAttempt.attempted_at >= cutoff,
+            )
             .count()
         )
-        return count >= self.max_attempts
+        locked = count >= self.max_attempts
+        if locked:
+            logger.warning(
+                "Account lockout triggered",
+                extra={
+                    "username": username,
+                    "ip_address": ip_address,
+                    "attempt_count": count,
+                    "window_seconds": self.duration,
+                },
+            )
+        return locked
 
     def clear(self, username: str, db: Session) -> None:
         db.query(LoginAttempt).filter(LoginAttempt.username == username).delete()
