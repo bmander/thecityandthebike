@@ -62,6 +62,7 @@ fun MainScreen(
     onLogout: () -> Unit,
     onLoginClick: () -> Unit,
     onScanQrCode: () -> Unit,
+    onShowAbout: () -> Unit = {},
     onShowPrivacyCopyright: () -> Unit = {},
     onImageClick: ((String) -> Unit)? = null,
     onUserClick: (String) -> Unit = {},
@@ -121,6 +122,13 @@ fun MainScreen(
                         expanded = menuExpanded,
                         onDismissRequest = { menuExpanded = false }
                     ) {
+                        DropdownMenuItem(
+                            text = { Text("About") },
+                            onClick = {
+                                menuExpanded = false
+                                onShowAbout()
+                            }
+                        )
                         DropdownMenuItem(
                             text = { Text("Privacy & Copyright") },
                             onClick = {

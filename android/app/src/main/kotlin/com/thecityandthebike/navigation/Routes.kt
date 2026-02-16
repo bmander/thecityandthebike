@@ -8,6 +8,7 @@ import kotlinx.serialization.Serializable
 @Serializable object Register
 @Serializable object Main
 @Serializable object PrivacyCopyright
+@Serializable object About
 @Serializable data class ImageDetail(val submissionId: String)
 @Serializable data class Bike(val bikeQrId: String)
 @Serializable data class BikeImageDetail(val submissionId: String)

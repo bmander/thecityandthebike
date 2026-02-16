@@ -31,6 +31,7 @@ import com.thecityandthebike.ui.screens.MainScreen
 import com.thecityandthebike.ui.screens.OnboardingScreen
 import com.thecityandthebike.ui.screens.PhotoCaptureScreen
 import com.thecityandthebike.ui.screens.PhotoPreviewScreen
+import com.thecityandthebike.ui.screens.AboutScreen
 import com.thecityandthebike.ui.screens.PrivacyCopyrightScreen
 import com.thecityandthebike.ui.screens.QrScannerScreen
 import com.thecityandthebike.ui.screens.RegisterScreen
@@ -138,6 +139,9 @@ fun AppNavGraph(onboardingPrefs: OnboardingPrefs) {
                 onScanQrCode = {
                     navController.navigate(Scanner)
                 },
+                onShowAbout = {
+                    navController.navigate(About)
+                },
                 onShowPrivacyCopyright = {
                     navController.navigate(PrivacyCopyright)
                 },
@@ -161,6 +165,12 @@ fun AppNavGraph(onboardingPrefs: OnboardingPrefs) {
 
         composable<PrivacyCopyright> {
             PrivacyCopyrightScreen(
+                onBack = { navController.popBackStack() }
+            )
+        }
+
+        composable<About> {
+            AboutScreen(
                 onBack = { navController.popBackStack() }
             )
         }
