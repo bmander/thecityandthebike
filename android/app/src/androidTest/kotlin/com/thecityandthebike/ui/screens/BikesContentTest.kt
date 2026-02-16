@@ -142,6 +142,31 @@ class BikesContentTest {
     }
 
     @Test
+    fun bikesContent_columnHeaders_displayed() {
+        val bikes = listOf(
+            BikeListItem(
+                bikeQrId = "BIKE-001",
+                provider = null,
+                submissionCount = 1,
+                owner = null
+            )
+        )
+
+        composeTestRule.setContentWithTheme {
+            BikesContent(
+                state = BikesListState(bikes = bikes),
+                onBikeClick = {},
+                onLoadMore = {},
+                onClearError = {}
+            )
+        }
+
+        composeTestRule.onNodeWithText("Bike").assertIsDisplayed()
+        composeTestRule.onNodeWithText("Owner").assertIsDisplayed()
+        composeTestRule.onNodeWithText("# Captures").assertIsDisplayed()
+    }
+
+    @Test
     fun bikesContent_providerDisplayed_showsProviderBadge() {
         val bikes = listOf(
             BikeListItem(
