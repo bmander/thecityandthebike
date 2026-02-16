@@ -2,7 +2,7 @@
   "use strict";
 
   var LIMIT = 20;
-  var offset = 0;
+  var nextCursor = null;
   var loading = false;
   var done = false;
   var observer = null;
@@ -65,19 +65,22 @@
     loadingEl.hidden = false;
     errorEl.hidden = true;
 
-    fetch(API_BASE_URL + "/submissions?limit=" + LIMIT + "&offset=" + offset)
+    var url = API_BASE_URL + "/submissions?limit=" + LIMIT;
+    if (nextCursor) url += "&cursor=" + encodeURIComponent(nextCursor);
+
+    fetch(url)
       .then(function (res) {
         if (!res.ok) throw new Error("HTTP " + res.status);
         return res.json();
       })
       .then(function (data) {
         data.items.forEach(renderCard);
-        offset += data.items.length;
+        nextCursor = data.next_cursor;
 
-        if (offset >= data.total || data.items.length === 0) {
+        if (!data.has_more || data.items.length === 0) {
           done = true;
           loadingEl.hidden = true;
-          endEl.hidden = offset === 0;
+          endEl.hidden = grid.children.length === 0;
         }
       })
       .catch(function () {
