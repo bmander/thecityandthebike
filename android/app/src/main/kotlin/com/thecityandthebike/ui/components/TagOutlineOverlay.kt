@@ -150,7 +150,7 @@ fun TagOutlineOverlay(
     }
 }
 
-private fun isPointInPolygon(x: Float, y: Float, polygon: List<List<Float>>): Boolean {
+internal fun isPointInPolygon(x: Float, y: Float, polygon: List<List<Float>>): Boolean {
     var inside = false
     var j = polygon.size - 1
     for (i in polygon.indices) {
