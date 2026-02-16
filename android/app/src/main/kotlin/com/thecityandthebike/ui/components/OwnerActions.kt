@@ -32,40 +32,33 @@ fun OwnerActions(
     onDownload: () -> Unit,
     onShowDeleteDialog: () -> Unit,
 ) {
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(top = 8.dp, end = 16.dp),
-        contentAlignment = Alignment.CenterEnd
-    ) {
-        if (isDeleting) {
-            CircularProgressIndicator(modifier = Modifier.size(24.dp))
-        } else {
-            Row {
-                OutlinedIconButton(
-                    onClick = onDownload,
-                    shape = RoundedCornerShape(8.dp),
-                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Download,
-                        contentDescription = "Download photo"
-                    )
-                }
-                Spacer(modifier = Modifier.width(8.dp))
-                FilledIconButton(
-                    onClick = onShowDeleteDialog,
-                    shape = RoundedCornerShape(8.dp),
-                    colors = IconButtonDefaults.filledIconButtonColors(
-                        containerColor = ExtendedTheme.colorScheme.destructiveAction,
-                        contentColor = ExtendedTheme.colorScheme.onDestructiveAction
-                    )
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Delete,
-                        contentDescription = "Delete photo"
-                    )
-                }
+    if (isDeleting) {
+        CircularProgressIndicator(modifier = Modifier.size(24.dp))
+    } else {
+        Row {
+            OutlinedIconButton(
+                onClick = onDownload,
+                shape = RoundedCornerShape(8.dp),
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Download,
+                    contentDescription = "Download photo"
+                )
+            }
+            Spacer(modifier = Modifier.width(8.dp))
+            FilledIconButton(
+                onClick = onShowDeleteDialog,
+                shape = RoundedCornerShape(8.dp),
+                colors = IconButtonDefaults.filledIconButtonColors(
+                    containerColor = ExtendedTheme.colorScheme.destructiveAction,
+                    contentColor = ExtendedTheme.colorScheme.onDestructiveAction
+                )
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Delete,
+                    contentDescription = "Delete photo"
+                )
             }
         }
     }
@@ -76,10 +69,17 @@ fun OwnerActions(
 @Composable
 private fun OwnerActionsPreview() {
     TheCityAndTheBikeTheme(dynamicColor = false) {
-        OwnerActions(
-            isDeleting = false,
-            onDownload = {},
-            onShowDeleteDialog = {}
-        )
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            contentAlignment = Alignment.CenterEnd
+        ) {
+            OwnerActions(
+                isDeleting = false,
+                onDownload = {},
+                onShowDeleteDialog = {}
+            )
+        }
     }
 }
