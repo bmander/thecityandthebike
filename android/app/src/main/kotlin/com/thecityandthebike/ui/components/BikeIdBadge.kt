@@ -11,11 +11,18 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 
 private const val MAX_ID_LENGTH = 16
+
+fun providerColor(provider: String, fallback: Color): Color = when (provider.lowercase()) {
+    "lime" -> Color(0xFF4CAF50)
+    "bird" -> Color(0xFF2196F3)
+    else -> fallback
+}
 
 private fun abbreviateId(id: String): String {
     if (id.length <= MAX_ID_LENGTH) return id
@@ -42,7 +49,7 @@ fun BikeIdBadge(provider: String?, bikeQrId: String) {
                 color = MaterialTheme.colorScheme.onPrimary,
                 modifier = Modifier
                     .padding(start = 7.dp, top = 2.dp, bottom = 2.dp, end = 3.dp)
-                    .background(MaterialTheme.colorScheme.primary, RoundedCornerShape(4.dp))
+                    .background(providerColor(provider, MaterialTheme.colorScheme.primary), RoundedCornerShape(4.dp))
                     .padding(horizontal = 3.dp, vertical = 0.dp)
             )
         }
