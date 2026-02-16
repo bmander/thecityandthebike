@@ -56,7 +56,7 @@ class SubmissionRepository @Inject constructor(
     }
 
     suspend fun createSubmission(
-        imageFile: File, bikeQrId: String, capturedDate: String, userCaption: String? = null
+        imageFile: File, bikeQrId: String, capturedDate: String, userCaption: String? = null, side: String? = null
     ): ApiResult<SubmissionResponse> {
         return safeApiCall {
             val requestFile = imageFile.asRequestBody("image/*".toMediaTypeOrNull())
@@ -64,7 +64,8 @@ class SubmissionRepository @Inject constructor(
             val bikeQrIdBody = bikeQrId.toRequestBody("text/plain".toMediaTypeOrNull())
             val capturedDateBody = capturedDate.toRequestBody("text/plain".toMediaTypeOrNull())
             val userCaptionBody = userCaption?.toRequestBody("text/plain".toMediaTypeOrNull())
-            apiService.createSubmission(imagePart, bikeQrIdBody, capturedDateBody, userCaptionBody)
+            val sideBody = side?.toRequestBody("text/plain".toMediaTypeOrNull())
+            apiService.createSubmission(imagePart, bikeQrIdBody, capturedDateBody, userCaptionBody, sideBody)
         }
     }
 

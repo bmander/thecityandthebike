@@ -352,7 +352,8 @@ class TestCreateSubmission:
     def test_create_submission_new_bike(self, client, auth_headers, test_user, db_session):
         """Creating submission for new bike should create the bike."""
         response = self._post_submission(
-            client, auth_headers, "NEW-BIKE-001", user_caption="My new bike submission"
+            client, auth_headers, "https://lime.bike/bc/v1/NEW-BIKE-001",
+            user_caption="My new bike submission",
         )
         assert response.status_code == 201
         data = response.json()
@@ -374,7 +375,9 @@ class TestCreateSubmission:
         """Creating submission for existing bike should update last_seen_at."""
         original_last_seen = test_bike.last_seen_at
 
-        response = self._post_submission(client, auth_headers, test_bike.bike_qr_id)
+        response = self._post_submission(
+            client, auth_headers, f"https://lime.bike/bc/v1/{test_bike.bike_qr_id}"
+        )
         assert response.status_code == 201
 
         # Query for updated bike to verify last_seen_at was updated
@@ -387,7 +390,9 @@ class TestCreateSubmission:
         self, client, auth_headers, test_user
     ):
         """Submission with only required fields should succeed."""
-        response = self._post_submission(client, auth_headers, "MINIMAL-BIKE")
+        response = self._post_submission(
+            client, auth_headers, "https://lime.bike/bc/v1/MINIMAL-BIKE"
+        )
         assert response.status_code == 201
         data = response.json()
         assert data["user_caption"] is None
@@ -439,24 +444,18 @@ class TestCreateSubmission:
         assert data["provider"] == "bird"
 
     def test_create_submission_unknown_url(self, client, auth_headers, test_user, db_session):
-        """Submitting an unknown URL should store it as-is with no provider."""
+        """Submitting an unknown URL should be rejected."""
         response = self._post_submission(
             client, auth_headers, "https://unknown.com/bikes/XYZ"
         )
-        assert response.status_code == 201
-        data = response.json()
-        assert data["bike_qr_id"] == "https://unknown.com/bikes/XYZ"
-        assert data["provider"] is None
+        assert response.status_code == 422
 
-    def test_create_submission_plain_string_provider_null(
+    def test_create_submission_plain_string_rejected(
         self, client, auth_headers, test_user
     ):
-        """Submitting a plain string should have provider=None."""
+        """Submitting a plain string should be rejected."""
         response = self._post_submission(client, auth_headers, "PLAIN-BIKE-ID")
-        assert response.status_code == 201
-        data = response.json()
-        assert data["bike_qr_id"] == "PLAIN-BIKE-ID"
-        assert data["provider"] is None
+        assert response.status_code == 422
 
     def test_create_submission_concurrent_bike_creation(
         self, client, auth_headers, test_user, db_session
@@ -481,7 +480,9 @@ class TestCreateSubmission:
             return original_first(self)
 
         with patch.object(Query, "first", patched_first):
-            response = self._post_submission(client, auth_headers, "RACE-BIKE")
+            response = self._post_submission(
+                client, auth_headers, "https://lime.bike/bc/v1/RACE-BIKE"
+            )
 
         assert response.status_code == 201
         assert response.json()["bike_qr_id"] == "RACE-BIKE"
@@ -490,7 +491,9 @@ class TestCreateSubmission:
         self, client, auth_headers, test_user
     ):
         """Server should generate a thumbnail for the submission."""
-        response = self._post_submission(client, auth_headers, "THUMB-BIKE")
+        response = self._post_submission(
+            client, auth_headers, "https://lime.bike/bc/v1/THUMB-BIKE"
+        )
         assert response.status_code == 201
         data = response.json()
         assert data["image_url_thumbnail"] is not None
@@ -528,7 +531,7 @@ class TestCreateSubmission:
         response = client.post(
             "/submissions",
             data={
-                "bike_qr_id": "TEST-BIKE",
+                "bike_qr_id": "https://lime.bike/bc/v1/TEST-BIKE",
                 "captured_date": date.today().isoformat(),
             },
             files={"image": ("photo.jpg", corrupt_image, "image/jpeg")},
@@ -547,7 +550,9 @@ class TestCreateSubmission:
 
         with patch.object(_Session, "commit", failing_commit):
             with pytest.raises(RuntimeError, match="simulated DB failure"):
-                self._post_submission(client, auth_headers, "ATOMIC-BIKE")
+                self._post_submission(
+                    client, auth_headers, "https://lime.bike/bc/v1/ATOMIC-BIKE"
+                )
 
         # Verify image files were cleaned up
         images_dir = os.path.join(self._temp_dir, "images")
@@ -558,7 +563,9 @@ class TestCreateSubmission:
         self, client, auth_headers, test_user
     ):
         """Created submission's image and thumbnail should be retrievable via GET."""
-        response = self._post_submission(client, auth_headers, "RETRIEVE-BIKE")
+        response = self._post_submission(
+            client, auth_headers, "https://lime.bike/bc/v1/RETRIEVE-BIKE"
+        )
         assert response.status_code == 201
         data = response.json()
 
@@ -569,3 +576,24 @@ class TestCreateSubmission:
         # GET the thumbnail
         thumb_response = client.get(data["image_url_thumbnail"])
         assert thumb_response.status_code == 200
+
+    def test_create_submission_with_side_left(self, client, auth_headers, test_user):
+        """Creating a submission with side='left' should store and return it."""
+        response = self._post_submission(client, auth_headers, "SIDE-LEFT-BIKE", side="left")
+        assert response.status_code == 201
+        data = response.json()
+        assert data["side"] == "left"
+
+    def test_create_submission_with_side_right(self, client, auth_headers, test_user):
+        """Creating a submission with side='right' should store and return it."""
+        response = self._post_submission(client, auth_headers, "SIDE-RIGHT-BIKE", side="right")
+        assert response.status_code == 201
+        data = response.json()
+        assert data["side"] == "right"
+
+    def test_create_submission_without_side(self, client, auth_headers, test_user):
+        """Creating a submission without side should default to None (backward compat)."""
+        response = self._post_submission(client, auth_headers, "NO-SIDE-BIKE")
+        assert response.status_code == 201
+        data = response.json()
+        assert data["side"] is None
