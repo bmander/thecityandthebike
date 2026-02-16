@@ -346,4 +346,122 @@ class ImageDetailScreenTest {
 
         composeTestRule.onNodeWithText("Next").assertDoesNotExist()
     }
+
+    // --- Tag selection and deletion tests ---
+
+    private val testTags = listOf(
+        TagResponse(
+            tagId = "tag-1",
+            submissionId = "sub-1",
+            userId = "user-1",
+            imageUrl = "/uploads/images/tag1.png",
+            ring = listOf(listOf(0f, 0f), listOf(100f, 0f), listOf(100f, 100f)),
+            ringWidth = 200,
+            ringHeight = 200,
+            createdAt = "2026-01-01T00:00:00Z"
+        )
+    )
+
+    @Test
+    fun selectedTag_showsDeleteButtonWhenDeletable() {
+        composeTestRule.setContentWithTheme {
+            ImageDetailScreen(
+                submission = testSubmission,
+                onHome = {},
+                tags = testTags,
+                selectedTagId = "tag-1",
+                isTagDeletable = { true }
+            )
+        }
+
+        composeTestRule.onNodeWithTag("deleteTagButton").assertIsDisplayed()
+    }
+
+    @Test
+    fun selectedTag_hidesDeleteButtonWhenNotDeletable() {
+        composeTestRule.setContentWithTheme {
+            ImageDetailScreen(
+                submission = testSubmission,
+                onHome = {},
+                tags = testTags,
+                selectedTagId = "tag-1",
+                isTagDeletable = { false }
+            )
+        }
+
+        composeTestRule.onNodeWithTag("deleteTagButton").assertDoesNotExist()
+    }
+
+    @Test
+    fun noSelectedTag_hidesDeleteButton() {
+        composeTestRule.setContentWithTheme {
+            ImageDetailScreen(
+                submission = testSubmission,
+                onHome = {},
+                tags = testTags,
+                selectedTagId = null,
+                isTagDeletable = { true }
+            )
+        }
+
+        composeTestRule.onNodeWithTag("deleteTagButton").assertDoesNotExist()
+    }
+
+    @Test
+    fun deleteTagButton_showsConfirmDialog() {
+        composeTestRule.setContentWithTheme {
+            ImageDetailScreen(
+                submission = testSubmission,
+                onHome = {},
+                tags = testTags,
+                selectedTagId = "tag-1",
+                isTagDeletable = { true }
+            )
+        }
+
+        composeTestRule.onNodeWithTag("deleteTagButton").performClick()
+
+        composeTestRule.onNodeWithText("Delete Tag").assertIsDisplayed()
+        composeTestRule.onNodeWithText("Are you sure you want to delete this tag?")
+            .assertIsDisplayed()
+    }
+
+    @Test
+    fun deleteTagDialog_cancelDismisses() {
+        composeTestRule.setContentWithTheme {
+            ImageDetailScreen(
+                submission = testSubmission,
+                onHome = {},
+                tags = testTags,
+                selectedTagId = "tag-1",
+                isTagDeletable = { true }
+            )
+        }
+
+        composeTestRule.onNodeWithTag("deleteTagButton").performClick()
+        composeTestRule.onNodeWithText("Cancel").performClick()
+
+        composeTestRule.onNodeWithText("Delete Tag").assertDoesNotExist()
+    }
+
+    @Test
+    fun deleteTagDialog_confirmCallsOnDeleteTag() {
+        var deletedTagId: String? = null
+
+        composeTestRule.setContentWithTheme {
+            ImageDetailScreen(
+                submission = testSubmission,
+                onHome = {},
+                tags = testTags,
+                selectedTagId = "tag-1",
+                isTagDeletable = { true },
+                onDeleteTag = { deletedTagId = it }
+            )
+        }
+
+        composeTestRule.onNodeWithTag("deleteTagButton").performClick()
+        composeTestRule.onNodeWithText("Delete").performClick()
+
+        assertTrue("onDeleteTag should be called with tag-1", deletedTagId == "tag-1")
+    }
 }
