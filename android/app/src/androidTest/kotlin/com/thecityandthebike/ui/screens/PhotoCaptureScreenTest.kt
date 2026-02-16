@@ -107,4 +107,84 @@ class PhotoCaptureScreenTest {
 
         assertTrue("onBack should be called when back button is clicked", backCalled)
     }
+
+    @Test
+    fun displaysFlashButton() {
+        composeTestRule.setContentWithTheme {
+            PhotoCaptureScreen(
+                onPhotoCaptured = {},
+                onBack = {}
+            )
+        }
+
+        composeTestRule
+            .onNodeWithContentDescription("Flash auto")
+            .assertIsDisplayed()
+    }
+
+    @Test
+    fun flashToggle_cyclesToOn() {
+        composeTestRule.setContentWithTheme {
+            PhotoCaptureScreen(
+                onPhotoCaptured = {},
+                onBack = {}
+            )
+        }
+
+        composeTestRule
+            .onNodeWithContentDescription("Flash auto")
+            .performClick()
+
+        composeTestRule
+            .onNodeWithContentDescription("Flash on")
+            .assertIsDisplayed()
+    }
+
+    @Test
+    fun flashToggle_cyclesToOff() {
+        composeTestRule.setContentWithTheme {
+            PhotoCaptureScreen(
+                onPhotoCaptured = {},
+                onBack = {}
+            )
+        }
+
+        composeTestRule
+            .onNodeWithContentDescription("Flash auto")
+            .performClick()
+
+        composeTestRule
+            .onNodeWithContentDescription("Flash on")
+            .performClick()
+
+        composeTestRule
+            .onNodeWithContentDescription("Flash off")
+            .assertIsDisplayed()
+    }
+
+    @Test
+    fun flashToggle_cyclesBackToAuto() {
+        composeTestRule.setContentWithTheme {
+            PhotoCaptureScreen(
+                onPhotoCaptured = {},
+                onBack = {}
+            )
+        }
+
+        composeTestRule
+            .onNodeWithContentDescription("Flash auto")
+            .performClick()
+
+        composeTestRule
+            .onNodeWithContentDescription("Flash on")
+            .performClick()
+
+        composeTestRule
+            .onNodeWithContentDescription("Flash off")
+            .performClick()
+
+        composeTestRule
+            .onNodeWithContentDescription("Flash auto")
+            .assertIsDisplayed()
+    }
 }

@@ -6,6 +6,7 @@ import android.net.Uri
 import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.camera.core.Camera
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.resolutionselector.AspectRatioStrategy
@@ -25,6 +26,9 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.FlashAuto
+import androidx.compose.material.icons.filled.FlashOn
+import androidx.compose.material.icons.filled.FlashOff
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
@@ -116,6 +120,8 @@ fun PhotoCaptureScreen(
     if (!hasCameraPermission) return
 
     var isCapturing by remember { mutableStateOf(false) }
+    var flashMode by remember { mutableStateOf(ImageCapture.FLASH_MODE_AUTO) }
+    var camera by remember { mutableStateOf<Camera?>(null) }
     val cameraProviderFuture = remember { ProcessCameraProvider.getInstance(context) }
     val cameraExecutor = remember { Executors.newSingleThreadExecutor() }
     val imageCapture = remember {
@@ -127,6 +133,14 @@ fun PhotoCaptureScreen(
                     .build()
             )
             .build()
+    }
+
+    LaunchedEffect(flashMode) {
+        imageCapture.flashMode = flashMode
+    }
+
+    LaunchedEffect(flashMode, camera) {
+        camera?.cameraControl?.enableTorch(flashMode == ImageCapture.FLASH_MODE_ON)
     }
 
     DisposableEffect(Unit) {
@@ -157,7 +171,7 @@ fun PhotoCaptureScreen(
                         try {
                             val cameraProvider = cameraProviderFuture.get()
                             cameraProvider.unbindAll()
-                            cameraProvider.bindToLifecycle(
+                            camera = cameraProvider.bindToLifecycle(
                                 lifecycleOwner,
                                 CameraSelector.DEFAULT_BACK_CAMERA,
                                 preview,
@@ -260,6 +274,34 @@ fun PhotoCaptureScreen(
             Icon(
                 imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                 contentDescription = "Back",
+                tint = Color.White
+            )
+        }
+
+        // Flash toggle button
+        IconButton(
+            onClick = {
+                flashMode = when (flashMode) {
+                    ImageCapture.FLASH_MODE_AUTO -> ImageCapture.FLASH_MODE_ON
+                    ImageCapture.FLASH_MODE_ON -> ImageCapture.FLASH_MODE_OFF
+                    else -> ImageCapture.FLASH_MODE_AUTO
+                }
+            },
+            modifier = Modifier
+                .align(Alignment.TopEnd)
+                .padding(16.dp)
+        ) {
+            Icon(
+                imageVector = when (flashMode) {
+                    ImageCapture.FLASH_MODE_AUTO -> Icons.Filled.FlashAuto
+                    ImageCapture.FLASH_MODE_ON -> Icons.Filled.FlashOn
+                    else -> Icons.Filled.FlashOff
+                },
+                contentDescription = when (flashMode) {
+                    ImageCapture.FLASH_MODE_AUTO -> "Flash auto"
+                    ImageCapture.FLASH_MODE_ON -> "Flash on"
+                    else -> "Flash off"
+                },
                 tint = Color.White
             )
         }
