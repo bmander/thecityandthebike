@@ -12,7 +12,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
+import com.thecityandthebike.ui.theme.ExtendedTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -119,7 +119,7 @@ fun TagOutlineOverlay(
                     val minY = ring.minOf { it[1] } * scaleY
 
                     val density = LocalDensity.current
-                    val buttonSizePx = with(density) { 28.dp.toPx() }
+                    val buttonSizePx = with(density) { 21.dp.toPx() }
 
                     IconButton(
                         onClick = { onDeleteTag(selectedTag.tagId) },
@@ -130,9 +130,9 @@ fun TagOutlineOverlay(
                                     (minY - buttonSizePx / 2).toInt()
                                 )
                             }
-                            .size(28.dp)
+                            .size(21.dp)
                             .background(
-                                color = MaterialTheme.colorScheme.errorContainer,
+                                color = ExtendedTheme.colorScheme.destructiveAction,
                                 shape = CircleShape
                             )
                             .testTag("deleteTagButton")
@@ -140,8 +140,8 @@ fun TagOutlineOverlay(
                         Icon(
                             Icons.Default.Delete,
                             contentDescription = "Delete tag",
-                            tint = MaterialTheme.colorScheme.error,
-                            modifier = Modifier.size(16.dp)
+                            tint = ExtendedTheme.colorScheme.onDestructiveAction,
+                            modifier = Modifier.size(24.dp)
                         )
                     }
                 }
