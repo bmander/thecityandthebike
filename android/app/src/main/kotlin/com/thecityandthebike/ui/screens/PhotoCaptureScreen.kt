@@ -19,6 +19,7 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
@@ -154,14 +155,30 @@ fun PhotoCaptureScreen(
     }
 
     Box(modifier = Modifier.fillMaxSize().background(Color.Black)) {
-        // Square camera preview with fender overlay
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .aspectRatio(1f)
-                .align(Alignment.Center)
-                .clipToBounds()
+        // Flash toggle + square camera preview
+        Column(
+            modifier = Modifier.align(Alignment.Center),
+            horizontalAlignment = Alignment.End
         ) {
+            FlashToggleButton(
+                flashMode = flashMode,
+                onToggle = {
+                    flashMode = when (flashMode) {
+                        ImageCapture.FLASH_MODE_AUTO -> ImageCapture.FLASH_MODE_ON
+                        ImageCapture.FLASH_MODE_ON -> ImageCapture.FLASH_MODE_OFF
+                        else -> ImageCapture.FLASH_MODE_AUTO
+                    }
+                },
+                modifier = Modifier.padding(end = 8.dp)
+            )
+
+            // Square camera preview with fender overlay
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .aspectRatio(1f)
+                    .clipToBounds()
+            ) {
             AndroidView(
                 factory = { ctx ->
                     val previewView = PreviewView(ctx).apply {
@@ -223,6 +240,7 @@ fun PhotoCaptureScreen(
                     }
                 }
             }
+        }
         }
 
         // Side toggle buttons
@@ -320,32 +338,31 @@ fun PhotoCaptureScreen(
             )
         }
 
-        // Flash toggle button
-        IconButton(
-            onClick = {
-                flashMode = when (flashMode) {
-                    ImageCapture.FLASH_MODE_AUTO -> ImageCapture.FLASH_MODE_ON
-                    ImageCapture.FLASH_MODE_ON -> ImageCapture.FLASH_MODE_OFF
-                    else -> ImageCapture.FLASH_MODE_AUTO
-                }
+    }
+}
+
+@Composable
+fun FlashToggleButton(
+    flashMode: Int,
+    onToggle: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    IconButton(
+        onClick = onToggle,
+        modifier = modifier
+    ) {
+        Icon(
+            imageVector = when (flashMode) {
+                ImageCapture.FLASH_MODE_AUTO -> Icons.Filled.FlashAuto
+                ImageCapture.FLASH_MODE_ON -> Icons.Filled.FlashOn
+                else -> Icons.Filled.FlashOff
             },
-            modifier = Modifier
-                .align(Alignment.TopEnd)
-                .padding(16.dp)
-        ) {
-            Icon(
-                imageVector = when (flashMode) {
-                    ImageCapture.FLASH_MODE_AUTO -> Icons.Filled.FlashAuto
-                    ImageCapture.FLASH_MODE_ON -> Icons.Filled.FlashOn
-                    else -> Icons.Filled.FlashOff
-                },
-                contentDescription = when (flashMode) {
-                    ImageCapture.FLASH_MODE_AUTO -> "Flash auto"
-                    ImageCapture.FLASH_MODE_ON -> "Flash on"
-                    else -> "Flash off"
-                },
-                tint = Color.White
-            )
-        }
+            contentDescription = when (flashMode) {
+                ImageCapture.FLASH_MODE_AUTO -> "Flash auto"
+                ImageCapture.FLASH_MODE_ON -> "Flash on"
+                else -> "Flash off"
+            },
+            tint = Color.White
+        )
     }
 }
