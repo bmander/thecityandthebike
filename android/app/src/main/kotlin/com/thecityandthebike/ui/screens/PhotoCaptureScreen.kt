@@ -177,12 +177,13 @@ fun PhotoCaptureScreen(
 
             // Fender template overlay — loaded from drawable resource
             val fenderVector = ImageVector.vectorResource(R.drawable.fender_template)
-            val fenderPath = remember(fenderVector) {
-                val vectorPath = fenderVector.root.first() as VectorPath
-                PathParser().addPathNodes(vectorPath.pathData).toPath()
+            val fenderPaths = remember(fenderVector) {
+                fenderVector.root.filterIsInstance<VectorPath>().map { vectorPath ->
+                    PathParser().addPathNodes(vectorPath.pathData).toPath()
+                }
             }
             Canvas(modifier = Modifier.fillMaxSize().testTag("template_overlay")) {
-                val overlayHeight = size.height * 0.7f
+                val overlayHeight = size.height * 1.0f
                 val scale = overlayHeight / fenderVector.viewportHeight
                 val overlayWidth = fenderVector.viewportWidth * scale
                 val offsetX = (size.width - overlayWidth) / 2
@@ -192,11 +193,13 @@ fun PhotoCaptureScreen(
                     translate(left = offsetX, top = offsetY)
                     scale(scaleX = scale, scaleY = scale, pivot = Offset.Zero)
                 }) {
-                    drawPath(
-                        path = fenderPath,
-                        color = Color.White.copy(alpha = 0.6f),
-                        style = Stroke(width = 3.dp.toPx() / scale)
-                )
+                    fenderPaths.forEach { path ->
+                        drawPath(
+                            path = path,
+                            color = Color.White.copy(alpha = 0.6f),
+                            style = Stroke(width = 3.dp.toPx() / scale)
+                        )
+                    }
                 }
             }
         }
