@@ -138,6 +138,22 @@ internal fun UserScreenContent(
                                     text = "${detail.submissionCount} photo${if (detail.submissionCount != 1) "s" else ""}",
                                     style = MaterialTheme.typography.titleMedium
                                 )
+                                Spacer(modifier = Modifier.height(4.dp))
+                                Text(
+                                    text = "${detail.ownedBikeCount} bike${if (detail.ownedBikeCount != 1) "s" else ""} owned",
+                                    style = MaterialTheme.typography.titleMedium
+                                )
+                                Spacer(modifier = Modifier.height(4.dp))
+                                val ranksText = detail.leaderboardRanks.joinToString(" | ") { rank ->
+                                    val label = rank.period.replaceFirstChar { it.uppercase() }
+                                    val value = rank.rank?.let { "#$it" } ?: "--"
+                                    "$label: $value"
+                                }
+                                Text(
+                                    text = ranksText,
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
                                 detail.firstSeenAt?.let { firstSeen ->
                                     Spacer(modifier = Modifier.height(4.dp))
                                     Text(
