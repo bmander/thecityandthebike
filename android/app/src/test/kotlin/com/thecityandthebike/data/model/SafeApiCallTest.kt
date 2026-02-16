@@ -105,4 +105,30 @@ class SafeApiCallTest {
         assertTrue(error is AppError.Unknown)
         assertEquals("unexpected", (error as AppError.Unknown).cause.message)
     }
+
+    @Test
+    fun `409 with JSON body extracts detail field`() = runTest {
+        val jsonBody = """{"detail":"You've already captured this today!"}"""
+        val result = safeApiCall<String> {
+            Response.error(409, jsonBody.toResponseBody())
+        }
+
+        assertTrue(result is ApiResult.Error)
+        val error = (result as ApiResult.Error).error
+        assertTrue(error is AppError.Server)
+        assertEquals(409, (error as AppError.Server).code)
+        assertEquals("You've already captured this today!", error.message)
+    }
+
+    @Test
+    fun `non-JSON error body uses raw string as fallback`() = runTest {
+        val result = safeApiCall<String> {
+            Response.error(400, "plain text error".toResponseBody())
+        }
+
+        assertTrue(result is ApiResult.Error)
+        val error = (result as ApiResult.Error).error
+        assertTrue(error is AppError.Server)
+        assertEquals("plain text error", (error as AppError.Server).message)
+    }
 }

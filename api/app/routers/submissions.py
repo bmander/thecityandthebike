@@ -109,7 +109,6 @@ async def create_submission(
     if parsed.provider not in WHITELISTED_PROVIDERS:
         raise HTTPException(status_code=422, detail="Unrecognized bike provider")
 
-    image_url, thumbnail_url = await process_and_store_image(image)
     bike = db.query(Bike).filter(Bike.bike_qr_id == parsed.bike_id).first()
     now = datetime.now(timezone.utc)
 
@@ -128,6 +127,21 @@ async def create_submission(
         except IntegrityError:
             bike = db.query(Bike).filter(Bike.bike_qr_id == parsed.bike_id).first()
             bike.last_seen_at = now
+
+    existing_query = db.query(FenderSubmission).filter(
+        FenderSubmission.user_id == current_user.user_id,
+        FenderSubmission.bike_id == bike.id,
+        FenderSubmission.captured_date == captured_date,
+    )
+    if side is None:
+        existing_query = existing_query.filter(FenderSubmission.side.is_(None))
+    else:
+        existing_query = existing_query.filter(FenderSubmission.side == side)
+
+    if existing_query.first() is not None:
+        raise HTTPException(status_code=409, detail="You've already captured this today!")
+
+    image_url, thumbnail_url = await process_and_store_image(image)
 
     submission = FenderSubmission(
         user_id=current_user.user_id,
