@@ -75,6 +75,10 @@ fun ImageDetailScreen(
     onDownload: () -> Unit = {},
     isLoggedIn: Boolean = false,
     tags: List<TagResponse> = emptyList(),
+    selectedTagId: String? = null,
+    onTagTapped: (String?) -> Unit = {},
+    isTagDeletable: (TagResponse) -> Boolean = { false },
+    onDeleteTag: (String) -> Unit = {},
     isTagMode: Boolean = false,
     isCreatingTag: Boolean = false,
     onEnterTagMode: () -> Unit = {},
@@ -102,6 +106,7 @@ fun ImageDetailScreen(
     }
 
     var showDeleteDialog by remember { mutableStateOf(false) }
+    var showDeleteTagDialog by remember { mutableStateOf<String?>(null) }
 
     if (showDeleteDialog) {
         AlertDialog(
@@ -120,6 +125,29 @@ fun ImageDetailScreen(
             },
             dismissButton = {
                 TextButton(onClick = { showDeleteDialog = false }) {
+                    Text("Cancel")
+                }
+            }
+        )
+    }
+
+    if (showDeleteTagDialog != null) {
+        AlertDialog(
+            onDismissRequest = { showDeleteTagDialog = null },
+            title = { Text("Delete Tag") },
+            text = { Text("Are you sure you want to delete this tag?") },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        onDeleteTag(showDeleteTagDialog!!)
+                        showDeleteTagDialog = null
+                    }
+                ) {
+                    Text("Delete", color = MaterialTheme.colorScheme.error)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDeleteTagDialog = null }) {
                     Text("Cancel")
                 }
             }
@@ -259,7 +287,15 @@ fun ImageDetailScreen(
                     imageUri = imageUri,
                     thumbnailUri = thumbnailUri,
                     contentDescription = "Submission photo",
-                    overlay = { TagOutlineOverlay(tags = tags) }
+                    overlay = {
+                        TagOutlineOverlay(
+                            tags = tags,
+                            selectedTagId = selectedTagId,
+                            onTagTapped = onTagTapped,
+                            isTagDeletable = isTagDeletable,
+                            onDeleteTag = { tagId -> showDeleteTagDialog = tagId }
+                        )
+                    }
                 )
             }
 

@@ -26,6 +26,7 @@ data class ImageDetailState(
     val isDeleting: Boolean = false,
     val isDeleted: Boolean = false,
     val tags: List<TagResponse> = emptyList(),
+    val selectedTagId: String? = null,
     val isTagMode: Boolean = false,
     val isCreatingTag: Boolean = false,
     val isDeletingTag: Boolean = false,
@@ -190,6 +191,10 @@ class ImageDetailViewModel @Inject constructor(
         }
     }
 
+    fun selectTag(tagId: String?) {
+        _state.value = _state.value.copy(selectedTagId = tagId)
+    }
+
     fun deleteTag(tagId: String) {
         viewModelScope.launch {
             _state.value = _state.value.copy(isDeletingTag = true)
@@ -197,7 +202,8 @@ class ImageDetailViewModel @Inject constructor(
                 is ApiResult.Success -> {
                     _state.value = _state.value.copy(
                         isDeletingTag = false,
-                        tags = _state.value.tags.filter { it.tagId != tagId }
+                        tags = _state.value.tags.filter { it.tagId != tagId },
+                        selectedTagId = if (_state.value.selectedTagId == tagId) null else _state.value.selectedTagId
                     )
                 }
                 is ApiResult.Error -> {

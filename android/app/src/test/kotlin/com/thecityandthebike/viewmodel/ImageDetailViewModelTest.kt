@@ -633,6 +633,78 @@ class ImageDetailViewModelTest {
         }
     }
 
+    // --- Tag selection tests ---
+
+    @Test
+    fun `selectTag sets selectedTagId in state`() = runTest {
+        coEvery { submissionRepository.getSubmission(testSubmissionId) } returns ApiResult.Success(testSubmission)
+        every { tokenManager.getUserId() } returns "user1"
+
+        val viewModel = createViewModel()
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        assertNull(viewModel.state.value.selectedTagId)
+
+        viewModel.selectTag("tag-1")
+        assertEquals("tag-1", viewModel.state.value.selectedTagId)
+    }
+
+    @Test
+    fun `selectTag with null deselects tag`() = runTest {
+        coEvery { submissionRepository.getSubmission(testSubmissionId) } returns ApiResult.Success(testSubmission)
+        every { tokenManager.getUserId() } returns "user1"
+
+        val viewModel = createViewModel()
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        viewModel.selectTag("tag-1")
+        assertEquals("tag-1", viewModel.state.value.selectedTagId)
+
+        viewModel.selectTag(null)
+        assertNull(viewModel.state.value.selectedTagId)
+    }
+
+    @Test
+    fun `deleteTag clears selectedTagId when deleting selected tag`() = runTest {
+        coEvery { submissionRepository.getSubmission(testSubmissionId) } returns ApiResult.Success(testSubmission)
+        coEvery { tagRepository.getTags(testSubmissionId) } returns ApiResult.Success(listOf(testTag))
+        coEvery { tagRepository.deleteTag("tag-1") } returns ApiResult.Success(MessageResponse(msg = "Tag deleted"))
+        every { tokenManager.getUserId() } returns "user1"
+
+        val viewModel = createViewModel()
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        viewModel.selectTag("tag-1")
+        assertEquals("tag-1", viewModel.state.value.selectedTagId)
+
+        viewModel.deleteTag("tag-1")
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        assertNull(viewModel.state.value.selectedTagId)
+        assertTrue(viewModel.state.value.tags.isEmpty())
+    }
+
+    @Test
+    fun `deleteTag keeps selectedTagId when deleting different tag`() = runTest {
+        val tag2 = testTag.copy(tagId = "tag-2")
+        coEvery { submissionRepository.getSubmission(testSubmissionId) } returns ApiResult.Success(testSubmission)
+        coEvery { tagRepository.getTags(testSubmissionId) } returns ApiResult.Success(listOf(testTag, tag2))
+        coEvery { tagRepository.deleteTag("tag-2") } returns ApiResult.Success(MessageResponse(msg = "Tag deleted"))
+        every { tokenManager.getUserId() } returns "user1"
+
+        val viewModel = createViewModel()
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        viewModel.selectTag("tag-1")
+        assertEquals("tag-1", viewModel.state.value.selectedTagId)
+
+        viewModel.deleteTag("tag-2")
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        assertEquals("tag-1", viewModel.state.value.selectedTagId)
+        assertEquals(1, viewModel.state.value.tags.size)
+    }
+
     @Test
     fun `createTag passes null ring when no mask was processed`() = runTest {
         coEvery { submissionRepository.getSubmission(testSubmissionId) } returns ApiResult.Success(testSubmission)
