@@ -206,11 +206,13 @@ fun PhotoCaptureScreen(
                 val overlayWidth = fenderVector.viewportWidth * scale
                 val offsetX = (size.width - overlayWidth) / 2
                 val offsetY = (size.height - overlayHeight) / 2
-                val mirrorScaleX = if (side == "left") -1f else 1f
 
                 withTransform({
                     translate(left = offsetX, top = offsetY)
-                    scale(scaleX = scale * mirrorScaleX, scaleY = scale, pivot = Offset(fenderVector.viewportWidth / 2f, 0f))
+                    scale(scaleX = scale, scaleY = scale, pivot = Offset.Zero)
+                    if (side == "left") {
+                        scale(scaleX = -1f, scaleY = 1f, pivot = Offset(fenderVector.viewportWidth / 2f, fenderVector.viewportHeight / 2f))
+                    }
                 }) {
                     fenderPaths.forEach { path ->
                         drawPath(
