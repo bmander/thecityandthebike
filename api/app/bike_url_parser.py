@@ -3,6 +3,9 @@ from typing import Optional
 from urllib.parse import urlparse
 
 
+WHITELISTED_PROVIDERS = {"lime", "bird"}
+
+
 @dataclass
 class ParsedBikeUrl:
     provider: Optional[str]

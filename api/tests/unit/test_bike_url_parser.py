@@ -1,4 +1,11 @@
-from app.bike_url_parser import parse_bike_url
+from app.bike_url_parser import WHITELISTED_PROVIDERS, parse_bike_url
+
+
+class TestWhitelistedProviders:
+    """Tests for WHITELISTED_PROVIDERS constant."""
+
+    def test_whitelisted_providers_contains_expected_values(self):
+        assert WHITELISTED_PROVIDERS == {"lime", "bird"}
 
 
 class TestParseBikeUrl:
