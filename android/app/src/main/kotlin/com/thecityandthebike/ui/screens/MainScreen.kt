@@ -41,13 +41,15 @@ import com.thecityandthebike.ui.components.MenuButton
 import com.thecityandthebike.ui.viewmodel.BikesListViewModel
 import com.thecityandthebike.ui.viewmodel.LeaderboardViewModel
 import com.thecityandthebike.ui.viewmodel.MainViewModel
+import com.thecityandthebike.ui.viewmodel.UserState
 import com.thecityandthebike.util.imageUrlToUri
 import kotlinx.coroutines.launch
 
 private enum class MainTab(val title: String) {
     FEED("Feed"),
     LEADERBOARD("Leaderboard"),
-    BIKES("Bikes")
+    BIKES("Bikes"),
+    ME("Me")
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -63,15 +65,28 @@ fun MainScreen(
     onShowPrivacyCopyright: () -> Unit = {},
     onImageClick: ((String) -> Unit)? = null,
     onUserClick: (String) -> Unit = {},
-    onBikeClick: (String) -> Unit = {}
+    onBikeClick: (String) -> Unit = {},
+    meState: UserState? = null,
+    onMeImageClick: (String) -> Unit = {},
+    onMeLoadMore: () -> Unit = {},
+    onMeClearError: () -> Unit = {}
 ) {
-    val tabs = MainTab.entries
+    val tabs = remember(isLoggedIn) {
+        if (isLoggedIn) MainTab.entries.toList() else MainTab.entries.filter { it != MainTab.ME }
+    }
     val pagerState = rememberPagerState(pageCount = { tabs.size })
     val coroutineScope = rememberCoroutineScope()
 
     // Sync tab selection with pager
     LaunchedEffect(pagerState) {
         snapshotFlow { pagerState.currentPage }.collect { /* just observe for recomposition */ }
+    }
+
+    // When tab count changes (login/logout), clamp pager to valid page
+    LaunchedEffect(tabs.size) {
+        if (pagerState.currentPage >= tabs.size) {
+            pagerState.scrollToPage(tabs.size - 1)
+        }
     }
 
     Box(modifier = Modifier.fillMaxSize()) {
@@ -153,6 +168,16 @@ fun MainScreen(
                             onLoadMore = { bikesListViewModel.loadMoreBikes() },
                             onClearError = { bikesListViewModel.clearError() }
                         )
+                    }
+                    MainTab.ME -> {
+                        meState?.let { state ->
+                            MeContent(
+                                state = state,
+                                onImageClick = onMeImageClick,
+                                onLoadMore = onMeLoadMore,
+                                onClearError = onMeClearError
+                            )
+                        }
                     }
                 }
             }
