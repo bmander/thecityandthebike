@@ -9,22 +9,15 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Snackbar
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.remember
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
@@ -32,75 +25,36 @@ import com.thecityandthebike.ui.components.CalendarEntry
 import com.thecityandthebike.ui.components.CalendarPhoto
 import com.thecityandthebike.ui.components.groupSubmissionsByDate
 import com.thecityandthebike.ui.viewmodel.UserState
-import com.thecityandthebike.ui.viewmodel.UserViewModel
 import com.thecityandthebike.util.imageUrlToUri
 import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun UserScreen(
-    viewModel: UserViewModel,
-    onBack: () -> Unit,
-    onImageClick: (String) -> Unit
-) {
-    val state by viewModel.state.collectAsStateWithLifecycle()
-
-    UserScreenContent(
-        state = state,
-        onBack = onBack,
-        onImageClick = onImageClick,
-        onLoadMore = { viewModel.loadMoreSubmissions() }
-    )
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-internal fun UserScreenContent(
+fun MeContent(
     state: UserState,
-    onBack: () -> Unit,
     onImageClick: (String) -> Unit,
-    onLoadMore: () -> Unit = {}
+    onLoadMore: () -> Unit,
+    onClearError: () -> Unit
 ) {
-    val title = state.userDetail?.username ?: "User"
-
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text(title) },
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Back"
-                        )
-                    }
-                }
-            )
-        }
-    ) { paddingValues ->
+    Box(modifier = Modifier.fillMaxSize()) {
         when {
             state.isLoading -> {
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(paddingValues),
-                    contentAlignment = Alignment.Center
-                ) {
-                    CircularProgressIndicator()
-                }
+                CircularProgressIndicator(
+                    modifier = Modifier.align(Alignment.Center)
+                )
             }
             state.error != null -> {
-                Box(
+                Snackbar(
                     modifier = Modifier
-                        .fillMaxSize()
-                        .padding(paddingValues),
-                    contentAlignment = Alignment.Center
+                        .align(Alignment.BottomCenter)
+                        .padding(16.dp),
+                    action = {
+                        TextButton(onClick = onClearError) {
+                            Text("Dismiss")
+                        }
+                    }
                 ) {
-                    Text(
-                        text = state.error ?: "Unknown error",
-                        color = MaterialTheme.colorScheme.error
-                    )
+                    Text(state.error)
                 }
             }
             else -> {
@@ -127,9 +81,7 @@ internal fun UserScreenContent(
 
                 LazyColumn(
                     state = listState,
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(paddingValues)
+                    modifier = Modifier.fillMaxSize()
                 ) {
                     state.userDetail?.let { detail ->
                         item {
@@ -137,22 +89,6 @@ internal fun UserScreenContent(
                                 Text(
                                     text = "${detail.submissionCount} photo${if (detail.submissionCount != 1) "s" else ""}",
                                     style = MaterialTheme.typography.titleMedium
-                                )
-                                Spacer(modifier = Modifier.height(4.dp))
-                                Text(
-                                    text = "${detail.ownedBikeCount} bike${if (detail.ownedBikeCount != 1) "s" else ""} owned",
-                                    style = MaterialTheme.typography.titleMedium
-                                )
-                                Spacer(modifier = Modifier.height(4.dp))
-                                val ranksText = detail.leaderboardRanks.joinToString(" | ") { rank ->
-                                    val label = rank.period.replaceFirstChar { it.uppercase() }
-                                    val value = rank.rank?.let { "#$it" } ?: "--"
-                                    "$label: $value"
-                                }
-                                Text(
-                                    text = ranksText,
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                                 detail.firstSeenAt?.let { firstSeen ->
                                     Spacer(modifier = Modifier.height(4.dp))

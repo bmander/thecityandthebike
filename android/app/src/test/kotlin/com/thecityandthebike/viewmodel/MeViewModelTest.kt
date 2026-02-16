@@ -1,14 +1,16 @@
 package com.thecityandthebike.viewmodel
 
-import androidx.lifecycle.SavedStateHandle
+import com.thecityandthebike.data.local.TokenManager
 import com.thecityandthebike.data.model.ApiResult
 import com.thecityandthebike.data.model.AppError
 import com.thecityandthebike.data.model.dto.CursorPaginatedSubmissions
 import com.thecityandthebike.data.model.dto.SubmissionResponse
 import com.thecityandthebike.data.model.dto.UserDetailResponse
 import com.thecityandthebike.data.repository.UserRepository
-import com.thecityandthebike.ui.viewmodel.UserViewModel
+import com.thecityandthebike.ui.viewmodel.MeViewModel
 import io.mockk.coEvery
+import io.mockk.coVerify
+import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -22,11 +24,11 @@ import org.junit.Before
 import org.junit.Test
 
 @OptIn(ExperimentalCoroutinesApi::class)
-class UserViewModelTest {
+class MeViewModelTest {
 
     private val testDispatcher = StandardTestDispatcher()
     private lateinit var userRepository: UserRepository
-    private lateinit var savedStateHandle: SavedStateHandle
+    private lateinit var tokenManager: TokenManager
 
     private val testUserId = "550e8400-e29b-41d4-a716-446655440000"
 
@@ -44,7 +46,8 @@ class UserViewModelTest {
     fun setup() {
         Dispatchers.setMain(testDispatcher)
         userRepository = mockk()
-        savedStateHandle = SavedStateHandle(mapOf("userId" to testUserId))
+        tokenManager = mockk()
+        every { tokenManager.getUserId() } returns testUserId
     }
 
     @After
@@ -52,8 +55,8 @@ class UserViewModelTest {
         Dispatchers.resetMain()
     }
 
-    private fun createViewModel(): UserViewModel {
-        return UserViewModel(userRepository, savedStateHandle)
+    private fun createViewModel(): MeViewModel {
+        return MeViewModel(userRepository, tokenManager)
     }
 
     @Test
@@ -110,6 +113,22 @@ class UserViewModelTest {
     }
 
     @Test
+    fun `null userId should not load anything`() = runTest {
+        every { tokenManager.getUserId() } returns null
+
+        val viewModel = createViewModel()
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        val state = viewModel.state.value
+        assertFalse(state.isLoading)
+        assertNull(state.userDetail)
+        assertTrue(state.submissions.isEmpty())
+        assertNull(state.error)
+
+        coVerify(exactly = 0) { userRepository.getUserDetail(any()) }
+    }
+
+    @Test
     fun `loadMoreSubmissions should append items`() = runTest {
         val firstPage = listOf(
             SubmissionResponse(submissionId = "1", userId = testUserId, bikeQrId = "BIKE-001"),
@@ -125,11 +144,9 @@ class UserViewModelTest {
 
         assertEquals(2, viewModel.state.value.submissions.size)
         assertTrue(viewModel.state.value.hasMorePages)
-        assertEquals("cursor-abc", viewModel.state.value.nextCursor)
 
         val secondPage = listOf(
-            SubmissionResponse(submissionId = "3", userId = testUserId, bikeQrId = "BIKE-003"),
-            SubmissionResponse(submissionId = "4", userId = testUserId, bikeQrId = "BIKE-004")
+            SubmissionResponse(submissionId = "3", userId = testUserId, bikeQrId = "BIKE-003")
         )
         val secondPaginated = CursorPaginatedSubmissions(items = secondPage, nextCursor = null, hasMore = false)
         coEvery { userRepository.getUserSubmissions(testUserId, limit = any(), cursor = "cursor-abc") } returns ApiResult.Success(secondPaginated)
@@ -137,7 +154,7 @@ class UserViewModelTest {
         viewModel.loadMoreSubmissions()
         testDispatcher.scheduler.advanceUntilIdle()
 
-        assertEquals(4, viewModel.state.value.submissions.size)
+        assertEquals(3, viewModel.state.value.submissions.size)
         assertEquals("3", viewModel.state.value.submissions[2].submissionId)
         assertFalse(viewModel.state.value.hasMorePages)
     }
@@ -155,8 +172,6 @@ class UserViewModelTest {
         val viewModel = createViewModel()
         testDispatcher.scheduler.advanceUntilIdle()
 
-        assertFalse(viewModel.state.value.hasMorePages)
-
         viewModel.loadMoreSubmissions()
         testDispatcher.scheduler.advanceUntilIdle()
 
@@ -164,49 +179,16 @@ class UserViewModelTest {
     }
 
     @Test
-    fun `loadMoreSubmissions error should keep existing submissions`() = runTest {
-        val firstPage = listOf(
-            SubmissionResponse(submissionId = "1", userId = testUserId, bikeQrId = "BIKE-001"),
-            SubmissionResponse(submissionId = "2", userId = testUserId, bikeQrId = "BIKE-002")
-        )
-        val firstPaginated = CursorPaginatedSubmissions(items = firstPage, nextCursor = "cursor-abc", hasMore = true)
-
-        coEvery { userRepository.getUserDetail(testUserId) } returns ApiResult.Success(testUserDetail)
-        coEvery { userRepository.getUserSubmissions(testUserId, limit = any(), cursor = null) } returns ApiResult.Success(firstPaginated)
+    fun `loadMoreSubmissions with null userId should be no-op`() = runTest {
+        every { tokenManager.getUserId() } returns null
 
         val viewModel = createViewModel()
         testDispatcher.scheduler.advanceUntilIdle()
-
-        coEvery { userRepository.getUserSubmissions(testUserId, limit = any(), cursor = "cursor-abc") } returns ApiResult.Error(AppError.Network(java.io.IOException("Network error")))
 
         viewModel.loadMoreSubmissions()
         testDispatcher.scheduler.advanceUntilIdle()
 
-        assertEquals(2, viewModel.state.value.submissions.size)
-        assertEquals("Network error. Check your connection and try again.", viewModel.state.value.error)
-        assertFalse(viewModel.state.value.isLoadingMore)
-    }
-
-    @Test
-    fun `clearError should reset error state`() = runTest {
-        coEvery { userRepository.getUserDetail(testUserId) } returns ApiResult.Error(AppError.Server(500, "Error"))
-
-        val viewModel = createViewModel()
-        testDispatcher.scheduler.advanceUntilIdle()
-        assertNotNull(viewModel.state.value.error)
-
-        viewModel.clearError()
-        assertNull(viewModel.state.value.error)
-    }
-
-    @Test
-    fun `userId should come from SavedStateHandle`() = runTest {
-        coEvery { userRepository.getUserDetail(testUserId) } returns ApiResult.Success(testUserDetail)
-        coEvery { userRepository.getUserSubmissions(testUserId, any(), any()) } returns
-            ApiResult.Success(CursorPaginatedSubmissions(items = emptyList(), nextCursor = null, hasMore = false))
-
-        val viewModel = createViewModel()
-        assertEquals(testUserId, viewModel.userId)
+        coVerify(exactly = 0) { userRepository.getUserSubmissions(any(), any(), any()) }
     }
 
     @Test
@@ -224,32 +206,21 @@ class UserViewModelTest {
         val viewModel = createViewModel()
         testDispatcher.scheduler.advanceUntilIdle()
 
-        assertEquals(3, viewModel.state.value.submissions.size)
-
         viewModel.removeSubmission("2")
 
         assertEquals(2, viewModel.state.value.submissions.size)
         assertFalse(viewModel.state.value.submissions.any { it.submissionId == "2" })
-        assertTrue(viewModel.state.value.submissions.any { it.submissionId == "1" })
-        assertTrue(viewModel.state.value.submissions.any { it.submissionId == "3" })
     }
 
     @Test
-    fun `removeSubmission should be no-op when id not found`() = runTest {
-        val submissions = listOf(
-            SubmissionResponse(submissionId = "1", userId = testUserId, bikeQrId = "BIKE-001")
-        )
-        val paginated = CursorPaginatedSubmissions(items = submissions, nextCursor = null, hasMore = false)
-
-        coEvery { userRepository.getUserDetail(testUserId) } returns ApiResult.Success(testUserDetail)
-        coEvery { userRepository.getUserSubmissions(testUserId, any(), any()) } returns ApiResult.Success(paginated)
+    fun `clearError should reset error state`() = runTest {
+        coEvery { userRepository.getUserDetail(testUserId) } returns ApiResult.Error(AppError.Server(500, "Error"))
 
         val viewModel = createViewModel()
         testDispatcher.scheduler.advanceUntilIdle()
+        assertNotNull(viewModel.state.value.error)
 
-        viewModel.removeSubmission("nonexistent")
-
-        assertEquals(1, viewModel.state.value.submissions.size)
-        assertEquals("1", viewModel.state.value.submissions[0].submissionId)
+        viewModel.clearError()
+        assertNull(viewModel.state.value.error)
     }
 }

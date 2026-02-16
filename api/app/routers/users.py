@@ -8,8 +8,11 @@ from sqlalchemy.orm import Session, joinedload
 from ..cursor import decode_cursor, encode_cursor
 from ..database import get_db
 from ..dependencies import get_current_user
-from ..models import User, FenderSubmission
+from ..models import User, Bike, FenderSubmission
 from ..schemas import CursorPaginatedResponse, PaginatedResponse, UserDetailResponse, UserResponse, SubmissionResponse
+from ..schemas.leaderboard import LeaderboardPeriod
+from ..schemas.user import LeaderboardRank
+from .leaderboard import _get_date_range
 
 router = APIRouter(prefix="/users", tags=["users"])
 
@@ -78,12 +81,56 @@ def get_user_detail(
         .where(FenderSubmission.user_id == user.user_id)
     ).one()
 
+    # Owned bike count: bikes where this user has the most submissions (or tied)
+    user_bike_counts = (
+        db.query(
+            FenderSubmission.bike_id,
+            FenderSubmission.user_id,
+            func.count().label("cnt"),
+        )
+        .group_by(FenderSubmission.bike_id, FenderSubmission.user_id)
+        .all()
+    )
+    # Group by bike_id to find max count per bike
+    bike_max: dict[int, int] = {}
+    for bike_id, _, cnt in user_bike_counts:
+        if bike_id not in bike_max or cnt > bike_max[bike_id]:
+            bike_max[bike_id] = cnt
+    owned_bike_count = sum(
+        1 for bike_id, uid, cnt in user_bike_counts
+        if uid == user.user_id and cnt == bike_max.get(bike_id)
+    )
+
+    # Leaderboard ranks
+    leaderboard_ranks = []
+    for period in LeaderboardPeriod:
+        start_dt, end_dt = _get_date_range(period)
+        rows = (
+            db.query(
+                FenderSubmission.user_id,
+                func.count().label("cnt"),
+            )
+            .filter(FenderSubmission.uploaded_at >= start_dt)
+            .filter(FenderSubmission.uploaded_at < end_dt)
+            .group_by(FenderSubmission.user_id)
+            .order_by(func.count().desc())
+            .all()
+        )
+        rank = None
+        for i, row in enumerate(rows):
+            if row.user_id == user.user_id:
+                rank = i + 1
+                break
+        leaderboard_ranks.append(LeaderboardRank(period=period.value, rank=rank))
+
     return UserDetailResponse(
         user_id=user.user_id,
         username=user.username,
         submission_count=stats[0],
         first_seen_at=stats[1],
         last_seen_at=stats[2],
+        owned_bike_count=owned_bike_count,
+        leaderboard_ranks=leaderboard_ranks,
     )
 
 

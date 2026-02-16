@@ -19,6 +19,7 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
@@ -154,14 +155,30 @@ fun PhotoCaptureScreen(
     }
 
     Box(modifier = Modifier.fillMaxSize().background(Color.Black)) {
-        // Square camera preview with fender overlay
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .aspectRatio(1f)
-                .align(Alignment.Center)
-                .clipToBounds()
+        // Flash toggle + square camera preview
+        Column(
+            modifier = Modifier.align(Alignment.Center),
+            horizontalAlignment = Alignment.End
         ) {
+            FlashToggleButton(
+                flashMode = flashMode,
+                onToggle = {
+                    flashMode = when (flashMode) {
+                        ImageCapture.FLASH_MODE_AUTO -> ImageCapture.FLASH_MODE_ON
+                        ImageCapture.FLASH_MODE_ON -> ImageCapture.FLASH_MODE_OFF
+                        else -> ImageCapture.FLASH_MODE_AUTO
+                    }
+                },
+                modifier = Modifier.padding(end = 8.dp)
+            )
+
+            // Square camera preview with fender overlay
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .aspectRatio(1f)
+                    .clipToBounds()
+            ) {
             AndroidView(
                 factory = { ctx ->
                     val previewView = PreviewView(ctx).apply {
@@ -206,11 +223,13 @@ fun PhotoCaptureScreen(
                 val overlayWidth = fenderVector.viewportWidth * scale
                 val offsetX = (size.width - overlayWidth) / 2
                 val offsetY = (size.height - overlayHeight) / 2
-                val mirrorScaleX = if (side == "left") -1f else 1f
 
                 withTransform({
                     translate(left = offsetX, top = offsetY)
-                    scale(scaleX = scale * mirrorScaleX, scaleY = scale, pivot = Offset(fenderVector.viewportWidth / 2f, 0f))
+                    scale(scaleX = scale, scaleY = scale, pivot = Offset.Zero)
+                    if (side == "left") {
+                        scale(scaleX = -1f, scaleY = 1f, pivot = Offset(fenderVector.viewportWidth / 2f, fenderVector.viewportHeight / 2f))
+                    }
                 }) {
                     fenderPaths.forEach { path ->
                         drawPath(
@@ -221,6 +240,7 @@ fun PhotoCaptureScreen(
                     }
                 }
             }
+        }
         }
 
         // Side toggle buttons
@@ -318,32 +338,31 @@ fun PhotoCaptureScreen(
             )
         }
 
-        // Flash toggle button
-        IconButton(
-            onClick = {
-                flashMode = when (flashMode) {
-                    ImageCapture.FLASH_MODE_AUTO -> ImageCapture.FLASH_MODE_ON
-                    ImageCapture.FLASH_MODE_ON -> ImageCapture.FLASH_MODE_OFF
-                    else -> ImageCapture.FLASH_MODE_AUTO
-                }
+    }
+}
+
+@Composable
+fun FlashToggleButton(
+    flashMode: Int,
+    onToggle: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    IconButton(
+        onClick = onToggle,
+        modifier = modifier
+    ) {
+        Icon(
+            imageVector = when (flashMode) {
+                ImageCapture.FLASH_MODE_AUTO -> Icons.Filled.FlashAuto
+                ImageCapture.FLASH_MODE_ON -> Icons.Filled.FlashOn
+                else -> Icons.Filled.FlashOff
             },
-            modifier = Modifier
-                .align(Alignment.TopEnd)
-                .padding(16.dp)
-        ) {
-            Icon(
-                imageVector = when (flashMode) {
-                    ImageCapture.FLASH_MODE_AUTO -> Icons.Filled.FlashAuto
-                    ImageCapture.FLASH_MODE_ON -> Icons.Filled.FlashOn
-                    else -> Icons.Filled.FlashOff
-                },
-                contentDescription = when (flashMode) {
-                    ImageCapture.FLASH_MODE_AUTO -> "Flash auto"
-                    ImageCapture.FLASH_MODE_ON -> "Flash on"
-                    else -> "Flash off"
-                },
-                tint = Color.White
-            )
-        }
+            contentDescription = when (flashMode) {
+                ImageCapture.FLASH_MODE_AUTO -> "Flash auto"
+                ImageCapture.FLASH_MODE_ON -> "Flash on"
+                else -> "Flash off"
+            },
+            tint = Color.White
+        )
     }
 }

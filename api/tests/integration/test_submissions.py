@@ -597,3 +597,78 @@ class TestCreateSubmission:
         assert response.status_code == 201
         data = response.json()
         assert data["side"] is None
+
+    def test_duplicate_same_bike_day_side_rejected(self, client, auth_headers, test_user):
+        """Second submission for same bike/day/side should return 409."""
+        url = "https://lime.bike/bc/v1/DUP-BIKE"
+        r1 = self._post_submission(client, auth_headers, url, side="left")
+        assert r1.status_code == 201
+        r2 = self._post_submission(client, auth_headers, url, side="left")
+        assert r2.status_code == 409
+        assert r2.json()["detail"] == "You've already captured this today!"
+
+    def test_different_side_allowed(self, client, auth_headers, test_user):
+        """Same bike/day but different side should be allowed."""
+        url = "https://lime.bike/bc/v1/SIDE-BOTH"
+        r1 = self._post_submission(client, auth_headers, url, side="left")
+        assert r1.status_code == 201
+        r2 = self._post_submission(client, auth_headers, url, side="right")
+        assert r2.status_code == 201
+
+    def test_different_day_allowed(self, client, auth_headers, test_user):
+        """Same bike/side but different day should be allowed."""
+        url = "https://lime.bike/bc/v1/DAY-BIKE"
+        r1 = self._post_submission(client, auth_headers, url, side="left", captured_date="2024-01-01")
+        assert r1.status_code == 201
+        r2 = self._post_submission(client, auth_headers, url, side="left", captured_date="2024-01-02")
+        assert r2.status_code == 201
+
+    def test_duplicate_null_side_rejected(self, client, auth_headers, test_user):
+        """Second submission with no side (NULL) should return 409."""
+        url = "https://lime.bike/bc/v1/NULL-SIDE"
+        r1 = self._post_submission(client, auth_headers, url)
+        assert r1.status_code == 201
+        r2 = self._post_submission(client, auth_headers, url)
+        assert r2.status_code == 409
+
+    def test_null_vs_named_side_allowed(self, client, auth_headers, test_user):
+        """Submission with no side and one with a side should both be allowed."""
+        url = "https://lime.bike/bc/v1/NULL-VS-LEFT"
+        r1 = self._post_submission(client, auth_headers, url)
+        assert r1.status_code == 201
+        r2 = self._post_submission(client, auth_headers, url, side="left")
+        assert r2.status_code == 201
+
+    def test_different_user_allowed(self, client, auth_headers, test_user, db_session):
+        """Different users should be allowed to submit for the same bike/day/side."""
+        url = "https://lime.bike/bc/v1/MULTI-USER"
+        r1 = self._post_submission(client, auth_headers, url, side="left")
+        assert r1.status_code == 201
+
+        other_user = User(
+            username="otheruser",
+            email="other@example.com",
+            password_hash=get_password_hash("password123"),
+        )
+        db_session.add(other_user)
+        db_session.commit()
+        other_token = create_access_token(subject=str(other_user.user_id))
+        other_headers = {"Authorization": f"Bearer {other_token}"}
+
+        r2 = self._post_submission(client, other_headers, url, side="left")
+        assert r2.status_code == 201
+
+    def test_no_image_stored_on_duplicate(self, client, auth_headers, test_user):
+        """Duplicate rejection should not create any new image files."""
+        url = "https://lime.bike/bc/v1/NO-STORE"
+        r1 = self._post_submission(client, auth_headers, url, side="left")
+        assert r1.status_code == 201
+
+        images_dir = os.path.join(self._temp_dir, "images")
+        files_before = set(os.listdir(images_dir))
+
+        r2 = self._post_submission(client, auth_headers, url, side="left")
+        assert r2.status_code == 409
+
+        files_after = set(os.listdir(images_dir))
+        assert files_before == files_after

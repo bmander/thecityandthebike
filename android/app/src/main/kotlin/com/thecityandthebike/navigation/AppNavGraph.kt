@@ -43,6 +43,7 @@ import com.thecityandthebike.ui.viewmodel.BikesListViewModel
 import com.thecityandthebike.ui.viewmodel.ImageDetailViewModel
 import com.thecityandthebike.ui.viewmodel.LeaderboardViewModel
 import com.thecityandthebike.ui.viewmodel.MainViewModel
+import com.thecityandthebike.ui.viewmodel.MeViewModel
 import com.thecityandthebike.ui.viewmodel.PhotoPreviewViewModel
 import com.thecityandthebike.ui.viewmodel.UserViewModel
 
@@ -117,7 +118,12 @@ fun AppNavGraph(onboardingPrefs: OnboardingPrefs) {
             val mainViewModel: MainViewModel = hiltViewModel()
             val leaderboardViewModel: LeaderboardViewModel = hiltViewModel()
             val bikesListViewModel: BikesListViewModel = hiltViewModel()
-            ObserveDeletion(backStackEntry) { mainViewModel.removeSubmission(it) }
+            val meViewModel: MeViewModel = hiltViewModel()
+            val meState by meViewModel.state.collectAsStateWithLifecycle()
+            ObserveDeletion(backStackEntry) {
+                mainViewModel.removeSubmission(it)
+                meViewModel.removeSubmission(it)
+            }
             MainScreen(
                 viewModel = mainViewModel,
                 leaderboardViewModel = leaderboardViewModel,
@@ -143,7 +149,13 @@ fun AppNavGraph(onboardingPrefs: OnboardingPrefs) {
                 },
                 onBikeClick = { bikeQrId ->
                     navController.navigate(Bike(bikeQrId))
-                }
+                },
+                meState = meState,
+                onMeImageClick = { submissionId ->
+                    navController.navigate(ImageDetail(submissionId))
+                },
+                onMeLoadMore = { meViewModel.loadMoreSubmissions() },
+                onMeClearError = { meViewModel.clearError() }
             )
         }
 

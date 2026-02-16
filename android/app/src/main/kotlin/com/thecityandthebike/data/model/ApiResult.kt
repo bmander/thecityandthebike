@@ -1,5 +1,6 @@
 package com.thecityandthebike.data.model
 
+import org.json.JSONObject
 import retrofit2.Response
 import java.io.IOException
 
@@ -20,7 +21,10 @@ suspend fun <T> safeApiCall(block: suspend () -> Response<T>): ApiResult<T> {
             }
         } else {
             val code = response.code()
-            val message = response.errorBody()?.string() ?: "Unknown error"
+            val rawBody = response.errorBody()?.string() ?: "Unknown error"
+            val message = try {
+                JSONObject(rawBody).optString("detail", rawBody)
+            } catch (_: Exception) { rawBody }
             val error = when (code) {
                 401, 403 -> AppError.Auth(code, message)
                 422 -> AppError.Validation("", message)

@@ -10,18 +10,19 @@ import com.thecityandthebike.ui.viewmodel.UserState
 import org.junit.Rule
 import org.junit.Test
 
-class UserScreenContentTest {
+class MeContentTest {
 
     @get:Rule
     val composeTestRule = createComposeRule()
 
     @Test
-    fun userScreen_loadingState_showsProgressIndicator() {
+    fun meContent_loadingState_showsProgressIndicator() {
         composeTestRule.setContentWithTheme {
-            UserScreenContent(
+            MeContent(
                 state = UserState(isLoading = true),
-                onBack = {},
-                onImageClick = {}
+                onImageClick = {},
+                onLoadMore = {},
+                onClearError = {}
             )
         }
 
@@ -29,22 +30,23 @@ class UserScreenContentTest {
     }
 
     @Test
-    fun userScreen_errorState_showsErrorText() {
+    fun meContent_errorState_showsErrorText() {
         composeTestRule.setContentWithTheme {
-            UserScreenContent(
-                state = UserState(error = "User not found"),
-                onBack = {},
-                onImageClick = {}
+            MeContent(
+                state = UserState(error = "Failed to load profile"),
+                onImageClick = {},
+                onLoadMore = {},
+                onClearError = {}
             )
         }
 
-        composeTestRule.onNodeWithText("User not found").assertIsDisplayed()
+        composeTestRule.onNodeWithText("Failed to load profile").assertIsDisplayed()
     }
 
     @Test
-    fun userScreen_successState_showsUserInfo() {
+    fun meContent_successState_showsUserStats() {
         composeTestRule.setContentWithTheme {
-            UserScreenContent(
+            MeContent(
                 state = UserState(
                     userDetail = UserDetailResponse(
                         userId = "user-1",
@@ -56,63 +58,21 @@ class UserScreenContentTest {
                         leaderboardRanks = emptyList()
                     )
                 ),
-                onBack = {},
-                onImageClick = {}
+                onImageClick = {},
+                onLoadMore = {},
+                onClearError = {}
             )
         }
 
-        composeTestRule.onNodeWithText("testuser").assertIsDisplayed()
         composeTestRule.onNodeWithText("5 photos").assertIsDisplayed()
         composeTestRule.onNodeWithText("First seen: Jan 15, 2025").assertIsDisplayed()
         composeTestRule.onNodeWithText("Last seen: Mar 20, 2025").assertIsDisplayed()
     }
 
     @Test
-    fun userScreen_singlePhoto_correctPluralization() {
+    fun meContent_submissionsGroupedByDate_showsDateLabels() {
         composeTestRule.setContentWithTheme {
-            UserScreenContent(
-                state = UserState(
-                    userDetail = UserDetailResponse(
-                        userId = "user-1",
-                        username = "testuser",
-                        submissionCount = 1,
-                        ownedBikeCount = 0,
-                        leaderboardRanks = emptyList()
-                    )
-                ),
-                onBack = {},
-                onImageClick = {}
-            )
-        }
-
-        composeTestRule.onNodeWithText("1 photo").assertIsDisplayed()
-    }
-
-    @Test
-    fun userScreen_multiplePhotos_correctPluralization() {
-        composeTestRule.setContentWithTheme {
-            UserScreenContent(
-                state = UserState(
-                    userDetail = UserDetailResponse(
-                        userId = "user-1",
-                        username = "testuser",
-                        submissionCount = 7,
-                        ownedBikeCount = 0,
-                        leaderboardRanks = emptyList()
-                    )
-                ),
-                onBack = {},
-                onImageClick = {}
-            )
-        }
-
-        composeTestRule.onNodeWithText("7 photos").assertIsDisplayed()
-    }
-
-    @Test
-    fun userScreen_submissionsGroupedByDate_showsDateLabels() {
-        composeTestRule.setContentWithTheme {
-            UserScreenContent(
+            MeContent(
                 state = UserState(
                     userDetail = UserDetailResponse(
                         userId = "user-1",
@@ -145,8 +105,9 @@ class UserScreenContentTest {
                         )
                     )
                 ),
-                onBack = {},
-                onImageClick = {}
+                onImageClick = {},
+                onLoadMore = {},
+                onClearError = {}
             )
         }
 
