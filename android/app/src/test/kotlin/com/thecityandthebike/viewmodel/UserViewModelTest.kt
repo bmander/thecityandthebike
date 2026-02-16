@@ -35,7 +35,9 @@ class UserViewModelTest {
         username = "testuser",
         submissionCount = 3,
         firstSeenAt = "2024-01-15T10:00:00Z",
-        lastSeenAt = "2024-06-20T14:30:00Z"
+        lastSeenAt = "2024-06-20T14:30:00Z",
+        ownedBikeCount = 0,
+        leaderboardRanks = emptyList()
     )
 
     @Before

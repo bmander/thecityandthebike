@@ -36,7 +36,9 @@ class UserRepositoryTest {
         val detail = UserDetailResponse(
             userId = "u1",
             username = "testuser",
-            submissionCount = 10
+            submissionCount = 10,
+            ownedBikeCount = 0,
+            leaderboardRanks = emptyList()
         )
         coEvery { apiService.getUserDetail("u1") } returns Response.success(detail)
 

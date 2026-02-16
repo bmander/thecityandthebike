@@ -53,7 +53,9 @@ class MeContentTest {
                         username = "testuser",
                         submissionCount = 5,
                         firstSeenAt = "2025-01-15T10:00:00Z",
-                        lastSeenAt = "2025-03-20T14:30:00Z"
+                        lastSeenAt = "2025-03-20T14:30:00Z",
+                        ownedBikeCount = 0,
+                        leaderboardRanks = emptyList()
                     )
                 ),
                 onImageClick = {},
@@ -75,7 +77,9 @@ class MeContentTest {
                     userDetail = UserDetailResponse(
                         userId = "user-1",
                         username = "testuser",
-                        submissionCount = 3
+                        submissionCount = 3,
+                        ownedBikeCount = 0,
+                        leaderboardRanks = emptyList()
                     ),
                     submissions = listOf(
                         SubmissionResponse(
