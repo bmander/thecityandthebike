@@ -11,7 +11,7 @@ class PhotoPreviewViewModel @Inject constructor(
     private val uploadManager: UploadManager
 ) : ViewModel() {
 
-    fun upload(uri: Uri, qrId: String) {
-        uploadManager.uploadAndCreateSubmission(uri, qrId)
+    fun upload(uri: Uri, qrId: String, side: String? = null) {
+        uploadManager.uploadAndCreateSubmission(uri, qrId, side)
     }
 }

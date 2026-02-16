@@ -44,7 +44,8 @@ interface ApiService {
         @Part image: MultipartBody.Part,
         @Part("bike_qr_id") bikeQrId: RequestBody,
         @Part("captured_date") capturedDate: RequestBody,
-        @Part("user_caption") userCaption: RequestBody?
+        @Part("user_caption") userCaption: RequestBody?,
+        @Part("side") side: RequestBody?
     ): Response<SubmissionResponse>
 
     @GET("submissions/{submissionId}")

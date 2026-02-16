@@ -103,6 +103,7 @@ async def create_submission(
     bike_qr_id: str = Form(...),
     captured_date: date = Form(...),
     user_caption: Optional[str] = Form(None),
+    side: Optional[str] = Form(None),
 ):
     image_url, thumbnail_url = await process_and_store_image(image)
 
@@ -133,6 +134,7 @@ async def create_submission(
         image_url_thumbnail=thumbnail_url,
         captured_date=captured_date,
         user_caption=user_caption,
+        side=side,
     )
     db.add(submission)
     try:

@@ -238,8 +238,14 @@ fun AppNavGraph(onboardingPrefs: OnboardingPrefs) {
                 return@composable
             }
             PhotoCaptureScreen(
+                side = route.side,
+                onSideChanged = { newSide ->
+                    navController.navigate(PhotoCapture(route.qrId, newSide)) {
+                        popUpTo<PhotoCapture> { inclusive = true }
+                    }
+                },
                 onPhotoCaptured = { uri ->
-                    navController.navigate(PhotoPreview(route.qrId, uri.toString())) {
+                    navController.navigate(PhotoPreview(route.qrId, uri.toString(), route.side)) {
                         popUpTo<PhotoCapture> { inclusive = true }
                     }
                 },
@@ -260,11 +266,11 @@ fun AppNavGraph(onboardingPrefs: OnboardingPrefs) {
             PhotoPreviewScreen(
                 photoUri = photoUri,
                 onConfirm = {
-                    viewModel.upload(photoUri, route.qrId)
+                    viewModel.upload(photoUri, route.qrId, route.side)
                     navController.popBackStack<Main>(inclusive = false)
                 },
                 onRetake = {
-                    navController.navigate(PhotoCapture(route.qrId)) {
+                    navController.navigate(PhotoCapture(route.qrId, route.side)) {
                         popUpTo<PhotoPreview> { inclusive = true }
                     }
                 }

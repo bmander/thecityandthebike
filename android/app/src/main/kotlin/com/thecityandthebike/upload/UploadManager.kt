@@ -31,7 +31,7 @@ class UploadManager @Inject constructor(
     private val _state = MutableStateFlow<UploadState>(UploadState.Idle)
     val state: StateFlow<UploadState> = _state.asStateFlow()
 
-    fun uploadAndCreateSubmission(localUri: Uri, bikeQrId: String) {
+    fun uploadAndCreateSubmission(localUri: Uri, bikeQrId: String, side: String? = null) {
         appScope.launch {
             _state.value = UploadState.Uploading(localUri)
 
@@ -44,7 +44,7 @@ class UploadManager @Inject constructor(
 
             try {
                 val capturedDate = LocalDate.now(ZoneId.of("America/Los_Angeles")).toString()
-                when (val result = submissionRepository.createSubmission(imageFile, bikeQrId, capturedDate)) {
+                when (val result = submissionRepository.createSubmission(imageFile, bikeQrId, capturedDate, side = side)) {
                     is ApiResult.Success -> {
                         _state.value = UploadState.Success
                     }

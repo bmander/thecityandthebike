@@ -569,3 +569,24 @@ class TestCreateSubmission:
         # GET the thumbnail
         thumb_response = client.get(data["image_url_thumbnail"])
         assert thumb_response.status_code == 200
+
+    def test_create_submission_with_side_left(self, client, auth_headers, test_user):
+        """Creating a submission with side='left' should store and return it."""
+        response = self._post_submission(client, auth_headers, "SIDE-LEFT-BIKE", side="left")
+        assert response.status_code == 201
+        data = response.json()
+        assert data["side"] == "left"
+
+    def test_create_submission_with_side_right(self, client, auth_headers, test_user):
+        """Creating a submission with side='right' should store and return it."""
+        response = self._post_submission(client, auth_headers, "SIDE-RIGHT-BIKE", side="right")
+        assert response.status_code == 201
+        data = response.json()
+        assert data["side"] == "right"
+
+    def test_create_submission_without_side(self, client, auth_headers, test_user):
+        """Creating a submission without side should default to None (backward compat)."""
+        response = self._post_submission(client, auth_headers, "NO-SIDE-BIKE")
+        assert response.status_code == 201
+        data = response.json()
+        assert data["side"] is None

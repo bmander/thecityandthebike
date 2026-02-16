@@ -16,7 +16,9 @@ import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.view.PreviewView
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -65,6 +67,8 @@ import java.util.concurrent.Executors
 
 @Composable
 fun PhotoCaptureScreen(
+    side: String,
+    onSideChanged: (String) -> Unit,
     onPhotoCaptured: (Uri) -> Unit,
     onBack: () -> Unit
 ) {
@@ -188,10 +192,11 @@ fun PhotoCaptureScreen(
                 val overlayWidth = fenderVector.viewportWidth * scale
                 val offsetX = (size.width - overlayWidth) / 2
                 val offsetY = (size.height - overlayHeight) / 2
+                val mirrorScaleX = if (side == "left") -1f else 1f
 
                 withTransform({
                     translate(left = offsetX, top = offsetY)
-                    scale(scaleX = scale, scaleY = scale, pivot = Offset.Zero)
+                    scale(scaleX = scale * mirrorScaleX, scaleY = scale, pivot = Offset(fenderVector.viewportWidth / 2f, 0f))
                 }) {
                     fenderPaths.forEach { path ->
                         drawPath(
@@ -201,6 +206,41 @@ fun PhotoCaptureScreen(
                         )
                     }
                 }
+            }
+        }
+
+        // Side toggle buttons
+        Row(
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .padding(bottom = 140.dp),
+            horizontalArrangement = Arrangement.spacedBy(24.dp)
+        ) {
+            Button(
+                onClick = { onSideChanged("left") },
+                modifier = Modifier
+                    .size(48.dp)
+                    .semantics { contentDescription = "Left side" }
+                    .testTag("side_left"),
+                shape = CircleShape,
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = if (side == "left") Color.White else Color.Gray
+                )
+            ) {
+                Text("L", color = if (side == "left") Color.Black else Color.LightGray)
+            }
+            Button(
+                onClick = { onSideChanged("right") },
+                modifier = Modifier
+                    .size(48.dp)
+                    .semantics { contentDescription = "Right side" }
+                    .testTag("side_right"),
+                shape = CircleShape,
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = if (side == "right") Color.White else Color.Gray
+                )
+            ) {
+                Text("R", color = if (side == "right") Color.Black else Color.LightGray)
             }
         }
 
