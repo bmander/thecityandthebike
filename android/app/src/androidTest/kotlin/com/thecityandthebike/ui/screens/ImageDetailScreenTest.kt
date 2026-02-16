@@ -150,7 +150,7 @@ class ImageDetailScreenTest {
             )
         }
 
-        composeTestRule.onNodeWithContentDescription("Add tag").assertIsDisplayed()
+        composeTestRule.onNodeWithContentDescription("Add tags").assertIsDisplayed()
     }
 
     @Test
@@ -163,7 +163,20 @@ class ImageDetailScreenTest {
             )
         }
 
-        composeTestRule.onNodeWithContentDescription("Add tag").assertDoesNotExist()
+        composeTestRule.onNodeWithContentDescription("Add tags").assertDoesNotExist()
+    }
+
+    @Test
+    fun addTagButton_showsLabelText() {
+        composeTestRule.setContentWithTheme {
+            ImageDetailScreen(
+                submission = testSubmission,
+                onHome = {},
+                isLoggedIn = true
+            )
+        }
+
+        composeTestRule.onNodeWithText("Add tags").assertIsDisplayed()
     }
 
     @Test
@@ -179,9 +192,26 @@ class ImageDetailScreenTest {
             )
         }
 
-        composeTestRule.onNodeWithContentDescription("Add tag").performClick()
+        composeTestRule.onNodeWithContentDescription("Add tags").performClick()
 
         assertTrue("onEnterTagMode should be called", enterCalled)
+    }
+
+    @Test
+    fun addTagAndOwnerActions_bothVisibleWhenOwnerAndLoggedIn() {
+        composeTestRule.setContentWithTheme {
+            ImageDetailScreen(
+                submission = testSubmission,
+                onHome = {},
+                isOwner = true,
+                isLoggedIn = true
+            )
+        }
+
+        composeTestRule.onNodeWithContentDescription("Add tags").assertIsDisplayed()
+        composeTestRule.onNodeWithText("Add tags").assertIsDisplayed()
+        composeTestRule.onNodeWithContentDescription("Download photo").assertIsDisplayed()
+        composeTestRule.onNodeWithContentDescription("Delete photo").assertIsDisplayed()
     }
 
     @Test
@@ -210,7 +240,7 @@ class ImageDetailScreenTest {
             )
         }
 
-        composeTestRule.onNodeWithContentDescription("Add tag").assertDoesNotExist()
+        composeTestRule.onNodeWithContentDescription("Add tags").assertDoesNotExist()
     }
 
     @Test

@@ -47,6 +47,7 @@ import androidx.compose.ui.unit.dp
 import com.thecityandthebike.data.model.dto.SubmissionResponse
 import com.thecityandthebike.data.model.dto.TagResponse
 import android.graphics.BitmapFactory
+import android.widget.Toast
 import com.thecityandthebike.ui.components.MaskConfirmView
 import com.thecityandthebike.ui.components.MaskPainter
 import com.thecityandthebike.ui.components.OwnerActions
@@ -299,29 +300,44 @@ fun ImageDetailScreen(
                 )
             }
 
-            if (isOwner) {
-                OwnerActions(
-                    isDeleting = isDeleting,
-                    onDownload = onDownload,
-                    onShowDeleteDialog = { showDeleteDialog = true }
-                )
-            }
-
-            if (isLoggedIn && !isTagMode) {
-                Box(
+            if (isOwner || (isLoggedIn && !isTagMode)) {
+                val context = LocalContext.current
+                Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(top = 8.dp, start = 16.dp),
-                    contentAlignment = Alignment.CenterStart
+                        .padding(start = 16.dp, top = 8.dp, end = 16.dp),
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    OutlinedIconButton(
-                        onClick = onEnterTagMode,
-                        shape = RoundedCornerShape(8.dp),
-                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
-                    ) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.Label,
-                            contentDescription = "Add tag"
+                    if (isLoggedIn && !isTagMode) {
+                        OutlinedIconButton(
+                            onClick = {
+                                Toast.makeText(
+                                    context,
+                                    "Draw on the picture to highlight tags",
+                                    Toast.LENGTH_LONG
+                                ).show()
+                                onEnterTagMode()
+                            },
+                            shape = RoundedCornerShape(8.dp),
+                            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
+                        ) {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.Label,
+                                contentDescription = "Add tags"
+                            )
+                        }
+                        Text(
+                            text = "Add tags",
+                            style = MaterialTheme.typography.labelMedium,
+                            modifier = Modifier.padding(start = 4.dp)
+                        )
+                    }
+                    Spacer(modifier = Modifier.weight(1f))
+                    if (isOwner) {
+                        OwnerActions(
+                            isDeleting = isDeleting,
+                            onDownload = onDownload,
+                            onShowDeleteDialog = { showDeleteDialog = true }
                         )
                     }
                 }
@@ -355,7 +371,8 @@ private fun ImageDetailScreenPreview() {
                 provider = "citibike"
             ),
             onHome = {},
-            isOwner = true
+            isOwner = true,
+            isLoggedIn = true
         )
     }
 }

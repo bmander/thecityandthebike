@@ -232,6 +232,190 @@ class TestGetUserDetail:
         data = response.json()
         assert "email" not in data
 
+    def test_get_user_detail_owned_bike_count(
+        self, client, test_user, db_session
+    ):
+        """User should own bikes where they have the most submissions."""
+        bike_a = Bike(
+            bike_qr_id="BIKE-A",
+            first_seen_at=datetime.now(timezone.utc),
+            last_seen_at=datetime.now(timezone.utc),
+        )
+        bike_b = Bike(
+            bike_qr_id="BIKE-B",
+            first_seen_at=datetime.now(timezone.utc),
+            last_seen_at=datetime.now(timezone.utc),
+        )
+        db_session.add_all([bike_a, bike_b])
+        db_session.commit()
+
+        other_user = User(
+            username="otheruser",
+            email="other@example.com",
+            password_hash="fakehash",
+        )
+        db_session.add(other_user)
+        db_session.commit()
+
+        # test_user has 3 submissions for bike_a, other_user has 1
+        for _ in range(3):
+            db_session.add(FenderSubmission(
+                user_id=test_user.user_id,
+                bike_id=bike_a.id,
+                image_url="https://example.com/a.jpg",
+                captured_date=date.today(),
+            ))
+        db_session.add(FenderSubmission(
+            user_id=other_user.user_id,
+            bike_id=bike_a.id,
+            image_url="https://example.com/a2.jpg",
+            captured_date=date.today(),
+        ))
+
+        # other_user has 2 submissions for bike_b, test_user has 1
+        for _ in range(2):
+            db_session.add(FenderSubmission(
+                user_id=other_user.user_id,
+                bike_id=bike_b.id,
+                image_url="https://example.com/b.jpg",
+                captured_date=date.today(),
+            ))
+        db_session.add(FenderSubmission(
+            user_id=test_user.user_id,
+            bike_id=bike_b.id,
+            image_url="https://example.com/b2.jpg",
+            captured_date=date.today(),
+        ))
+        db_session.commit()
+
+        response = client.get(f"/users/{test_user.user_id}")
+        assert response.status_code == 200
+        data = response.json()
+        assert data["owned_bike_count"] == 1  # only bike_a
+
+    def test_get_user_detail_owned_bike_count_zero(self, client, test_user):
+        """User with no submissions should own zero bikes."""
+        response = client.get(f"/users/{test_user.user_id}")
+        assert response.status_code == 200
+        data = response.json()
+        assert data["owned_bike_count"] == 0
+
+    def test_get_user_detail_owned_bike_count_tied(
+        self, client, test_user, db_session
+    ):
+        """User tied for most submissions should still count as owner."""
+        bike = Bike(
+            bike_qr_id="BIKE-TIE",
+            first_seen_at=datetime.now(timezone.utc),
+            last_seen_at=datetime.now(timezone.utc),
+        )
+        db_session.add(bike)
+        db_session.commit()
+
+        other_user = User(
+            username="tieuser",
+            email="tie@example.com",
+            password_hash="fakehash",
+        )
+        db_session.add(other_user)
+        db_session.commit()
+
+        # Both users have 2 submissions for the same bike
+        for _ in range(2):
+            db_session.add(FenderSubmission(
+                user_id=test_user.user_id,
+                bike_id=bike.id,
+                image_url="https://example.com/t1.jpg",
+                captured_date=date.today(),
+            ))
+            db_session.add(FenderSubmission(
+                user_id=other_user.user_id,
+                bike_id=bike.id,
+                image_url="https://example.com/t2.jpg",
+                captured_date=date.today(),
+            ))
+        db_session.commit()
+
+        response = client.get(f"/users/{test_user.user_id}")
+        assert response.status_code == 200
+        data = response.json()
+        assert data["owned_bike_count"] == 1
+
+    def test_get_user_detail_leaderboard_ranks(
+        self, client, test_user, test_bike, db_session
+    ):
+        """User with recent submissions should appear ranked on leaderboards."""
+        now = datetime.now(timezone.utc)
+        for _ in range(3):
+            db_session.add(FenderSubmission(
+                user_id=test_user.user_id,
+                bike_id=test_bike.id,
+                image_url="https://example.com/lb.jpg",
+                captured_date=date.today(),
+                uploaded_at=now,
+            ))
+        db_session.commit()
+
+        response = client.get(f"/users/{test_user.user_id}")
+        assert response.status_code == 200
+        data = response.json()
+        ranks = {r["period"]: r["rank"] for r in data["leaderboard_ranks"]}
+        assert ranks["daily"] == 1
+        assert ranks["weekly"] == 1
+        assert ranks["monthly"] == 1
+
+    def test_get_user_detail_leaderboard_ranks_no_submissions(
+        self, client, test_user
+    ):
+        """User with no submissions should have null ranks."""
+        response = client.get(f"/users/{test_user.user_id}")
+        assert response.status_code == 200
+        data = response.json()
+        ranks = {r["period"]: r["rank"] for r in data["leaderboard_ranks"]}
+        assert ranks["daily"] is None
+        assert ranks["weekly"] is None
+        assert ranks["monthly"] is None
+
+    def test_get_user_detail_leaderboard_ranks_not_first(
+        self, client, test_user, test_bike, db_session
+    ):
+        """User with fewer submissions than another should rank lower."""
+        now = datetime.now(timezone.utc)
+        other_user = User(
+            username="leaderuser",
+            email="leader@example.com",
+            password_hash="fakehash",
+        )
+        db_session.add(other_user)
+        db_session.commit()
+
+        # other_user has 5 submissions, test_user has 2
+        for _ in range(5):
+            db_session.add(FenderSubmission(
+                user_id=other_user.user_id,
+                bike_id=test_bike.id,
+                image_url="https://example.com/o.jpg",
+                captured_date=date.today(),
+                uploaded_at=now,
+            ))
+        for _ in range(2):
+            db_session.add(FenderSubmission(
+                user_id=test_user.user_id,
+                bike_id=test_bike.id,
+                image_url="https://example.com/t.jpg",
+                captured_date=date.today(),
+                uploaded_at=now,
+            ))
+        db_session.commit()
+
+        response = client.get(f"/users/{test_user.user_id}")
+        assert response.status_code == 200
+        data = response.json()
+        ranks = {r["period"]: r["rank"] for r in data["leaderboard_ranks"]}
+        assert ranks["daily"] == 2
+        assert ranks["weekly"] == 2
+        assert ranks["monthly"] == 2
+
 
 class TestGetUserSubmissions:
     """Tests for GET /users/{user_id}/submissions endpoint (cursor-paginated)."""
