@@ -41,7 +41,9 @@ def login(
     db: Annotated[Session, Depends(get_db)],
     lockout: Annotated[AccountLockout, Depends(get_account_lockout)],
 ):
-    if lockout.is_locked(data.username, db):
+    client_ip = request.client.host if request.client else "unknown"
+
+    if lockout.is_locked(data.username, client_ip, db):
         raise HTTPException(
             status_code=status.HTTP_423_LOCKED,
             detail={"msg": "Account temporarily locked due to too many failed attempts"},
@@ -49,7 +51,7 @@ def login(
 
     user = db.query(User).filter(User.username == data.username).first()
     if not user or not verify_password(data.password, user.password_hash):
-        lockout.record_failure(data.username, db)
+        lockout.record_failure(data.username, client_ip, db)
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail={"msg": "Bad username or password"},

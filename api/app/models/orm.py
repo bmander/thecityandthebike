@@ -9,9 +9,13 @@ from ..database import Base
 
 class LoginAttempt(Base):
     __tablename__ = "login_attempts"
+    __table_args__ = (
+        Index("ix_login_attempts_username_ip", "username", "ip_address"),
+    )
 
     id = Column(Integer, primary_key=True, autoincrement=True)
-    username = Column(String(255), nullable=False, index=True)
+    username = Column(String(255), nullable=False)
+    ip_address = Column(String(45), nullable=False)
     attempted_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
 
 
