@@ -494,4 +494,86 @@ class ImageDetailScreenTest {
 
         assertTrue("onDeleteTag should be called with tag-1", deletedTagId == "tag-1")
     }
+
+    // --- View tag button tests ---
+
+    @Test
+    fun viewTagButton_visibleWhenTagSelectedAndOnTagClickProvided() {
+        composeTestRule.setContentWithTheme {
+            ImageDetailScreen(
+                submission = testSubmission,
+                onHome = {},
+                tags = testTags,
+                selectedTagId = "tag-1",
+                onTagClick = {}
+            )
+        }
+
+        composeTestRule.onNodeWithText("View tag").assertIsDisplayed()
+    }
+
+    @Test
+    fun viewTagButton_hiddenWhenNoTagSelected() {
+        composeTestRule.setContentWithTheme {
+            ImageDetailScreen(
+                submission = testSubmission,
+                onHome = {},
+                tags = testTags,
+                selectedTagId = null,
+                onTagClick = {}
+            )
+        }
+
+        composeTestRule.onNodeWithText("View tag").assertDoesNotExist()
+    }
+
+    @Test
+    fun viewTagButton_hiddenWhenInTagMode() {
+        composeTestRule.setContentWithTheme {
+            ImageDetailScreen(
+                submission = testSubmission,
+                onHome = {},
+                tags = testTags,
+                selectedTagId = "tag-1",
+                isTagMode = true,
+                isLoggedIn = true,
+                onTagClick = {}
+            )
+        }
+
+        composeTestRule.onNodeWithText("View tag").assertDoesNotExist()
+    }
+
+    @Test
+    fun viewTagButton_hiddenWhenOnTagClickNull() {
+        composeTestRule.setContentWithTheme {
+            ImageDetailScreen(
+                submission = testSubmission,
+                onHome = {},
+                tags = testTags,
+                selectedTagId = "tag-1"
+            )
+        }
+
+        composeTestRule.onNodeWithText("View tag").assertDoesNotExist()
+    }
+
+    @Test
+    fun viewTagButton_clickCallsOnTagClickWithCorrectId() {
+        var clickedTagId: String? = null
+
+        composeTestRule.setContentWithTheme {
+            ImageDetailScreen(
+                submission = testSubmission,
+                onHome = {},
+                tags = testTags,
+                selectedTagId = "tag-1",
+                onTagClick = { clickedTagId = it }
+            )
+        }
+
+        composeTestRule.onNodeWithText("View tag").performClick()
+
+        assertTrue("onTagClick should be called with tag-1", clickedTagId == "tag-1")
+    }
 }

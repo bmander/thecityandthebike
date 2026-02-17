@@ -107,4 +107,14 @@ interface ApiService {
 
     @DELETE("tags/{tagId}")
     suspend fun deleteTag(@Path("tagId") tagId: String): Response<MessageResponse>
+
+    @GET("tags/{tagId}")
+    suspend fun getTagDetail(@Path("tagId") tagId: String): Response<TagDetailResponse>
+
+    @GET("tags/{tagId}/submissions")
+    suspend fun getTagSubmissions(
+        @Path("tagId") tagId: String,
+        @Query("limit") limit: Int = 20,
+        @Query("cursor") cursor: String? = null
+    ): Response<CursorPaginatedSubmissions>
 }

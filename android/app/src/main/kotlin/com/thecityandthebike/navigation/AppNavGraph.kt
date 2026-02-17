@@ -25,7 +25,9 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.toRoute
 import com.thecityandthebike.data.local.OnboardingPrefs
 import com.thecityandthebike.ui.screens.BikeScreen
+import com.thecityandthebike.ui.components.PointsAwardedOverlay
 import com.thecityandthebike.ui.screens.ImageDetailScreen
+import com.thecityandthebike.ui.screens.TagScreen
 import com.thecityandthebike.ui.screens.LoginScreen
 import com.thecityandthebike.ui.screens.MainScreen
 import com.thecityandthebike.ui.screens.OnboardingScreen
@@ -36,6 +38,7 @@ import com.thecityandthebike.ui.screens.PrivacyCopyrightScreen
 import com.thecityandthebike.ui.screens.QrScannerScreen
 import com.thecityandthebike.ui.screens.RegisterScreen
 import com.thecityandthebike.ui.screens.SplashScreen
+import com.thecityandthebike.ui.screens.MeScreen
 import com.thecityandthebike.ui.screens.UserScreen
 import com.thecityandthebike.util.imageUrlToUri
 import com.thecityandthebike.ui.viewmodel.AuthViewModel
@@ -46,6 +49,7 @@ import com.thecityandthebike.ui.viewmodel.LeaderboardViewModel
 import com.thecityandthebike.ui.viewmodel.MainViewModel
 import com.thecityandthebike.ui.viewmodel.MeViewModel
 import com.thecityandthebike.ui.viewmodel.PhotoPreviewViewModel
+import com.thecityandthebike.ui.viewmodel.TagViewModel
 import com.thecityandthebike.ui.viewmodel.UserViewModel
 
 @Composable
@@ -119,11 +123,8 @@ fun AppNavGraph(onboardingPrefs: OnboardingPrefs) {
             val mainViewModel: MainViewModel = hiltViewModel()
             val leaderboardViewModel: LeaderboardViewModel = hiltViewModel()
             val bikesListViewModel: BikesListViewModel = hiltViewModel()
-            val meViewModel: MeViewModel = hiltViewModel()
-            val meState by meViewModel.state.collectAsStateWithLifecycle()
             ObserveDeletion(backStackEntry) {
                 mainViewModel.removeSubmission(it)
-                meViewModel.removeSubmission(it)
             }
             MainScreen(
                 viewModel = mainViewModel,
@@ -154,12 +155,9 @@ fun AppNavGraph(onboardingPrefs: OnboardingPrefs) {
                 onBikeClick = { bikeQrId ->
                     navController.navigate(Bike(bikeQrId))
                 },
-                meState = meState,
-                onMeImageClick = { submissionId ->
-                    navController.navigate(ImageDetail(submissionId))
-                },
-                onMeLoadMore = { meViewModel.loadMoreSubmissions() },
-                onMeClearError = { meViewModel.clearError() }
+                onShowMe = {
+                    navController.navigate(Me)
+                }
             )
         }
 
@@ -185,7 +183,8 @@ fun AppNavGraph(onboardingPrefs: OnboardingPrefs) {
                 onHome = { navController.popBackStack<Main>(inclusive = false) },
                 onDeleted = navController.handleDeletion(),
                 onBikeClick = { bikeQrId -> navController.navigate(Bike(bikeQrId)) },
-                onUserClick = { userId -> navController.navigate(User(userId)) }
+                onUserClick = { userId -> navController.navigate(User(userId)) },
+                onTagClick = { tagId -> navController.navigate(TagDetail(tagId)) }
             )
         }
 
@@ -211,7 +210,36 @@ fun AppNavGraph(onboardingPrefs: OnboardingPrefs) {
             ImageDetailRoute(
                 onHome = { navController.popBackStack<Main>(inclusive = false) },
                 onDeleted = navController.handleDeletion(),
+                onUserClick = { userId -> navController.navigate(User(userId)) },
+                onTagClick = { tagId -> navController.navigate(TagDetail(tagId)) }
+            )
+        }
+
+        composable<TagDetail> { backStackEntry ->
+            val tagViewModel: TagViewModel = hiltViewModel()
+            ObserveDeletion(backStackEntry) { tagViewModel.removeSubmission(it) }
+            TagScreen(
+                viewModel = tagViewModel,
+                onBack = { navController.popBackStack() },
+                onImageClick = { submissionId ->
+                    navController.navigate(TagImageDetail(submissionId))
+                },
                 onUserClick = { userId -> navController.navigate(User(userId)) }
+            )
+        }
+
+        composable<TagImageDetail>(
+            enterTransition = { EnterTransition.None },
+            exitTransition = { ExitTransition.None },
+            popEnterTransition = { EnterTransition.None },
+            popExitTransition = { ExitTransition.None }
+        ) {
+            ImageDetailRoute(
+                onHome = { navController.popBackStack<Main>(inclusive = false) },
+                onDeleted = navController.handleDeletion(),
+                onBikeClick = { bikeQrId -> navController.navigate(Bike(bikeQrId)) },
+                onUserClick = { userId -> navController.navigate(User(userId)) },
+                onTagClick = { tagId -> navController.navigate(TagDetail(tagId)) }
             )
         }
 
@@ -236,7 +264,34 @@ fun AppNavGraph(onboardingPrefs: OnboardingPrefs) {
             ImageDetailRoute(
                 onHome = { navController.popBackStack<Main>(inclusive = false) },
                 onDeleted = navController.handleDeletion(),
-                onBikeClick = { bikeQrId -> navController.navigate(Bike(bikeQrId)) }
+                onBikeClick = { bikeQrId -> navController.navigate(Bike(bikeQrId)) },
+                onTagClick = { tagId -> navController.navigate(TagDetail(tagId)) }
+            )
+        }
+
+        composable<Me> { backStackEntry ->
+            val meViewModel: MeViewModel = hiltViewModel()
+            ObserveDeletion(backStackEntry) { meViewModel.removeSubmission(it) }
+            MeScreen(
+                viewModel = meViewModel,
+                onBack = { navController.popBackStack() },
+                onImageClick = { submissionId ->
+                    navController.navigate(MeImageDetail(submissionId))
+                }
+            )
+        }
+
+        composable<MeImageDetail>(
+            enterTransition = { EnterTransition.None },
+            exitTransition = { ExitTransition.None },
+            popEnterTransition = { EnterTransition.None },
+            popExitTransition = { ExitTransition.None }
+        ) {
+            ImageDetailRoute(
+                onHome = { navController.popBackStack<Main>(inclusive = false) },
+                onDeleted = navController.handleDeletion(),
+                onBikeClick = { bikeQrId -> navController.navigate(Bike(bikeQrId)) },
+                onUserClick = { userId -> navController.navigate(User(userId)) }
             )
         }
 
@@ -329,7 +384,8 @@ private fun ImageDetailRoute(
     onHome: () -> Unit,
     onDeleted: (String) -> Unit,
     onBikeClick: ((String) -> Unit)? = null,
-    onUserClick: ((String) -> Unit)? = null
+    onUserClick: ((String) -> Unit)? = null,
+    onTagClick: ((String) -> Unit)? = null
 ) {
     val viewModel: ImageDetailViewModel = hiltViewModel()
     val detailState by viewModel.state.collectAsStateWithLifecycle()
@@ -348,46 +404,55 @@ private fun ImageDetailRoute(
             }
         }
         detailState.submission != null -> {
-            ImageDetailScreen(
-                submission = detailState.submission!!,
-                onHome = onHome,
-                onBikeClick = onBikeClick,
-                onUserClick = onUserClick,
-                isOwner = detailState.isOwner,
-                isDeleting = detailState.isDeleting,
-                onDelete = { viewModel.deleteSubmission() },
-                onDownload = {
-                    detailState.submission?.imageUrl?.let { url ->
-                        val uri = imageUrlToUri(url)
-                        val request = DownloadManager.Request(uri)
-                            .setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
-                            .setDestinationInExternalPublicDir(
-                                Environment.DIRECTORY_DOWNLOADS,
-                                "tcatb_${viewModel.submissionId}.jpg"
-                            )
-                        val dm = context.getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
-                        dm.enqueue(request)
-                    }
-                },
-                isLoggedIn = viewModel.isLoggedIn(),
-                tags = detailState.tags,
-                selectedTagId = detailState.selectedTagId,
-                onTagTapped = { viewModel.selectTag(it) },
-                isTagDeletable = { viewModel.isTagOwner(it) },
-                onDeleteTag = { viewModel.deleteTag(it) },
-                isTagMode = detailState.isTagMode,
-                isCreatingTag = detailState.isCreatingTag,
-                onEnterTagMode = { viewModel.enterTagMode() },
-                onExitTagMode = { viewModel.exitTagMode() },
-                onCreateTag = { file -> viewModel.createTag(file) },
-                isProcessingMask = detailState.isProcessingMask,
-                processedRing = detailState.processedRing,
-                processedMaskWidth = detailState.processedMaskWidth,
-                processedMaskHeight = detailState.processedMaskHeight,
-                onProcessMask = { file -> viewModel.processMask(file) },
-                onConfirmTag = { file -> viewModel.createTag(file) },
-                onBackToDrawing = { viewModel.goBackToDrawing() },
-            )
+            Box(modifier = Modifier.fillMaxSize()) {
+                ImageDetailScreen(
+                    submission = detailState.submission!!,
+                    onHome = onHome,
+                    onBikeClick = onBikeClick,
+                    onUserClick = onUserClick,
+                    isOwner = detailState.isOwner,
+                    isDeleting = detailState.isDeleting,
+                    onDelete = { viewModel.deleteSubmission() },
+                    onDownload = {
+                        detailState.submission?.imageUrl?.let { url ->
+                            val uri = imageUrlToUri(url)
+                            val request = DownloadManager.Request(uri)
+                                .setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
+                                .setDestinationInExternalPublicDir(
+                                    Environment.DIRECTORY_DOWNLOADS,
+                                    "tcatb_${viewModel.submissionId}.jpg"
+                                )
+                            val dm = context.getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
+                            dm.enqueue(request)
+                        }
+                    },
+                    isLoggedIn = viewModel.isLoggedIn(),
+                    tags = detailState.tags,
+                    selectedTagId = detailState.selectedTagId,
+                    onTagTapped = { viewModel.selectTag(it) },
+                    isTagDeletable = { viewModel.isTagOwner(it) },
+                    onDeleteTag = { viewModel.deleteTag(it) },
+                    isTagMode = detailState.isTagMode,
+                    isCreatingTag = detailState.isCreatingTag,
+                    onEnterTagMode = { viewModel.enterTagMode() },
+                    onExitTagMode = { viewModel.exitTagMode() },
+                    onCreateTag = { file -> viewModel.createTag(file) },
+                    isProcessingMask = detailState.isProcessingMask,
+                    processedRing = detailState.processedRing,
+                    processedMaskWidth = detailState.processedMaskWidth,
+                    processedMaskHeight = detailState.processedMaskHeight,
+                    onProcessMask = { file -> viewModel.processMask(file) },
+                    onConfirmTag = { file -> viewModel.createTag(file) },
+                    onBackToDrawing = { viewModel.goBackToDrawing() },
+                    onTagClick = onTagClick,
+                )
+                detailState.pointsAwarded?.let { points ->
+                    PointsAwardedOverlay(
+                        points = points,
+                        onDismiss = { viewModel.clearPointsAwarded() }
+                    )
+                }
+            }
         }
         else -> {
             LaunchedEffect(Unit) { onHome() }

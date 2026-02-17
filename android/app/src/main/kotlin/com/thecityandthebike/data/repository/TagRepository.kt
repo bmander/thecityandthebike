@@ -2,7 +2,9 @@ package com.thecityandthebike.data.repository
 
 import com.thecityandthebike.data.api.ApiService
 import com.thecityandthebike.data.model.ApiResult
+import com.thecityandthebike.data.model.dto.CursorPaginatedSubmissions
 import com.thecityandthebike.data.model.dto.MessageResponse
+import com.thecityandthebike.data.model.dto.TagDetailResponse
 import com.thecityandthebike.data.model.dto.TagResponse
 import com.thecityandthebike.data.model.safeApiCall
 import kotlinx.serialization.json.Json
@@ -21,6 +23,18 @@ class TagRepository @Inject constructor(
 ) {
     suspend fun getTags(submissionId: String): ApiResult<List<TagResponse>> {
         return safeApiCall { apiService.getTags(submissionId) }
+    }
+
+    suspend fun getTagDetail(tagId: String): ApiResult<TagDetailResponse> {
+        return safeApiCall { apiService.getTagDetail(tagId) }
+    }
+
+    suspend fun getTagSubmissions(
+        tagId: String,
+        limit: Int = 20,
+        cursor: String? = null
+    ): ApiResult<CursorPaginatedSubmissions> {
+        return safeApiCall { apiService.getTagSubmissions(tagId, limit = limit, cursor = cursor) }
     }
 
     suspend fun createTag(

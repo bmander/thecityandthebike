@@ -64,9 +64,9 @@ class LeaderboardContentTest {
     @Test
     fun leaderboardContent_entriesDisplayed_showsRankUsernameAndCount() {
         val entries = listOf(
-            LeaderboardEntry(rank = 1, userId = "u1", username = "alice", submissionCount = 10),
-            LeaderboardEntry(rank = 2, userId = "u2", username = "bob", submissionCount = 7),
-            LeaderboardEntry(rank = 3, userId = "u3", username = "charlie", submissionCount = 5)
+            LeaderboardEntry(rank = 1, userId = "u1", username = "alice", score = 10),
+            LeaderboardEntry(rank = 2, userId = "u2", username = "bob", score = 7),
+            LeaderboardEntry(rank = 3, userId = "u3", username = "charlie", score = 5)
         )
 
         composeTestRule.setContentWithTheme {
@@ -95,7 +95,7 @@ class LeaderboardContentTest {
     fun leaderboardContent_rowTap_invokesOnUserClick() {
         val clickedUserIds = mutableListOf<String>()
         val entries = listOf(
-            LeaderboardEntry(rank = 1, userId = "u1", username = "alice", submissionCount = 10)
+            LeaderboardEntry(rank = 1, userId = "u1", username = "alice", score = 10)
         )
 
         composeTestRule.setContentWithTheme {
@@ -125,6 +125,7 @@ class LeaderboardContentTest {
         composeTestRule.onNodeWithText("Daily").assertIsDisplayed()
         composeTestRule.onNodeWithText("Weekly").assertIsDisplayed()
         composeTestRule.onNodeWithText("Monthly").assertIsDisplayed()
+        composeTestRule.onNodeWithText("All Time").assertIsDisplayed()
     }
 
     @Test

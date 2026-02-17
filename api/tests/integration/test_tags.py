@@ -75,6 +75,79 @@ class TestListTags:
         assert response.status_code == 404
 
 
+class TestGetTagDetail:
+    """Tests for GET /tags/{tag_id} endpoint."""
+
+    def test_get_tag_detail_success(self, client, test_tag):
+        response = client.get(f"/tags/{test_tag.tag_id}")
+        assert response.status_code == 200
+        data = response.json()
+        assert data["tag_id"] == str(test_tag.tag_id)
+        assert data["image_url"] == test_tag.image_url
+        assert "created_at" in data
+        assert data["submission_count"] == 1
+
+    def test_get_tag_detail_not_found(self, client):
+        fake_id = str(uuid.uuid4())
+        response = client.get(f"/tags/{fake_id}")
+        assert response.status_code == 404
+        assert "Tag not found" in response.json()["detail"]["msg"]
+
+    def test_get_tag_detail_captured_by_fields(
+        self, client, test_tag, test_user
+    ):
+        """Should return correct first/last captured_by user info."""
+        response = client.get(f"/tags/{test_tag.tag_id}")
+        assert response.status_code == 200
+        data = response.json()
+        assert data["first_captured_by"]["name"] == test_user.username
+        assert data["first_captured_by"]["id"] == str(test_user.user_id)
+        assert data["last_captured_by"]["name"] == test_user.username
+        assert data["last_captured_by"]["id"] == str(test_user.user_id)
+
+    def test_get_tag_detail_captured_at_fields(
+        self, client, test_tag
+    ):
+        """Should return non-null first/last captured_at timestamps."""
+        response = client.get(f"/tags/{test_tag.tag_id}")
+        assert response.status_code == 200
+        data = response.json()
+        assert data["first_captured_at"] is not None
+        assert data["last_captured_at"] is not None
+
+
+class TestGetTagSubmissions:
+    """Tests for GET /tags/{tag_id}/submissions endpoint."""
+
+    def test_get_tag_submissions_success(self, client, test_tag, test_submission):
+        response = client.get(f"/tags/{test_tag.tag_id}/submissions")
+        assert response.status_code == 200
+        data = response.json()
+        assert len(data["items"]) == 1
+        assert data["items"][0]["submission_id"] == str(test_submission.submission_id)
+        assert data["has_more"] is False
+
+    def test_get_tag_submissions_not_found(self, client):
+        fake_id = str(uuid.uuid4())
+        response = client.get(f"/tags/{fake_id}/submissions")
+        assert response.status_code == 404
+        assert "Tag not found" in response.json()["detail"]["msg"]
+
+    def test_get_tag_submissions_response_shape(self, client, test_tag, test_submission):
+        """Response should include items, next_cursor, and has_more."""
+        response = client.get(f"/tags/{test_tag.tag_id}/submissions")
+        assert response.status_code == 200
+        data = response.json()
+        assert "items" in data
+        assert "next_cursor" in data
+        assert "has_more" in data
+        assert data["next_cursor"] is None
+
+    def test_get_tag_submissions_invalid_cursor(self, client, test_tag):
+        response = client.get(f"/tags/{test_tag.tag_id}/submissions?cursor=not-valid")
+        assert response.status_code == 422
+
+
 class TestCreateTag:
     def test_create_tag_success(self, client, auth_headers, test_submission):
         png_buf = create_test_png()

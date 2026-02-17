@@ -3,7 +3,7 @@ from .user import LeaderboardRank, UserDetailResponse, UserResponse
 from .submission import CursorPaginatedResponse, PaginatedResponse, SubmissionResponse
 from .bike import BikeDetailResponse, BikeListItem, BikeResponse, Owner, UserSummary
 from .leaderboard import LeaderboardEntry, LeaderboardPeriod, LeaderboardResponse
-from .tag import TagResponse
+from .tag import TagDetailResponse, TagResponse
 
 __all__ = [
     "UserRegister",
@@ -25,5 +25,6 @@ __all__ = [
     "LeaderboardEntry",
     "LeaderboardPeriod",
     "LeaderboardResponse",
+    "TagDetailResponse",
     "TagResponse",
 ]

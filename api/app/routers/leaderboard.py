@@ -1,23 +1,27 @@
 import calendar
 from datetime import date, datetime, timedelta, timezone
-from typing import Annotated
+from typing import Annotated, Optional
 
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from ..database import get_db
-from ..models import User, FenderSubmission
+from ..models import User
+from ..models.orm import ScoringEvent
 from ..schemas.leaderboard import LeaderboardEntry, LeaderboardPeriod, LeaderboardResponse
 
 router = APIRouter(prefix="/leaderboard", tags=["leaderboard"])
 
 
-def _get_date_range(period: LeaderboardPeriod) -> tuple[datetime, datetime]:
+def _get_date_range(period: LeaderboardPeriod) -> tuple[Optional[datetime], Optional[datetime]]:
     """Return (start_dt, end_dt) as UTC datetimes using a half-open interval.
 
     end_dt is midnight of the day AFTER the period ends.
+    Returns (None, None) for all_time.
     """
+    if period == LeaderboardPeriod.all_time:
+        return None, None
     today = datetime.now(timezone.utc).date()
     if period == LeaderboardPeriod.daily:
         start = today
@@ -41,17 +45,25 @@ def get_leaderboard(
 ):
     start_dt, end_dt = _get_date_range(period)
 
-    rows = (
+    query = (
         db.query(
-            FenderSubmission.user_id,
+            ScoringEvent.user_id,
             User.username,
-            func.count().label("submission_count"),
+            func.sum(ScoringEvent.points).label("score"),
         )
-        .join(User, FenderSubmission.user_id == User.user_id)
-        .filter(FenderSubmission.uploaded_at >= start_dt)
-        .filter(FenderSubmission.uploaded_at < end_dt)
-        .group_by(FenderSubmission.user_id, User.username)
-        .order_by(func.count().desc())
+        .join(User, ScoringEvent.user_id == User.user_id)
+        .filter(ScoringEvent.revoked_at.is_(None))
+    )
+
+    if start_dt is not None:
+        query = query.filter(ScoringEvent.created_at >= start_dt)
+    if end_dt is not None:
+        query = query.filter(ScoringEvent.created_at < end_dt)
+
+    rows = (
+        query
+        .group_by(ScoringEvent.user_id, User.username)
+        .order_by(func.sum(ScoringEvent.points).desc())
         .all()
     )
 
@@ -60,14 +72,14 @@ def get_leaderboard(
             rank=i + 1,
             user_id=row.user_id,
             username=row.username,
-            submission_count=row.submission_count,
+            score=row.score,
         )
         for i, row in enumerate(rows)
     ]
 
     return LeaderboardResponse(
         period=period,
-        start_date=start_dt.date(),
-        end_date=(end_dt - timedelta(days=1)).date(),
+        start_date=start_dt.date() if start_dt else None,
+        end_date=(end_dt - timedelta(days=1)).date() if end_dt else None,
         entries=entries,
     )

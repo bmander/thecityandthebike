@@ -222,7 +222,7 @@ fun PhotoCaptureScreen(
                 }
             }
             Canvas(modifier = Modifier.fillMaxSize().testTag("template_overlay")) {
-                val overlayHeight = size.height * 1.0f
+                val overlayHeight = size.height * 0.95f
                 val scale = overlayHeight / fenderVector.viewportHeight
                 val overlayWidth = fenderVector.viewportWidth * scale
                 val offsetX = (size.width - overlayWidth) / 2

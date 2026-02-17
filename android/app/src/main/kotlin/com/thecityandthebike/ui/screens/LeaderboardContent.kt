@@ -126,7 +126,7 @@ private fun LeaderboardRow(
             )
         }
         Text(
-            text = "${entry.submissionCount}",
+            text = "${entry.score}",
             style = textStyle,
             fontWeight = fontWeight,
             color = textColor
