@@ -14,7 +14,7 @@ data class LeaderboardEntry(
 @Serializable
 data class LeaderboardResponse(
     val period: String,
-    @SerialName("start_date") val startDate: String,
-    @SerialName("end_date") val endDate: String,
+    @SerialName("start_date") val startDate: String? = null,
+    @SerialName("end_date") val endDate: String? = null,
     val entries: List<LeaderboardEntry>
 )
