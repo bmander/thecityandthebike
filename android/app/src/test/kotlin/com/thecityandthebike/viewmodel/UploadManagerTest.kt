@@ -63,7 +63,7 @@ class UploadManagerTest {
     }
 
     @Test
-    fun `upload failure should set error state`() = testScope.runTest {
+    fun `upload failure should set error state with localUri`() = testScope.runTest {
         val uri = mockk<Uri>()
         val imageFile = mockk<File>(relaxed = true)
         coEvery { imagePreparer.prepareImageFile(uri) } returns imageFile
@@ -76,10 +76,11 @@ class UploadManagerTest {
         val state = uploadManager.state.value
         assertTrue(state is UploadState.Error)
         assertEquals("Upload failed", (state as UploadState.Error).message)
+        assertEquals(uri, state.localUri)
     }
 
     @Test
-    fun `file conversion failure should set error and not attempt upload`() = testScope.runTest {
+    fun `file conversion failure should set error with localUri and not attempt upload`() = testScope.runTest {
         val uri = mockk<Uri>()
         coEvery { imagePreparer.prepareImageFile(uri) } returns null
 
@@ -90,6 +91,7 @@ class UploadManagerTest {
         val state = uploadManager.state.value
         assertTrue(state is UploadState.Error)
         assertEquals("Could not read image file", (state as UploadState.Error).message)
+        assertEquals(uri, (state as UploadState.Error).localUri)
         coVerify(exactly = 0) { submissionRepository.createSubmission(any<File>(), any(), any(), any()) }
     }
 
@@ -130,5 +132,65 @@ class UploadManagerTest {
         testDispatcher.scheduler.advanceUntilIdle()
 
         assertTrue(uploadManager.state.value is UploadState.Error)
+    }
+
+    @Test
+    fun `retryUpload re-triggers upload with same params`() = testScope.runTest {
+        val uri = mockk<Uri>()
+        val imageFile = mockk<File>(relaxed = true)
+        coEvery { imagePreparer.prepareImageFile(uri) } returns imageFile
+        coEvery { submissionRepository.createSubmission(any<File>(), any(), any(), any(), any()) } returns ApiResult.Error(AppError.Server(500, "Upload failed"))
+
+        val uploadManager = createUploadManager()
+        uploadManager.uploadAndCreateSubmission(uri, "bike1", "left")
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        assertTrue(uploadManager.state.value is UploadState.Error)
+
+        // Now make the retry succeed
+        val submissionResponse = SubmissionResponse(
+            submissionId = "new-1",
+            userId = "user1",
+            bikeQrId = "bike1",
+            imageUrl = "http://example.com/uploaded.jpg"
+        )
+        coEvery { submissionRepository.createSubmission(any<File>(), any(), any(), any(), any()) } returns ApiResult.Success(submissionResponse)
+
+        uploadManager.retryUpload()
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        assertEquals(UploadState.Success(), uploadManager.state.value)
+        coVerify(exactly = 2) { submissionRepository.createSubmission(any<File>(), "bike1", any(), any(), "left") }
+    }
+
+    @Test
+    fun `retryUpload with no previous upload is no-op`() = testScope.runTest {
+        val uploadManager = createUploadManager()
+
+        uploadManager.retryUpload()
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        assertEquals(UploadState.Idle, uploadManager.state.value)
+    }
+
+    @Test
+    fun `clearError clears retry params`() = testScope.runTest {
+        val uri = mockk<Uri>()
+        coEvery { imagePreparer.prepareImageFile(uri) } returns null
+
+        val uploadManager = createUploadManager()
+        uploadManager.uploadAndCreateSubmission(uri, "bike1")
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        assertTrue(uploadManager.state.value is UploadState.Error)
+
+        uploadManager.clearError()
+        assertEquals(UploadState.Idle, uploadManager.state.value)
+
+        // Retry should be no-op since params were cleared
+        uploadManager.retryUpload()
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        assertEquals(UploadState.Idle, uploadManager.state.value)
     }
 }

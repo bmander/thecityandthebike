@@ -6,6 +6,7 @@ import androidx.compose.ui.semantics.ProgressBarRangeInfo
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.hasClickAction
+import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.hasProgressBarRangeInfo
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithContentDescription
@@ -14,6 +15,7 @@ import androidx.compose.ui.test.performClick
 import com.thecityandthebike.createTestUri
 import com.thecityandthebike.createTestUriList
 import com.thecityandthebike.setContentWithTheme
+import android.net.Uri
 import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
@@ -186,5 +188,70 @@ class ImageGridTest {
         // Click second clickable item -> grid index 2 -> adjusted index 1
         clickableNodes[1].performClick()
         assertEquals(listOf(0, 1), clickedSubmissionIndices)
+    }
+
+    @Test
+    fun imageGrid_failedUri_showsWarningIcon() {
+        val testUris = createTestUriList(3)
+        val failedUris = setOf(testUris[0])
+
+        composeTestRule.setContentWithTheme {
+            ImageGrid(
+                imageUris = testUris,
+                failedUris = failedUris,
+                modifier = Modifier.fillMaxSize()
+            )
+        }
+
+        composeTestRule
+            .onNodeWithContentDescription("Upload failed")
+            .assertIsDisplayed()
+    }
+
+    @Test
+    fun imageGrid_failedUri_isClickableWithRetryCallback() {
+        val testUris = createTestUriList(3)
+        val failedUris = setOf(testUris[0])
+        var clickedUri: Uri? = null
+
+        composeTestRule.setContentWithTheme {
+            ImageGrid(
+                imageUris = testUris,
+                failedUris = failedUris,
+                modifier = Modifier.fillMaxSize(),
+                onImageClick = {},
+                onFailedImageClick = { clickedUri = it }
+            )
+        }
+
+        // The failed item should be clickable
+        composeTestRule
+            .onAllNodes(hasClickAction())
+            .assertCountEquals(3) // 1 failed + 2 normal
+
+        // Click the failed item (first in the grid)
+        composeTestRule
+            .onAllNodes(hasClickAction().and(hasContentDescription("Upload failed")))[0]
+            .performClick()
+
+        assertEquals(testUris[0], clickedUri)
+    }
+
+    @Test
+    fun imageGrid_failedUri_doesNotShowLoadingIndicator() {
+        val testUris = createTestUriList(3)
+        val failedUris = setOf(testUris[0])
+
+        composeTestRule.setContentWithTheme {
+            ImageGrid(
+                imageUris = testUris,
+                failedUris = failedUris,
+                modifier = Modifier.fillMaxSize()
+            )
+        }
+
+        composeTestRule
+            .onNode(hasProgressBarRangeInfo(ProgressBarRangeInfo.Indeterminate))
+            .assertDoesNotExist()
     }
 }

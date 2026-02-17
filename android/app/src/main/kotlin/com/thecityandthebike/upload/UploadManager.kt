@@ -23,7 +23,7 @@ sealed interface UploadState {
         val pointsAwarded: Int = 0,
         val pointsBreakdown: List<ScoringBreakdown> = emptyList()
     ) : UploadState
-    data class Error(val message: String) : UploadState
+    data class Error(val message: String, val localUri: Uri) : UploadState
 }
 
 @Singleton
@@ -35,14 +35,22 @@ class UploadManager @Inject constructor(
     private val _state = MutableStateFlow<UploadState>(UploadState.Idle)
     val state: StateFlow<UploadState> = _state.asStateFlow()
 
+    private var lastLocalUri: Uri? = null
+    private var lastBikeQrId: String? = null
+    private var lastSide: String? = null
+
     fun uploadAndCreateSubmission(localUri: Uri, bikeQrId: String, side: String? = null) {
+        lastLocalUri = localUri
+        lastBikeQrId = bikeQrId
+        lastSide = side
+
         appScope.launch {
             _state.value = UploadState.Uploading(localUri)
 
             val imageFile = imagePreparer.prepareImageFile(localUri)
 
             if (imageFile == null) {
-                _state.value = UploadState.Error("Could not read image file")
+                _state.value = UploadState.Error("Could not read image file", localUri)
                 return@launch
             }
 
@@ -56,7 +64,7 @@ class UploadManager @Inject constructor(
                         )
                     }
                     is ApiResult.Error -> {
-                        _state.value = UploadState.Error(result.error.displayMessage)
+                        _state.value = UploadState.Error(result.error.displayMessage, localUri)
                     }
                 }
             } finally {
@@ -65,7 +73,16 @@ class UploadManager @Inject constructor(
         }
     }
 
+    fun retryUpload() {
+        val uri = lastLocalUri ?: return
+        val bikeQrId = lastBikeQrId ?: return
+        uploadAndCreateSubmission(uri, bikeQrId, lastSide)
+    }
+
     fun clearError() {
         _state.value = UploadState.Idle
+        lastLocalUri = null
+        lastBikeQrId = null
+        lastSide = null
     }
 }

@@ -220,7 +220,8 @@ private fun FeedContent(
     }
     val pendingUri = state.pendingUploadUri
     val imageUris = if (pendingUri != null) listOf(pendingUri) + submissionImageUris else submissionImageUris
-    val uploadingUris = if (pendingUri != null) setOf(pendingUri) else emptySet()
+    val uploadingUris = if (pendingUri != null && !state.uploadFailed) setOf(pendingUri) else emptySet()
+    val failedUris = if (pendingUri != null && state.uploadFailed) setOf(pendingUri) else emptySet()
 
     Box(modifier = Modifier.fillMaxSize()) {
         PullToRefreshBox(
@@ -231,6 +232,7 @@ private fun FeedContent(
             ImageGrid(
                 imageUris = imageUris,
                 uploadingUris = uploadingUris,
+                failedUris = failedUris,
                 modifier = Modifier.fillMaxSize(),
                 onImageClick = onImageClick?.let { callback ->
                     { index ->
@@ -241,6 +243,7 @@ private fun FeedContent(
                         }
                     }
                 },
+                onFailedImageClick = { viewModel.retryUpload() },
                 onLoadMore = { viewModel.loadMoreSubmissions() }
             )
         }
@@ -269,7 +272,14 @@ private fun FeedContent(
                 modifier = Modifier
                     .align(Alignment.BottomCenter)
                     .padding(16.dp),
-                action = {
+                action = if (state.uploadFailed) {
+                    {
+                        TextButton(onClick = { viewModel.retryUpload() }) {
+                            Text("Retry")
+                        }
+                    }
+                } else null,
+                dismissAction = {
                     TextButton(onClick = { viewModel.clearError() }) {
                         Text("Dismiss")
                     }
