@@ -172,7 +172,7 @@ class MainScreenTest {
         }
 
         composeTestRule
-            .onNodeWithContentDescription("Login")
+            .onNodeWithText("Sign in")
             .assertIsDisplayed()
 
         composeTestRule
@@ -264,7 +264,7 @@ class MainScreenTest {
             .assertIsDisplayed()
 
         composeTestRule
-            .onNodeWithContentDescription("Login")
+            .onNodeWithText("Sign in")
             .assertDoesNotExist()
     }
 
