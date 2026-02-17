@@ -71,7 +71,7 @@ class TestGetLeaderboard:
         assert data["start_date"] == now.date().isoformat()
         assert data["end_date"] == now.date().isoformat()
         assert len(data["entries"]) == 1
-        assert data["entries"][0]["score"] == 47  # first bike ever: 25+15+5+2
+        assert data["entries"][0]["score"] == 22  # first bike ever: 10+5+5+2
         assert data["entries"][0]["username"] == "testuser"
         assert data["entries"][0]["rank"] == 1
 
@@ -99,7 +99,7 @@ class TestGetLeaderboard:
         data = response.json()
         assert data["period"] == "weekly"
         assert len(data["entries"]) == 1
-        assert data["entries"][0]["score"] == 47
+        assert data["entries"][0]["score"] == 22
 
     def test_monthly_leaderboard(self, client, db_session, test_user, test_bike):
         """Monthly leaderboard returns scores from current calendar month."""
@@ -146,7 +146,7 @@ class TestGetLeaderboard:
 
         bike = db_session.query(Bike).filter(Bike.id == test_bike.id).first()
 
-        # Alice: first-ever bike = 47 points
+        # Alice: first-ever bike = 22 points
         sub_alice = FenderSubmission(
             user_id=user_alice.user_id,
             bike_id=test_bike.id,
@@ -159,7 +159,7 @@ class TestGetLeaderboard:
         award_submission_points(db_session, user_alice.user_id, sub_alice, bike)
         db_session.commit()
 
-        # Bob: same bike same day = 15 + 2 = 17 points
+        # Bob: same bike same day = 5 + 2 = 7 points
         sub_bob = FenderSubmission(
             user_id=user_bob.user_id,
             bike_id=test_bike.id,
@@ -179,10 +179,10 @@ class TestGetLeaderboard:
         assert len(entries) == 2
         assert entries[0]["rank"] == 1
         assert entries[0]["username"] == "alice"
-        assert entries[0]["score"] == 47
+        assert entries[0]["score"] == 22
         assert entries[1]["rank"] == 2
         assert entries[1]["username"] == "bob"
-        assert entries[1]["score"] == 17
+        assert entries[1]["score"] == 7
 
     def test_response_includes_user_id(self, client, db_session, test_user, test_bike):
         """Each entry should include the user_id."""
