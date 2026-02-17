@@ -337,6 +337,19 @@ class ImageDetailViewModelTest {
     }
 
     @Test
+    fun `startCreatingTag sets isCreatingTag immediately`() = runTest {
+        coEvery { submissionRepository.getSubmission(testSubmissionId) } returns ApiResult.Success(testSubmission)
+        every { tokenManager.getUserId() } returns "user1"
+
+        val viewModel = createViewModel()
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        assertFalse(viewModel.state.value.isCreatingTag)
+        viewModel.startCreatingTag()
+        assertTrue(viewModel.state.value.isCreatingTag)
+    }
+
+    @Test
     fun `createTag sets isCreatingTag while in progress`() = runTest {
         coEvery { submissionRepository.getSubmission(testSubmissionId) } returns ApiResult.Success(testSubmission)
         every { tokenManager.getUserId() } returns "user1"

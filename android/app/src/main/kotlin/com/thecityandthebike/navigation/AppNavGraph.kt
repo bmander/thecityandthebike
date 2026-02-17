@@ -442,6 +442,7 @@ private fun ImageDetailRoute(
                     processedMaskWidth = detailState.processedMaskWidth,
                     processedMaskHeight = detailState.processedMaskHeight,
                     onProcessMask = { file -> viewModel.processMask(file) },
+                    onConfirmTagStarted = { viewModel.startCreatingTag() },
                     onConfirmTag = { file -> viewModel.createTag(file) },
                     onBackToDrawing = { viewModel.goBackToDrawing() },
                     onTagClick = onTagClick,
