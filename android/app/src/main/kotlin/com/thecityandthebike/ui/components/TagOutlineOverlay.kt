@@ -6,11 +6,10 @@ import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.offset
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.Label
+import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -21,7 +20,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
@@ -153,25 +151,47 @@ fun TagOutlineOverlay(
             }
         }
 
-        if (selectedTagId != null && onTagClick != null) {
-            IconButton(
-                onClick = { onTagClick(selectedTagId) },
-                modifier = Modifier
-                    .align(Alignment.BottomEnd)
-                    .padding(8.dp)
-                    .size(32.dp)
-                    .background(
-                        color = MaterialTheme.colorScheme.surfaceVariant,
-                        shape = CircleShape
-                    )
-                    .testTag("viewTagButton")
-            ) {
-                Icon(
-                    Icons.AutoMirrored.Filled.Label,
-                    contentDescription = "View tag",
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.size(18.dp)
-                )
+        if (selectedTagId != null && displaySize.width > 0 && displaySize.height > 0 && onTagClick != null) {
+            val selectedTag = tags.find { it.tagId == selectedTagId }
+            if (selectedTag != null) {
+                val ring = selectedTag.ring
+                val ringWidth = selectedTag.ringWidth
+                val ringHeight = selectedTag.ringHeight
+                if (ring != null && ringWidth != null && ringHeight != null &&
+                    ring.size >= 3 && ringWidth > 0 && ringHeight > 0
+                ) {
+                    val scaleX = displaySize.width.toFloat() / ringWidth
+                    val scaleY = displaySize.height.toFloat() / ringHeight
+                    val maxX = ring.maxOf { it[0] } * scaleX
+                    val maxY = ring.maxOf { it[1] } * scaleY
+
+                    val density = LocalDensity.current
+                    val buttonSizePx = with(density) { 21.dp.toPx() }
+
+                    IconButton(
+                        onClick = { onTagClick(selectedTagId) },
+                        modifier = Modifier
+                            .offset {
+                                IntOffset(
+                                    (maxX - buttonSizePx / 2).toInt(),
+                                    (maxY - buttonSizePx / 2).toInt()
+                                )
+                            }
+                            .size(21.dp)
+                            .background(
+                                color = MaterialTheme.colorScheme.surfaceVariant,
+                                shape = CircleShape
+                            )
+                            .testTag("viewTagButton")
+                    ) {
+                        Icon(
+                            Icons.AutoMirrored.Filled.ArrowForward,
+                            contentDescription = "View tag",
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.size(18.dp)
+                        )
+                    }
+                }
             }
         }
     }
