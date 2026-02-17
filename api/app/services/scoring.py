@@ -4,6 +4,20 @@ from sqlalchemy.orm import Session
 
 from ..models.orm import FenderSubmission, ScoringEvent
 
+# --- Scoring rules ---------------------------------------------------------
+# Submission bonuses: awarded when no prior submission matches the condition.
+# "add_image" is unconditional (always awarded).
+SUBMISSION_POINTS = {
+    "first_bike_ever": 10,
+    "first_bike_for_user": 5,
+    "first_bike_today": 5,
+    "add_image": 2,
+}
+
+# Tag points by position (0-indexed). Tags beyond this list earn 0.
+TAG_POINTS = [2, 1, 1]
+# ---------------------------------------------------------------------------
+
 
 def award_submission_points(db: Session, user_id, submission, bike) -> int:
     """Award points for a new submission. Returns total points awarded."""
@@ -19,13 +33,14 @@ def award_submission_points(db: Session, user_id, submission, bike) -> int:
         .first()
     )
     if prior_any is None:
+        pts = SUBMISSION_POINTS["first_bike_ever"]
         db.add(ScoringEvent(
             user_id=user_id,
             event_type="first_bike_ever",
-            points=25,
+            points=pts,
             submission_id=submission.submission_id,
         ))
-        total += 25
+        total += pts
 
     # Check if any prior submissions by this user for this bike (first bike for user)
     prior_user = (
@@ -38,13 +53,14 @@ def award_submission_points(db: Session, user_id, submission, bike) -> int:
         .first()
     )
     if prior_user is None:
+        pts = SUBMISSION_POINTS["first_bike_for_user"]
         db.add(ScoringEvent(
             user_id=user_id,
             event_type="first_bike_for_user",
-            points=15,
+            points=pts,
             submission_id=submission.submission_id,
         ))
-        total += 15
+        total += pts
 
     # Check if any prior submissions for this bike with today's captured_date (first bike today)
     prior_today = (
@@ -57,22 +73,24 @@ def award_submission_points(db: Session, user_id, submission, bike) -> int:
         .first()
     )
     if prior_today is None:
+        pts = SUBMISSION_POINTS["first_bike_today"]
         db.add(ScoringEvent(
             user_id=user_id,
             event_type="first_bike_today",
-            points=5,
+            points=pts,
             submission_id=submission.submission_id,
         ))
-        total += 5
+        total += pts
 
     # Always award add_image
+    pts = SUBMISSION_POINTS["add_image"]
     db.add(ScoringEvent(
         user_id=user_id,
         event_type="add_image",
-        points=2,
+        points=pts,
         submission_id=submission.submission_id,
     ))
-    total += 2
+    total += pts
 
     return total
 
@@ -89,12 +107,7 @@ def award_tag_points(db: Session, user_id, submission_id, tag) -> int:
         .count()
     )
 
-    if prior_count == 0:
-        points = 2
-    elif prior_count <= 2:
-        points = 1
-    else:
-        points = 0
+    points = TAG_POINTS[prior_count] if prior_count < len(TAG_POINTS) else 0
 
     if points > 0:
         db.add(ScoringEvent(
