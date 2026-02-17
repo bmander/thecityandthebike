@@ -52,7 +52,7 @@ fun TagOutlineOverlay(
             .fillMaxSize()
             .testTag("tagOutlineOverlay")
             .onSizeChanged { displaySize = it }
-            .pointerInput(tags, displaySize) {
+            .pointerInput(tags, displaySize, selectedTagId) {
                 detectTapGestures { offset ->
                     if (displaySize.width <= 0 || displaySize.height <= 0) return@detectTapGestures
 
