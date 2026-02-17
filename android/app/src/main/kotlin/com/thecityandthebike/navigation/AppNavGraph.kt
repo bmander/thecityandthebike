@@ -36,6 +36,7 @@ import com.thecityandthebike.ui.screens.PrivacyCopyrightScreen
 import com.thecityandthebike.ui.screens.QrScannerScreen
 import com.thecityandthebike.ui.screens.RegisterScreen
 import com.thecityandthebike.ui.screens.SplashScreen
+import com.thecityandthebike.ui.screens.MeScreen
 import com.thecityandthebike.ui.screens.UserScreen
 import com.thecityandthebike.util.imageUrlToUri
 import com.thecityandthebike.ui.viewmodel.AuthViewModel
@@ -119,11 +120,8 @@ fun AppNavGraph(onboardingPrefs: OnboardingPrefs) {
             val mainViewModel: MainViewModel = hiltViewModel()
             val leaderboardViewModel: LeaderboardViewModel = hiltViewModel()
             val bikesListViewModel: BikesListViewModel = hiltViewModel()
-            val meViewModel: MeViewModel = hiltViewModel()
-            val meState by meViewModel.state.collectAsStateWithLifecycle()
             ObserveDeletion(backStackEntry) {
                 mainViewModel.removeSubmission(it)
-                meViewModel.removeSubmission(it)
             }
             MainScreen(
                 viewModel = mainViewModel,
@@ -154,12 +152,9 @@ fun AppNavGraph(onboardingPrefs: OnboardingPrefs) {
                 onBikeClick = { bikeQrId ->
                     navController.navigate(Bike(bikeQrId))
                 },
-                meState = meState,
-                onMeImageClick = { submissionId ->
-                    navController.navigate(ImageDetail(submissionId))
-                },
-                onMeLoadMore = { meViewModel.loadMoreSubmissions() },
-                onMeClearError = { meViewModel.clearError() }
+                onShowMe = {
+                    navController.navigate(Me)
+                }
             )
         }
 
@@ -237,6 +232,32 @@ fun AppNavGraph(onboardingPrefs: OnboardingPrefs) {
                 onHome = { navController.popBackStack<Main>(inclusive = false) },
                 onDeleted = navController.handleDeletion(),
                 onBikeClick = { bikeQrId -> navController.navigate(Bike(bikeQrId)) }
+            )
+        }
+
+        composable<Me> { backStackEntry ->
+            val meViewModel: MeViewModel = hiltViewModel()
+            ObserveDeletion(backStackEntry) { meViewModel.removeSubmission(it) }
+            MeScreen(
+                viewModel = meViewModel,
+                onBack = { navController.popBackStack() },
+                onImageClick = { submissionId ->
+                    navController.navigate(MeImageDetail(submissionId))
+                }
+            )
+        }
+
+        composable<MeImageDetail>(
+            enterTransition = { EnterTransition.None },
+            exitTransition = { ExitTransition.None },
+            popEnterTransition = { EnterTransition.None },
+            popExitTransition = { ExitTransition.None }
+        ) {
+            ImageDetailRoute(
+                onHome = { navController.popBackStack<Main>(inclusive = false) },
+                onDeleted = navController.handleDeletion(),
+                onBikeClick = { bikeQrId -> navController.navigate(Bike(bikeQrId)) },
+                onUserClick = { userId -> navController.navigate(User(userId)) }
             )
         }
 
