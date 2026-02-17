@@ -6,18 +6,22 @@ import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Label
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import com.thecityandthebike.ui.theme.ExtendedTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
@@ -38,6 +42,7 @@ fun TagOutlineOverlay(
     onTagTapped: (String?) -> Unit = {},
     isTagDeletable: (TagResponse) -> Boolean = { false },
     onDeleteTag: (String) -> Unit = {},
+    onTagClick: ((String) -> Unit)? = null,
     modifier: Modifier = Modifier,
 ) {
     var displaySize by remember { mutableStateOf(IntSize.Zero) }
@@ -145,6 +150,28 @@ fun TagOutlineOverlay(
                         )
                     }
                 }
+            }
+        }
+
+        if (selectedTagId != null && onTagClick != null) {
+            IconButton(
+                onClick = { onTagClick(selectedTagId) },
+                modifier = Modifier
+                    .align(Alignment.BottomEnd)
+                    .padding(8.dp)
+                    .size(32.dp)
+                    .background(
+                        color = MaterialTheme.colorScheme.surfaceVariant,
+                        shape = CircleShape
+                    )
+                    .testTag("viewTagButton")
+            ) {
+                Icon(
+                    Icons.AutoMirrored.Filled.Label,
+                    contentDescription = "View tag",
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.size(18.dp)
+                )
             }
         }
     }
