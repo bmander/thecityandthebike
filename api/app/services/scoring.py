@@ -109,18 +109,26 @@ def award_tag_points(db: Session, user_id, submission_id, tag) -> int:
 
 
 def revoke_submission_points(db: Session, submission_id) -> None:
-    """Revoke all scoring events for a submission."""
+    """Revoke all scoring events for a submission and detach FK references."""
     now = datetime.now(timezone.utc)
     db.query(ScoringEvent).filter(
         ScoringEvent.submission_id == submission_id,
         ScoringEvent.revoked_at.is_(None),
     ).update({"revoked_at": now})
+    # Detach FK references so the submission and its tags can be deleted
+    db.query(ScoringEvent).filter(
+        ScoringEvent.submission_id == submission_id,
+    ).update({"submission_id": None, "tag_id": None})
 
 
 def revoke_tag_points(db: Session, tag_id) -> None:
-    """Revoke scoring events for a tag."""
+    """Revoke scoring events for a tag and detach FK reference."""
     now = datetime.now(timezone.utc)
     db.query(ScoringEvent).filter(
         ScoringEvent.tag_id == tag_id,
         ScoringEvent.revoked_at.is_(None),
     ).update({"revoked_at": now})
+    # Detach FK reference so the tag can be deleted
+    db.query(ScoringEvent).filter(
+        ScoringEvent.tag_id == tag_id,
+    ).update({"tag_id": None})
