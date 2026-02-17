@@ -320,9 +320,38 @@ suspend fun exportCompositedFromRing(
     }
     originalBitmap.recycle()
 
+    // Crop to the bounding box of the ring polygon
+    var minX = Float.MAX_VALUE
+    var minY = Float.MAX_VALUE
+    var maxX = Float.MIN_VALUE
+    var maxY = Float.MIN_VALUE
+    for (point in ring) {
+        val px = point[0] * scaleX
+        val py = point[1] * scaleY
+        if (px < minX) minX = px
+        if (py < minY) minY = py
+        if (px > maxX) maxX = px
+        if (py > maxY) maxY = py
+    }
+    val cropLeft = minX.toInt().coerceIn(0, outputWidth)
+    val cropTop = minY.toInt().coerceIn(0, outputHeight)
+    val cropRight = (maxX + 1).toInt().coerceIn(cropLeft, outputWidth)
+    val cropBottom = (maxY + 1).toInt().coerceIn(cropTop, outputHeight)
+    val cropWidth = cropRight - cropLeft
+    val cropHeight = cropBottom - cropTop
+
+    val cropped = if (cropWidth > 0 && cropHeight > 0) {
+        Bitmap.createBitmap(output, cropLeft, cropTop, cropWidth, cropHeight)
+    } else {
+        output
+    }
+
     val tempFile = File(context.cacheDir, "tag_${System.currentTimeMillis()}.png")
     FileOutputStream(tempFile).use { out ->
-        output.compress(Bitmap.CompressFormat.PNG, 100, out)
+        cropped.compress(Bitmap.CompressFormat.PNG, 100, out)
+    }
+    if (cropped !== output) {
+        cropped.recycle()
     }
     output.recycle()
 
