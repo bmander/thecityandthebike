@@ -95,6 +95,7 @@ fun ImageDetailScreen(
     processedMaskWidth: Int = 0,
     processedMaskHeight: Int = 0,
     onProcessMask: (File) -> Unit = {},
+    onConfirmTagStarted: () -> Unit = {},
     onConfirmTag: (File) -> Unit = {},
     onBackToDrawing: () -> Unit = {},
     onTagClick: ((String) -> Unit)? = null,
@@ -218,6 +219,7 @@ fun ImageDetailScreen(
                     Button(
                         onClick = {
                             imageUri?.let { uri ->
+                                onConfirmTagStarted()
                                 scope.launch {
                                     exportCompositedFromRing(
                                         context, uri, processedRing,

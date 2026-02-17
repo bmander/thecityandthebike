@@ -162,6 +162,10 @@ class ImageDetailViewModel @Inject constructor(
         )
     }
 
+    fun startCreatingTag() {
+        _state.value = _state.value.copy(isCreatingTag = true)
+    }
+
     fun createTag(imageFile: java.io.File) {
         viewModelScope.launch {
             _state.value = _state.value.copy(isCreatingTag = true)
