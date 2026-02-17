@@ -110,3 +110,16 @@ class Tag(Base):
 
     submission = relationship("FenderSubmission", back_populates="tags")
     user = relationship("User")
+
+
+class ScoringEvent(Base):
+    __tablename__ = "scoring_events"
+
+    event_id = Column(Uuid, primary_key=True, default=uuid.uuid4)
+    user_id = Column(Uuid, ForeignKey("users.user_id"), nullable=False, index=True)
+    event_type = Column(String(50), nullable=False)
+    points = Column(Integer, nullable=False)
+    submission_id = Column(Uuid, ForeignKey("fender_submissions.submission_id"), nullable=True)
+    tag_id = Column(Uuid, ForeignKey("tags.tag_id"), nullable=True)
+    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
+    revoked_at = Column(DateTime(timezone=True), nullable=True)

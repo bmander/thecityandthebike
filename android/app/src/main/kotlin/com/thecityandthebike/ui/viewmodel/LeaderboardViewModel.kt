@@ -15,7 +15,8 @@ import javax.inject.Inject
 enum class LeaderboardPeriod(val apiValue: String, val displayName: String) {
     DAILY("daily", "Daily"),
     WEEKLY("weekly", "Weekly"),
-    MONTHLY("monthly", "Monthly")
+    MONTHLY("monthly", "Monthly"),
+    ALL_TIME("all_time", "All Time")
 }
 
 data class LeaderboardState(

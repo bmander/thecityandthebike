@@ -1,4 +1,5 @@
 from datetime import datetime
+from typing import Optional
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict
@@ -15,3 +16,4 @@ class TagResponse(BaseModel):
     ring_width: int | None = None
     ring_height: int | None = None
     created_at: datetime
+    points_awarded: Optional[int] = None
