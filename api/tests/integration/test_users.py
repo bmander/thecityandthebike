@@ -2,6 +2,7 @@ from datetime import date, datetime, timedelta, timezone
 
 from app.dependencies import get_password_hash
 from app.models import User, FenderSubmission, Bike
+from app.services.scoring import award_submission_points
 
 
 class TestGetProfile:
@@ -346,14 +347,17 @@ class TestGetUserDetail:
     ):
         """User with recent submissions should appear ranked on leaderboards."""
         now = datetime.now(timezone.utc)
-        for _ in range(3):
-            db_session.add(FenderSubmission(
-                user_id=test_user.user_id,
-                bike_id=test_bike.id,
-                image_url="https://example.com/lb.jpg",
-                captured_date=date.today(),
-                uploaded_at=now,
-            ))
+        bike = db_session.query(Bike).filter(Bike.id == test_bike.id).first()
+        sub = FenderSubmission(
+            user_id=test_user.user_id,
+            bike_id=test_bike.id,
+            image_url="https://example.com/lb.jpg",
+            captured_date=date.today(),
+            uploaded_at=now,
+        )
+        db_session.add(sub)
+        db_session.commit()
+        award_submission_points(db_session, test_user.user_id, sub, bike)
         db_session.commit()
 
         response = client.get(f"/users/{test_user.user_id}")
@@ -363,6 +367,7 @@ class TestGetUserDetail:
         assert ranks["daily"] == 1
         assert ranks["weekly"] == 1
         assert ranks["monthly"] == 1
+        assert ranks["all_time"] == 1
 
     def test_get_user_detail_leaderboard_ranks_no_submissions(
         self, client, test_user
@@ -375,11 +380,12 @@ class TestGetUserDetail:
         assert ranks["daily"] is None
         assert ranks["weekly"] is None
         assert ranks["monthly"] is None
+        assert ranks["all_time"] is None
 
     def test_get_user_detail_leaderboard_ranks_not_first(
         self, client, test_user, test_bike, db_session
     ):
-        """User with fewer submissions than another should rank lower."""
+        """User with fewer score than another should rank lower."""
         now = datetime.now(timezone.utc)
         other_user = User(
             username="leaderuser",
@@ -389,23 +395,32 @@ class TestGetUserDetail:
         db_session.add(other_user)
         db_session.commit()
 
-        # other_user has 5 submissions, test_user has 2
-        for _ in range(5):
-            db_session.add(FenderSubmission(
-                user_id=other_user.user_id,
-                bike_id=test_bike.id,
-                image_url="https://example.com/o.jpg",
-                captured_date=date.today(),
-                uploaded_at=now,
-            ))
-        for _ in range(2):
-            db_session.add(FenderSubmission(
-                user_id=test_user.user_id,
-                bike_id=test_bike.id,
-                image_url="https://example.com/t.jpg",
-                captured_date=date.today(),
-                uploaded_at=now,
-            ))
+        bike = db_session.query(Bike).filter(Bike.id == test_bike.id).first()
+
+        # other_user: first ever bike = 47 points
+        sub_other = FenderSubmission(
+            user_id=other_user.user_id,
+            bike_id=test_bike.id,
+            image_url="https://example.com/o.jpg",
+            captured_date=date.today(),
+            uploaded_at=now,
+        )
+        db_session.add(sub_other)
+        db_session.commit()
+        award_submission_points(db_session, other_user.user_id, sub_other, bike)
+        db_session.commit()
+
+        # test_user: same bike same day = 17 points
+        sub_test = FenderSubmission(
+            user_id=test_user.user_id,
+            bike_id=test_bike.id,
+            image_url="https://example.com/t.jpg",
+            captured_date=date.today(),
+            uploaded_at=now,
+        )
+        db_session.add(sub_test)
+        db_session.commit()
+        award_submission_points(db_session, test_user.user_id, sub_test, bike)
         db_session.commit()
 
         response = client.get(f"/users/{test_user.user_id}")
@@ -415,6 +430,7 @@ class TestGetUserDetail:
         assert ranks["daily"] == 2
         assert ranks["weekly"] == 2
         assert ranks["monthly"] == 2
+        assert ranks["all_time"] == 2
 
 
 class TestGetUserSubmissions:

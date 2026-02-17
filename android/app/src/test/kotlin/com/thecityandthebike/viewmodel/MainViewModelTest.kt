@@ -256,7 +256,7 @@ class MainViewModelTest {
         val refreshedPaginated = CursorPaginatedSubmissions(items = refreshedPage, nextCursor = null, hasMore = false)
         coEvery { submissionRepository.getSubmissions(any(), any()) } returns ApiResult.Success(refreshedPaginated)
 
-        uploadStateFlow.value = UploadState.Success
+        uploadStateFlow.value = UploadState.Success()
         testDispatcher.scheduler.advanceUntilIdle()
 
         assertEquals(1, viewModel.state.value.submissions.size)
@@ -352,7 +352,7 @@ class MainViewModelTest {
         val refreshedPaginated = CursorPaginatedSubmissions(items = refreshedPage, nextCursor = null, hasMore = false)
         coEvery { submissionRepository.getSubmissions(any(), any()) } returns ApiResult.Success(refreshedPaginated)
 
-        uploadStateFlow.value = UploadState.Success
+        uploadStateFlow.value = UploadState.Success()
         testDispatcher.scheduler.advanceUntilIdle()
 
         assertNull(viewModel.state.value.pendingUploadUri)

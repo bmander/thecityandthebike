@@ -38,6 +38,7 @@ import com.thecityandthebike.ui.components.CameraFAB
 import com.thecityandthebike.ui.components.ImageGrid
 import com.thecityandthebike.ui.components.LoginFAB
 import com.thecityandthebike.ui.components.MenuButton
+import com.thecityandthebike.ui.components.PointsAwardedOverlay
 import com.thecityandthebike.ui.viewmodel.BikesListViewModel
 import com.thecityandthebike.ui.viewmodel.LeaderboardViewModel
 import com.thecityandthebike.ui.viewmodel.MainViewModel
@@ -190,6 +191,15 @@ fun MainScreen(
                     .align(Alignment.BottomCenter)
                     .windowInsetsPadding(WindowInsets.navigationBars)
                     .padding(16.dp)
+            )
+        }
+
+        // Points awarded overlay
+        val mainState by viewModel.state.collectAsStateWithLifecycle()
+        mainState.pointsAwarded?.let { points ->
+            PointsAwardedOverlay(
+                points = points,
+                onDismiss = { viewModel.clearPointsAwarded() }
             )
         }
     }
