@@ -14,10 +14,10 @@ from ..database import get_db
 from ..dependencies import get_current_user
 from ..models import User, FenderSubmission, Tag
 from ..schemas.tag import TagDetailResponse, TagResponse
-from ..schemas.submission import CursorPaginatedResponse, SubmissionResponse
+from ..schemas.submission import CursorPaginatedResponse, ScoringBreakdown, SubmissionResponse
 from ..schemas.bike import UserSummary
 from ..schemas.auth import MessageResponse
-from ..services.scoring import award_tag_points, revoke_tag_points
+from ..services.scoring import EVENT_LABELS, award_tag_points, revoke_tag_points
 from ..services.storage import (
     ALLOWED_TAG_EXTENSIONS,
     CHUNK_SIZE,
@@ -249,10 +249,14 @@ async def create_tag(
     db.add(tag)
     db.commit()
     db.refresh(tag)
-    points = award_tag_points(db, current_user.user_id, submission_id, tag)
+    breakdown = award_tag_points(db, current_user.user_id, submission_id, tag)
     db.commit()
     response = TagResponse.model_validate(tag)
-    response.points_awarded = points
+    response.points_awarded = sum(pts for _, pts in breakdown)
+    response.points_breakdown = [
+        ScoringBreakdown(event_type=et, label=EVENT_LABELS.get(et, et), points=pts)
+        for et, pts in breakdown
+    ] or None
     return response
 
 

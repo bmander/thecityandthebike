@@ -5,6 +5,7 @@ from uuid import UUID
 from pydantic import BaseModel, ConfigDict
 
 from .bike import UserSummary
+from .submission import ScoringBreakdown
 
 
 class TagResponse(BaseModel):
@@ -19,6 +20,7 @@ class TagResponse(BaseModel):
     ring_height: int | None = None
     created_at: datetime
     points_awarded: Optional[int] = None
+    points_breakdown: Optional[list[ScoringBreakdown]] = None
 
 
 class TagDetailResponse(BaseModel):

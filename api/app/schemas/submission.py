@@ -20,6 +20,12 @@ class CursorPaginatedResponse(BaseModel, Generic[T]):
     has_more: bool
 
 
+class ScoringBreakdown(BaseModel):
+    event_type: str
+    label: str
+    points: int
+
+
 class SubmissionResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
@@ -35,3 +41,4 @@ class SubmissionResponse(BaseModel):
     side: Optional[str] = None
     username: Optional[str] = None
     points_awarded: Optional[int] = None
+    points_breakdown: Optional[List[ScoringBreakdown]] = None

@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import android.net.Uri
 import com.thecityandthebike.data.model.ApiResult
+import com.thecityandthebike.data.model.dto.ScoringBreakdown
 import com.thecityandthebike.data.model.dto.SubmissionResponse
 import com.thecityandthebike.data.repository.SubmissionRepository
 import com.thecityandthebike.upload.UploadManager
@@ -24,7 +25,7 @@ data class MainState(
     val hasMorePages: Boolean = true,
     val nextCursor: String? = null,
     val pendingUploadUri: Uri? = null,
-    val pointsAwarded: Int? = null
+    val pointsAwarded: List<ScoringBreakdown>? = null
 )
 
 @HiltViewModel
@@ -49,9 +50,9 @@ class MainViewModel @Inject constructor(
                         _state.value = _state.value.copy(pendingUploadUri = uploadState.localUri)
                     }
                     is UploadState.Success -> {
-                        val pts = uploadState.pointsAwarded
-                        if (pts > 0) {
-                            _state.value = _state.value.copy(pointsAwarded = pts)
+                        val breakdown = uploadState.pointsBreakdown
+                        if (breakdown.isNotEmpty()) {
+                            _state.value = _state.value.copy(pointsAwarded = breakdown)
                         }
                         fetchSubmissions(isRefresh = true, clearPendingUpload = true)
                     }

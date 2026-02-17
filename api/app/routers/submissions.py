@@ -14,7 +14,8 @@ from ..dependencies import get_current_user, get_current_user_optional
 from ..models import User, Bike, FenderSubmission
 from ..schemas import CursorPaginatedResponse, SubmissionResponse
 from ..schemas.auth import MessageResponse
-from ..services.scoring import award_submission_points, revoke_submission_points
+from ..schemas.submission import ScoringBreakdown
+from ..services.scoring import EVENT_LABELS, award_submission_points, revoke_submission_points
 from ..services.storage import delete_image
 from .uploads import process_and_store_image
 
@@ -165,8 +166,12 @@ async def create_submission(
     # Force load relationships for the username and provider properties
     _ = submission.user
     _ = submission.bike
-    points = award_submission_points(db, current_user.user_id, submission, bike)
+    breakdown = award_submission_points(db, current_user.user_id, submission, bike)
     db.commit()
     response = SubmissionResponse.model_validate(submission)
-    response.points_awarded = points
+    response.points_awarded = sum(pts for _, pts in breakdown)
+    response.points_breakdown = [
+        ScoringBreakdown(event_type=et, label=EVENT_LABELS.get(et, et), points=pts)
+        for et, pts in breakdown
+    ]
     return response

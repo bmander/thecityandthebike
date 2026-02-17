@@ -196,9 +196,9 @@ fun MainScreen(
 
         // Points awarded overlay
         val mainState by viewModel.state.collectAsStateWithLifecycle()
-        mainState.pointsAwarded?.let { points ->
+        mainState.pointsAwarded?.let { breakdown ->
             PointsAwardedOverlay(
-                points = points,
+                breakdown = breakdown,
                 onDismiss = { viewModel.clearPointsAwarded() }
             )
         }

@@ -25,10 +25,15 @@ class TestSubmissionPointAwards:
         db_session.commit()
 
         bike = db_session.query(Bike).filter(Bike.id == test_bike.id).first()
-        points = award_submission_points(db_session, test_user.user_id, submission, bike)
+        breakdown = award_submission_points(db_session, test_user.user_id, submission, bike)
         db_session.commit()
 
-        assert points == 22
+        breakdown_dict = dict(breakdown)
+        assert sum(pts for _, pts in breakdown) == 22
+        assert breakdown_dict["first_bike_ever"] == 10
+        assert breakdown_dict["first_bike_for_user"] == 5
+        assert breakdown_dict["first_bike_today"] == 5
+        assert breakdown_dict["add_image"] == 2
 
         events = db_session.query(ScoringEvent).filter(
             ScoringEvent.submission_id == submission.submission_id
@@ -64,10 +69,10 @@ class TestSubmissionPointAwards:
         db_session.add(sub2)
         db_session.commit()
 
-        points = award_submission_points(db_session, test_user.user_id, sub2, bike)
+        breakdown = award_submission_points(db_session, test_user.user_id, sub2, bike)
         db_session.commit()
 
-        assert points == 7  # first_bike_today (5) + add_image (2)
+        assert sum(pts for _, pts in breakdown) == 7  # first_bike_today (5) + add_image (2)
 
     def test_same_bike_same_day_again(self, db_session, test_user, test_bike):
         """Third submission of same bike, same day = 2 (add_image only)."""
@@ -94,10 +99,10 @@ class TestSubmissionPointAwards:
         db_session.add(sub2)
         db_session.commit()
 
-        points = award_submission_points(db_session, test_user.user_id, sub2, bike)
+        breakdown = award_submission_points(db_session, test_user.user_id, sub2, bike)
         db_session.commit()
 
-        assert points == 2  # add_image only
+        assert sum(pts for _, pts in breakdown) == 2  # add_image only
 
     def test_different_user_same_bike(self, db_session, test_user, test_bike):
         """Different user capturing already-seen bike = 5 + 5 + 2 = 12 (or 5 + 2 = 7 if same day)."""
@@ -132,11 +137,11 @@ class TestSubmissionPointAwards:
         db_session.add(sub2)
         db_session.commit()
 
-        points = award_submission_points(db_session, user2.user_id, sub2, bike)
+        breakdown = award_submission_points(db_session, user2.user_id, sub2, bike)
         db_session.commit()
 
         # Not first_bike_ever, is first_bike_for_user, not first_bike_today (same day), add_image
-        assert points == 7  # 5 + 2
+        assert sum(pts for _, pts in breakdown) == 7  # 5 + 2
 
 
 class TestTagPointAwards:
@@ -144,7 +149,7 @@ class TestTagPointAwards:
 
     def test_tag_points_decreasing(self, db_session, test_user, test_submission):
         """1st tag=2, 2nd tag=1, 3rd tag=1, 4th tag=0."""
-        tags = []
+        results = []
         for i in range(4):
             tag = Tag(
                 submission_id=test_submission.submission_id,
@@ -155,17 +160,21 @@ class TestTagPointAwards:
             db_session.commit()
             db_session.refresh(tag)
 
-            points = award_tag_points(
+            breakdown = award_tag_points(
                 db_session, test_user.user_id,
                 test_submission.submission_id, tag
             )
             db_session.commit()
-            tags.append((tag, points))
+            total = sum(pts for _, pts in breakdown)
+            results.append((tag, total, breakdown))
 
-        assert tags[0][1] == 2  # 1st tag
-        assert tags[1][1] == 1  # 2nd tag
-        assert tags[2][1] == 1  # 3rd tag
-        assert tags[3][1] == 0  # 4th tag
+        assert results[0][1] == 2  # 1st tag
+        assert results[1][1] == 1  # 2nd tag
+        assert results[2][1] == 1  # 3rd tag
+        assert results[3][1] == 0  # 4th tag
+        # Verify breakdown structure
+        assert results[0][2] == [("add_tag", 2)]
+        assert results[3][2] == []  # No points, empty breakdown
 
 
 class TestPointRevocation:

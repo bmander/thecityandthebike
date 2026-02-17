@@ -2,6 +2,7 @@ package com.thecityandthebike.upload
 
 import android.net.Uri
 import com.thecityandthebike.data.model.ApiResult
+import com.thecityandthebike.data.model.dto.ScoringBreakdown
 import com.thecityandthebike.data.repository.SubmissionRepository
 import com.thecityandthebike.di.ApplicationScope
 import com.thecityandthebike.util.ImagePreparer
@@ -18,7 +19,10 @@ import javax.inject.Singleton
 sealed interface UploadState {
     data object Idle : UploadState
     data class Uploading(val localUri: Uri) : UploadState
-    data class Success(val pointsAwarded: Int = 0) : UploadState
+    data class Success(
+        val pointsAwarded: Int = 0,
+        val pointsBreakdown: List<ScoringBreakdown> = emptyList()
+    ) : UploadState
     data class Error(val message: String) : UploadState
 }
 
@@ -47,7 +51,8 @@ class UploadManager @Inject constructor(
                 when (val result = submissionRepository.createSubmission(imageFile, bikeQrId, capturedDate, side = side)) {
                     is ApiResult.Success -> {
                         _state.value = UploadState.Success(
-                            pointsAwarded = result.data.pointsAwarded ?: 0
+                            pointsAwarded = result.data.pointsAwarded ?: 0,
+                            pointsBreakdown = result.data.pointsBreakdown ?: emptyList()
                         )
                     }
                     is ApiResult.Error -> {

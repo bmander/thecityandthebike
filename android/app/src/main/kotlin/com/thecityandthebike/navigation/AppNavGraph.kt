@@ -446,9 +446,9 @@ private fun ImageDetailRoute(
                     onBackToDrawing = { viewModel.goBackToDrawing() },
                     onTagClick = onTagClick,
                 )
-                detailState.pointsAwarded?.let { points ->
+                detailState.pointsAwarded?.let { breakdown ->
                     PointsAwardedOverlay(
-                        points = points,
+                        breakdown = breakdown,
                         onDismiss = { viewModel.clearPointsAwarded() }
                     )
                 }

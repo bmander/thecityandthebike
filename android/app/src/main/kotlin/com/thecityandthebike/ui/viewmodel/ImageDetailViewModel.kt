@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.thecityandthebike.data.local.TokenManager
 import com.thecityandthebike.data.model.ApiResult
+import com.thecityandthebike.data.model.dto.ScoringBreakdown
 import com.thecityandthebike.data.model.dto.SubmissionResponse
 import com.thecityandthebike.data.model.dto.TagResponse
 import com.thecityandthebike.data.processing.MaskProcessor
@@ -34,7 +35,7 @@ data class ImageDetailState(
     val processedRing: List<List<Float>>? = null,
     val processedMaskWidth: Int = 0,
     val processedMaskHeight: Int = 0,
-    val pointsAwarded: Int? = null,
+    val pointsAwarded: List<ScoringBreakdown>? = null,
 )
 
 @HiltViewModel
@@ -173,7 +174,7 @@ class ImageDetailViewModel @Inject constructor(
                 ringHeight = currentState.processedMaskHeight.takeIf { it > 0 }
             )) {
                 is ApiResult.Success -> {
-                    val pts = result.data.pointsAwarded
+                    val breakdown = result.data.pointsBreakdown
                     _state.value = _state.value.copy(
                         isCreatingTag = false,
                         isTagMode = false,
@@ -181,7 +182,7 @@ class ImageDetailViewModel @Inject constructor(
                         processedMaskWidth = 0,
                         processedMaskHeight = 0,
                         tags = listOf(result.data) + _state.value.tags,
-                        pointsAwarded = if (pts != null && pts > 0) pts else null
+                        pointsAwarded = if (!breakdown.isNullOrEmpty()) breakdown else null
                     )
                 }
                 is ApiResult.Error -> {

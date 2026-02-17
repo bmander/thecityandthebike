@@ -4,6 +4,13 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 @Serializable
+data class ScoringBreakdown(
+    @SerialName("event_type") val eventType: String,
+    val label: String,
+    val points: Int
+)
+
+@Serializable
 data class SubmissionResponse(
     @SerialName("submission_id") val submissionId: String,
     @SerialName("user_id") val userId: String,
@@ -16,7 +23,8 @@ data class SubmissionResponse(
     val username: String? = null,
     val provider: String? = null,
     val side: String? = null,
-    @SerialName("points_awarded") val pointsAwarded: Int? = null
+    @SerialName("points_awarded") val pointsAwarded: Int? = null,
+    @SerialName("points_breakdown") val pointsBreakdown: List<ScoringBreakdown>? = null
 )
 
 @Serializable

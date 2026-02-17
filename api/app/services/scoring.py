@@ -16,12 +16,23 @@ SUBMISSION_POINTS = {
 
 # Tag points by position (0-indexed). Tags beyond this list earn 0.
 TAG_POINTS = [2, 1, 1]
+
+# Human-readable labels for each event type.
+EVENT_LABELS = {
+    "first_bike_ever": "First photo of this bike ever",
+    "first_bike_for_user": "Your first photo of this bike",
+    "first_bike_today": "First photo of this bike today",
+    "add_image": "Took a photo",
+    "add_tag": "Tagged a component",
+}
 # ---------------------------------------------------------------------------
 
 
-def award_submission_points(db: Session, user_id, submission, bike) -> int:
-    """Award points for a new submission. Returns total points awarded."""
-    total = 0
+def award_submission_points(
+    db: Session, user_id, submission, bike
+) -> list[tuple[str, int]]:
+    """Award points for a new submission. Returns list of (event_type, points)."""
+    breakdown: list[tuple[str, int]] = []
 
     # Check if any prior submissions exist for this bike (first bike ever)
     prior_any = (
@@ -40,7 +51,7 @@ def award_submission_points(db: Session, user_id, submission, bike) -> int:
             points=pts,
             submission_id=submission.submission_id,
         ))
-        total += pts
+        breakdown.append(("first_bike_ever", pts))
 
     # Check if any prior submissions by this user for this bike (first bike for user)
     prior_user = (
@@ -60,7 +71,7 @@ def award_submission_points(db: Session, user_id, submission, bike) -> int:
             points=pts,
             submission_id=submission.submission_id,
         ))
-        total += pts
+        breakdown.append(("first_bike_for_user", pts))
 
     # Check if any prior submissions for this bike with today's captured_date (first bike today)
     prior_today = (
@@ -80,7 +91,7 @@ def award_submission_points(db: Session, user_id, submission, bike) -> int:
             points=pts,
             submission_id=submission.submission_id,
         ))
-        total += pts
+        breakdown.append(("first_bike_today", pts))
 
     # Always award add_image
     pts = SUBMISSION_POINTS["add_image"]
@@ -90,13 +101,15 @@ def award_submission_points(db: Session, user_id, submission, bike) -> int:
         points=pts,
         submission_id=submission.submission_id,
     ))
-    total += pts
+    breakdown.append(("add_image", pts))
 
-    return total
+    return breakdown
 
 
-def award_tag_points(db: Session, user_id, submission_id, tag) -> int:
-    """Award points for a new tag. Returns points awarded."""
+def award_tag_points(
+    db: Session, user_id, submission_id, tag
+) -> list[tuple[str, int]]:
+    """Award points for a new tag. Returns list of (event_type, points)."""
     prior_count = (
         db.query(ScoringEvent)
         .filter(
@@ -117,8 +130,9 @@ def award_tag_points(db: Session, user_id, submission_id, tag) -> int:
             submission_id=submission_id,
             tag_id=tag.tag_id,
         ))
+        return [("add_tag", points)]
 
-    return points
+    return []
 
 
 def revoke_submission_points(db: Session, submission_id) -> None:
