@@ -7,11 +7,15 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.itemsIndexed
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Icon
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
@@ -29,7 +33,9 @@ fun ImageGrid(
     imageUris: List<Uri>,
     modifier: Modifier = Modifier,
     uploadingUris: Set<Uri> = emptySet(),
+    failedUris: Set<Uri> = emptySet(),
     onImageClick: ((Int) -> Unit)? = null,
+    onFailedImageClick: ((Uri) -> Unit)? = null,
     onLoadMore: (() -> Unit)? = null
 ) {
     val gridState = rememberLazyGridState()
@@ -58,12 +64,15 @@ fun ImageGrid(
     ) {
         itemsIndexed(imageUris, key = { _, uri -> uri.toString() }) { index, uri ->
             val isUploading = uri in uploadingUris
+            val isFailed = uri in failedUris
             Box(
                 modifier = Modifier
                     .aspectRatio(1f)
                     .background(MaterialTheme.colorScheme.surfaceVariant)
                     .then(
-                        if (!isUploading && onImageClick != null) {
+                        if (isFailed && onFailedImageClick != null) {
+                            Modifier.clickable(onClickLabel = "Upload failed") { onFailedImageClick(uri) }
+                        } else if (!isUploading && !isFailed && onImageClick != null) {
                             Modifier.clickable(onClickLabel = "View photo") { onImageClick(index) }
                         } else {
                             Modifier
@@ -84,6 +93,21 @@ fun ImageGrid(
                         contentAlignment = Alignment.Center
                     ) {
                         CircularProgressIndicator(color = Color.White)
+                    }
+                }
+                if (isFailed) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .background(Color.Black.copy(alpha = 0.4f)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Warning,
+                            contentDescription = "Upload failed",
+                            tint = Color.White,
+                            modifier = Modifier.size(36.dp)
+                        )
                     }
                 }
             }

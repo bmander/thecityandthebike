@@ -264,17 +264,20 @@ class MainViewModelTest {
     }
 
     @Test
-    fun `upload error should set error state`() = runTest {
+    fun `upload error should set error state and keep pendingUploadUri`() = runTest {
         val paginated = CursorPaginatedSubmissions(items = emptyList(), nextCursor = null, hasMore = false)
         coEvery { submissionRepository.getSubmissions(any(), any()) } returns ApiResult.Success(paginated)
 
         viewModel = createViewModel()
         testDispatcher.scheduler.advanceUntilIdle()
 
-        uploadStateFlow.value = UploadState.Error("Upload failed")
+        val uri = mockk<Uri>()
+        uploadStateFlow.value = UploadState.Error("Upload failed", uri)
         testDispatcher.scheduler.advanceUntilIdle()
 
         assertEquals("Upload failed", viewModel.state.value.error)
+        assertEquals(uri, viewModel.state.value.pendingUploadUri)
+        assertTrue(viewModel.state.value.uploadFailed)
     }
 
     @Test
@@ -360,7 +363,7 @@ class MainViewModelTest {
     }
 
     @Test
-    fun `upload error should clear pendingUploadUri`() = runTest {
+    fun `upload error should keep pendingUploadUri and set uploadFailed`() = runTest {
         val paginated = CursorPaginatedSubmissions(items = emptyList(), nextCursor = null, hasMore = false)
         coEvery { submissionRepository.getSubmissions(any(), any()) } returns ApiResult.Success(paginated)
 
@@ -373,10 +376,11 @@ class MainViewModelTest {
 
         assertEquals(uri, viewModel.state.value.pendingUploadUri)
 
-        uploadStateFlow.value = UploadState.Error("Upload failed")
+        uploadStateFlow.value = UploadState.Error("Upload failed", uri)
         testDispatcher.scheduler.advanceUntilIdle()
 
-        assertNull(viewModel.state.value.pendingUploadUri)
+        assertEquals(uri, viewModel.state.value.pendingUploadUri)
+        assertTrue(viewModel.state.value.uploadFailed)
         assertEquals("Upload failed", viewModel.state.value.error)
     }
 
@@ -398,6 +402,65 @@ class MainViewModelTest {
         viewModel.refreshSubmissions()
         testDispatcher.scheduler.advanceUntilIdle()
 
+        assertEquals(uri, viewModel.state.value.pendingUploadUri)
+    }
+
+    @Test
+    fun `retryUpload delegates to uploadManager`() = runTest {
+        val paginated = CursorPaginatedSubmissions(items = emptyList(), nextCursor = null, hasMore = false)
+        coEvery { submissionRepository.getSubmissions(any(), any()) } returns ApiResult.Success(paginated)
+        every { uploadManager.retryUpload() } returns Unit
+
+        viewModel = createViewModel()
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        viewModel.retryUpload()
+
+        io.mockk.verify { uploadManager.retryUpload() }
+    }
+
+    @Test
+    fun `clearError on upload failure clears pendingUploadUri`() = runTest {
+        val paginated = CursorPaginatedSubmissions(items = emptyList(), nextCursor = null, hasMore = false)
+        coEvery { submissionRepository.getSubmissions(any(), any()) } returns ApiResult.Success(paginated)
+        every { uploadManager.clearError() } returns Unit
+
+        viewModel = createViewModel()
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        val uri = mockk<Uri>()
+        uploadStateFlow.value = UploadState.Error("Upload failed", uri)
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        assertEquals(uri, viewModel.state.value.pendingUploadUri)
+        assertTrue(viewModel.state.value.uploadFailed)
+
+        viewModel.clearError()
+
+        assertNull(viewModel.state.value.pendingUploadUri)
+        assertFalse(viewModel.state.value.uploadFailed)
+        assertNull(viewModel.state.value.error)
+        io.mockk.verify { uploadManager.clearError() }
+    }
+
+    @Test
+    fun `uploading state after error resets uploadFailed`() = runTest {
+        val paginated = CursorPaginatedSubmissions(items = emptyList(), nextCursor = null, hasMore = false)
+        coEvery { submissionRepository.getSubmissions(any(), any()) } returns ApiResult.Success(paginated)
+
+        viewModel = createViewModel()
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        val uri = mockk<Uri>()
+        uploadStateFlow.value = UploadState.Error("Upload failed", uri)
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        assertTrue(viewModel.state.value.uploadFailed)
+
+        uploadStateFlow.value = UploadState.Uploading(uri)
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        assertFalse(viewModel.state.value.uploadFailed)
         assertEquals(uri, viewModel.state.value.pendingUploadUri)
     }
 }

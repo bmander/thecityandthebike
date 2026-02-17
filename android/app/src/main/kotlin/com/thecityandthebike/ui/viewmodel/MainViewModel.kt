@@ -25,6 +25,7 @@ data class MainState(
     val hasMorePages: Boolean = true,
     val nextCursor: String? = null,
     val pendingUploadUri: Uri? = null,
+    val uploadFailed: Boolean = false,
     val pointsAwarded: List<ScoringBreakdown>? = null
 )
 
@@ -47,7 +48,10 @@ class MainViewModel @Inject constructor(
             uploadManager.state.collect { uploadState ->
                 when (uploadState) {
                     is UploadState.Uploading -> {
-                        _state.value = _state.value.copy(pendingUploadUri = uploadState.localUri)
+                        _state.value = _state.value.copy(
+                            pendingUploadUri = uploadState.localUri,
+                            uploadFailed = false
+                        )
                     }
                     is UploadState.Success -> {
                         val breakdown = uploadState.pointsBreakdown
@@ -58,7 +62,8 @@ class MainViewModel @Inject constructor(
                     }
                     is UploadState.Error -> {
                         _state.value = _state.value.copy(
-                            pendingUploadUri = null,
+                            pendingUploadUri = uploadState.localUri,
+                            uploadFailed = true,
                             error = uploadState.message
                         )
                     }
@@ -139,8 +144,21 @@ class MainViewModel @Inject constructor(
         )
     }
 
+    fun retryUpload() {
+        uploadManager.retryUpload()
+    }
+
     fun clearError() {
-        _state.value = _state.value.copy(error = null)
+        if (_state.value.uploadFailed) {
+            _state.value = _state.value.copy(
+                error = null,
+                pendingUploadUri = null,
+                uploadFailed = false
+            )
+            uploadManager.clearError()
+        } else {
+            _state.value = _state.value.copy(error = null)
+        }
     }
 
     fun clearPointsAwarded() {
