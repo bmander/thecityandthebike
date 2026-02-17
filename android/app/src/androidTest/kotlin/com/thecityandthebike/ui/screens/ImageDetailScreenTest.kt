@@ -509,7 +509,7 @@ class ImageDetailScreenTest {
             )
         }
 
-        composeTestRule.onNodeWithText("View tag").assertIsDisplayed()
+        composeTestRule.onNodeWithTag("viewTagButton").assertIsDisplayed()
     }
 
     @Test
@@ -524,7 +524,7 @@ class ImageDetailScreenTest {
             )
         }
 
-        composeTestRule.onNodeWithText("View tag").assertDoesNotExist()
+        composeTestRule.onNodeWithTag("viewTagButton").assertDoesNotExist()
     }
 
     @Test
@@ -541,7 +541,7 @@ class ImageDetailScreenTest {
             )
         }
 
-        composeTestRule.onNodeWithText("View tag").assertDoesNotExist()
+        composeTestRule.onNodeWithTag("viewTagButton").assertDoesNotExist()
     }
 
     @Test
@@ -555,7 +555,7 @@ class ImageDetailScreenTest {
             )
         }
 
-        composeTestRule.onNodeWithText("View tag").assertDoesNotExist()
+        composeTestRule.onNodeWithTag("viewTagButton").assertDoesNotExist()
     }
 
     @Test
@@ -572,7 +572,7 @@ class ImageDetailScreenTest {
             )
         }
 
-        composeTestRule.onNodeWithText("View tag").performClick()
+        composeTestRule.onNodeWithTag("viewTagButton").performClick()
 
         assertTrue("onTagClick should be called with tag-1", clickedTagId == "tag-1")
     }

@@ -311,7 +311,8 @@ fun ImageDetailScreen(
                             selectedTagId = selectedTagId,
                             onTagTapped = onTagTapped,
                             isTagDeletable = isTagDeletable,
-                            onDeleteTag = { tagId -> showDeleteTagDialog = tagId }
+                            onDeleteTag = { tagId -> showDeleteTagDialog = tagId },
+                            onTagClick = onTagClick
                         )
                     }
                 )
@@ -357,23 +358,6 @@ fun ImageDetailScreen(
                             onShowDeleteDialog = { showDeleteDialog = true }
                         )
                     }
-                }
-            }
-
-            if (selectedTagId != null && !isTagMode && onTagClick != null) {
-                OutlinedButton(
-                    onClick = { onTagClick(selectedTagId) },
-                    modifier = Modifier.padding(horizontal = 16.dp),
-                    shape = RoundedCornerShape(8.dp),
-                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
-                ) {
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Filled.Label,
-                        contentDescription = null,
-                        modifier = Modifier.size(16.dp)
-                    )
-                    Spacer(modifier = Modifier.size(4.dp))
-                    Text("View tag")
                 }
             }
 
