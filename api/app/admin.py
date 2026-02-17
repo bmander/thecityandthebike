@@ -6,7 +6,7 @@ from sqlalchemy.orm import sessionmaker
 from starlette.requests import Request
 
 from .dependencies import verify_password
-from .models import User, Bike, FenderSubmission, RefreshToken, LoginAttempt
+from .models import User, Bike, FenderSubmission, RefreshToken, LoginAttempt, Tag, ScoringEvent
 
 
 class AdminAuth(AuthenticationBackend):
@@ -91,6 +91,26 @@ class LoginAttemptAdmin(ModelView, model=LoginAttempt):
     column_sortable_list = [LoginAttempt.attempted_at]
 
 
+class TagAdmin(ModelView, model=Tag):
+    column_list = [Tag.tag_id, Tag.submission_id, Tag.user_id, Tag.created_at]
+    column_searchable_list = [Tag.submission_id]
+
+
+class ScoringEventAdmin(ModelView, model=ScoringEvent):
+    column_list = [
+        ScoringEvent.event_id,
+        ScoringEvent.user_id,
+        ScoringEvent.event_type,
+        ScoringEvent.points,
+        ScoringEvent.submission_id,
+        ScoringEvent.tag_id,
+        ScoringEvent.created_at,
+        ScoringEvent.revoked_at,
+    ]
+    column_searchable_list = [ScoringEvent.event_type]
+    column_sortable_list = [ScoringEvent.created_at, ScoringEvent.points]
+
+
 def setup_admin(app, engine, secret_key):
     session_factory = sessionmaker(autocommit=False, autoflush=False, bind=engine)
     auth_backend = AdminAuth(secret_key=secret_key, session_factory=session_factory)
@@ -100,4 +120,6 @@ def setup_admin(app, engine, secret_key):
     admin.add_view(FenderSubmissionAdmin)
     admin.add_view(RefreshTokenAdmin)
     admin.add_view(LoginAttemptAdmin)
+    admin.add_view(TagAdmin)
+    admin.add_view(ScoringEventAdmin)
     return admin
