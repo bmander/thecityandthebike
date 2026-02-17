@@ -25,6 +25,7 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.toRoute
 import com.thecityandthebike.data.local.OnboardingPrefs
 import com.thecityandthebike.ui.screens.BikeScreen
+import com.thecityandthebike.ui.components.PointsAwardedOverlay
 import com.thecityandthebike.ui.screens.ImageDetailScreen
 import com.thecityandthebike.ui.screens.TagScreen
 import com.thecityandthebike.ui.screens.LoginScreen
@@ -382,47 +383,55 @@ private fun ImageDetailRoute(
             }
         }
         detailState.submission != null -> {
-            ImageDetailScreen(
-                submission = detailState.submission!!,
-                onHome = onHome,
-                onBikeClick = onBikeClick,
-                onUserClick = onUserClick,
-                isOwner = detailState.isOwner,
-                isDeleting = detailState.isDeleting,
-                onDelete = { viewModel.deleteSubmission() },
-                onDownload = {
-                    detailState.submission?.imageUrl?.let { url ->
-                        val uri = imageUrlToUri(url)
-                        val request = DownloadManager.Request(uri)
-                            .setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
-                            .setDestinationInExternalPublicDir(
-                                Environment.DIRECTORY_DOWNLOADS,
-                                "tcatb_${viewModel.submissionId}.jpg"
-                            )
-                        val dm = context.getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
-                        dm.enqueue(request)
-                    }
-                },
-                isLoggedIn = viewModel.isLoggedIn(),
-                tags = detailState.tags,
-                selectedTagId = detailState.selectedTagId,
-                onTagTapped = { viewModel.selectTag(it) },
-                isTagDeletable = { viewModel.isTagOwner(it) },
-                onDeleteTag = { viewModel.deleteTag(it) },
-                isTagMode = detailState.isTagMode,
-                isCreatingTag = detailState.isCreatingTag,
-                onEnterTagMode = { viewModel.enterTagMode() },
-                onExitTagMode = { viewModel.exitTagMode() },
-                onCreateTag = { file -> viewModel.createTag(file) },
-                isProcessingMask = detailState.isProcessingMask,
-                processedRing = detailState.processedRing,
-                processedMaskWidth = detailState.processedMaskWidth,
-                processedMaskHeight = detailState.processedMaskHeight,
-                onProcessMask = { file -> viewModel.processMask(file) },
-                onConfirmTag = { file -> viewModel.createTag(file) },
-                onBackToDrawing = { viewModel.goBackToDrawing() },
-                onTagClick = onTagClick,
-            )
+            Box(modifier = Modifier.fillMaxSize()) {
+                ImageDetailScreen(
+                    submission = detailState.submission!!,
+                    onHome = onHome,
+                    onBikeClick = onBikeClick,
+                    onUserClick = onUserClick,
+                    isOwner = detailState.isOwner,
+                    isDeleting = detailState.isDeleting,
+                    onDelete = { viewModel.deleteSubmission() },
+                    onDownload = {
+                        detailState.submission?.imageUrl?.let { url ->
+                            val uri = imageUrlToUri(url)
+                            val request = DownloadManager.Request(uri)
+                                .setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
+                                .setDestinationInExternalPublicDir(
+                                    Environment.DIRECTORY_DOWNLOADS,
+                                    "tcatb_${viewModel.submissionId}.jpg"
+                                )
+                            val dm = context.getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
+                            dm.enqueue(request)
+                        }
+                    },
+                    isLoggedIn = viewModel.isLoggedIn(),
+                    tags = detailState.tags,
+                    selectedTagId = detailState.selectedTagId,
+                    onTagTapped = { viewModel.selectTag(it) },
+                    isTagDeletable = { viewModel.isTagOwner(it) },
+                    onDeleteTag = { viewModel.deleteTag(it) },
+                    isTagMode = detailState.isTagMode,
+                    isCreatingTag = detailState.isCreatingTag,
+                    onEnterTagMode = { viewModel.enterTagMode() },
+                    onExitTagMode = { viewModel.exitTagMode() },
+                    onCreateTag = { file -> viewModel.createTag(file) },
+                    isProcessingMask = detailState.isProcessingMask,
+                    processedRing = detailState.processedRing,
+                    processedMaskWidth = detailState.processedMaskWidth,
+                    processedMaskHeight = detailState.processedMaskHeight,
+                    onProcessMask = { file -> viewModel.processMask(file) },
+                    onConfirmTag = { file -> viewModel.createTag(file) },
+                    onBackToDrawing = { viewModel.goBackToDrawing() },
+                    onTagClick = onTagClick,
+                )
+                detailState.pointsAwarded?.let { points ->
+                    PointsAwardedOverlay(
+                        points = points,
+                        onDismiss = { viewModel.clearPointsAwarded() }
+                    )
+                }
+            }
         }
         else -> {
             LaunchedEffect(Unit) { onHome() }

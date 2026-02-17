@@ -12,7 +12,8 @@ data class TagResponse(
     val ring: List<List<Float>>? = null,
     @SerialName("ring_width") val ringWidth: Int? = null,
     @SerialName("ring_height") val ringHeight: Int? = null,
-    @SerialName("created_at") val createdAt: String
+    @SerialName("created_at") val createdAt: String,
+    @SerialName("points_awarded") val pointsAwarded: Int? = null
 )
 
 @Serializable

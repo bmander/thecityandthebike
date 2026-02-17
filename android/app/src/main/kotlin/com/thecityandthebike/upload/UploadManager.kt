@@ -18,7 +18,7 @@ import javax.inject.Singleton
 sealed interface UploadState {
     data object Idle : UploadState
     data class Uploading(val localUri: Uri) : UploadState
-    data object Success : UploadState
+    data class Success(val pointsAwarded: Int = 0) : UploadState
     data class Error(val message: String) : UploadState
 }
 
@@ -46,7 +46,9 @@ class UploadManager @Inject constructor(
                 val capturedDate = LocalDate.now(ZoneId.of("America/Los_Angeles")).toString()
                 when (val result = submissionRepository.createSubmission(imageFile, bikeQrId, capturedDate, side = side)) {
                     is ApiResult.Success -> {
-                        _state.value = UploadState.Success
+                        _state.value = UploadState.Success(
+                            pointsAwarded = result.data.pointsAwarded ?: 0
+                        )
                     }
                     is ApiResult.Error -> {
                         _state.value = UploadState.Error(result.error.displayMessage)

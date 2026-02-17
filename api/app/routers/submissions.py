@@ -14,6 +14,7 @@ from ..dependencies import get_current_user, get_current_user_optional
 from ..models import User, Bike, FenderSubmission
 from ..schemas import CursorPaginatedResponse, SubmissionResponse
 from ..schemas.auth import MessageResponse
+from ..services.scoring import award_submission_points, revoke_submission_points
 from ..services.storage import delete_image
 from .uploads import process_and_store_image
 
@@ -84,6 +85,7 @@ def delete_submission(
         raise HTTPException(status_code=404, detail="Submission not found")
     if submission.user_id != current_user.user_id:
         raise HTTPException(status_code=403, detail="Not authorized to delete this submission")
+    revoke_submission_points(db, submission.submission_id)
     image_urls = [
         submission.image_url,
         submission.image_url_thumbnail,
@@ -163,4 +165,8 @@ async def create_submission(
     # Force load relationships for the username and provider properties
     _ = submission.user
     _ = submission.bike
-    return submission
+    points = award_submission_points(db, current_user.user_id, submission, bike)
+    db.commit()
+    response = SubmissionResponse.model_validate(submission)
+    response.points_awarded = points
+    return response
