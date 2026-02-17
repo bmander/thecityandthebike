@@ -2,7 +2,9 @@ package com.thecityandthebike.ui.screens
 
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.performClick
 import com.thecityandthebike.setContentWithTheme
 import com.thecityandthebike.ui.viewmodel.BikesListState
 import com.thecityandthebike.ui.viewmodel.BikesListViewModel
@@ -10,7 +12,6 @@ import com.thecityandthebike.ui.viewmodel.LeaderboardState
 import com.thecityandthebike.ui.viewmodel.LeaderboardViewModel
 import com.thecityandthebike.ui.viewmodel.MainState
 import com.thecityandthebike.ui.viewmodel.MainViewModel
-import com.thecityandthebike.ui.viewmodel.UserState
 import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -36,69 +37,7 @@ class MainScreenTabTest {
     }
 
     @Test
-    fun mainScreen_loggedIn_showsMeTab() {
-        val (mainVM, leaderboardVM, bikesListVM) = createMockViewModels()
-
-        composeTestRule.setContentWithTheme {
-            MainScreen(
-                viewModel = mainVM,
-                leaderboardViewModel = leaderboardVM,
-                bikesListViewModel = bikesListVM,
-                isLoggedIn = true,
-                onLogout = {},
-                onLoginClick = {},
-                onScanQrCode = {},
-                meState = UserState()
-            )
-        }
-
-        composeTestRule.onNodeWithText("Me").assertIsDisplayed()
-    }
-
-    @Test
-    fun mainScreen_loggedOut_doesNotShowMeTab() {
-        val (mainVM, leaderboardVM, bikesListVM) = createMockViewModels()
-
-        composeTestRule.setContentWithTheme {
-            MainScreen(
-                viewModel = mainVM,
-                leaderboardViewModel = leaderboardVM,
-                bikesListViewModel = bikesListVM,
-                isLoggedIn = false,
-                onLogout = {},
-                onLoginClick = {},
-                onScanQrCode = {}
-            )
-        }
-
-        composeTestRule.onNodeWithText("Me").assertDoesNotExist()
-    }
-
-    @Test
-    fun mainScreen_loggedIn_showsAllFourTabs() {
-        val (mainVM, leaderboardVM, bikesListVM) = createMockViewModels()
-
-        composeTestRule.setContentWithTheme {
-            MainScreen(
-                viewModel = mainVM,
-                leaderboardViewModel = leaderboardVM,
-                bikesListViewModel = bikesListVM,
-                isLoggedIn = true,
-                onLogout = {},
-                onLoginClick = {},
-                onScanQrCode = {},
-                meState = UserState()
-            )
-        }
-
-        composeTestRule.onNodeWithText("Feed").assertIsDisplayed()
-        composeTestRule.onNodeWithText("Leaderboard").assertIsDisplayed()
-        composeTestRule.onNodeWithText("Bikes").assertIsDisplayed()
-        composeTestRule.onNodeWithText("Me").assertIsDisplayed()
-    }
-
-    @Test
-    fun mainScreen_loggedOut_showsOnlyThreeTabs() {
+    fun mainScreen_showsThreeTabs() {
         val (mainVM, leaderboardVM, bikesListVM) = createMockViewModels()
 
         composeTestRule.setContentWithTheme {
@@ -116,6 +55,45 @@ class MainScreenTabTest {
         composeTestRule.onNodeWithText("Feed").assertIsDisplayed()
         composeTestRule.onNodeWithText("Leaderboard").assertIsDisplayed()
         composeTestRule.onNodeWithText("Bikes").assertIsDisplayed()
+    }
+
+    @Test
+    fun mainScreen_loggedIn_showsMeInMenu() {
+        val (mainVM, leaderboardVM, bikesListVM) = createMockViewModels()
+
+        composeTestRule.setContentWithTheme {
+            MainScreen(
+                viewModel = mainVM,
+                leaderboardViewModel = leaderboardVM,
+                bikesListViewModel = bikesListVM,
+                isLoggedIn = true,
+                onLogout = {},
+                onLoginClick = {},
+                onScanQrCode = {}
+            )
+        }
+
+        composeTestRule.onNodeWithContentDescription("Menu").performClick()
+        composeTestRule.onNodeWithText("Me").assertIsDisplayed()
+    }
+
+    @Test
+    fun mainScreen_loggedOut_doesNotShowMeInMenu() {
+        val (mainVM, leaderboardVM, bikesListVM) = createMockViewModels()
+
+        composeTestRule.setContentWithTheme {
+            MainScreen(
+                viewModel = mainVM,
+                leaderboardViewModel = leaderboardVM,
+                bikesListViewModel = bikesListVM,
+                isLoggedIn = false,
+                onLogout = {},
+                onLoginClick = {},
+                onScanQrCode = {}
+            )
+        }
+
+        composeTestRule.onNodeWithContentDescription("Menu").performClick()
         composeTestRule.onNodeWithText("Me").assertDoesNotExist()
     }
 }

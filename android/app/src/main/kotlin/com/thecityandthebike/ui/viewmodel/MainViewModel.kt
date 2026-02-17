@@ -23,7 +23,8 @@ data class MainState(
     val isLoadingMore: Boolean = false,
     val hasMorePages: Boolean = true,
     val nextCursor: String? = null,
-    val pendingUploadUri: Uri? = null
+    val pendingUploadUri: Uri? = null,
+    val pointsAwarded: Int? = null
 )
 
 @HiltViewModel
@@ -48,6 +49,10 @@ class MainViewModel @Inject constructor(
                         _state.value = _state.value.copy(pendingUploadUri = uploadState.localUri)
                     }
                     is UploadState.Success -> {
+                        val pts = uploadState.pointsAwarded
+                        if (pts > 0) {
+                            _state.value = _state.value.copy(pointsAwarded = pts)
+                        }
                         fetchSubmissions(isRefresh = true, clearPendingUpload = true)
                     }
                     is UploadState.Error -> {
@@ -135,5 +140,9 @@ class MainViewModel @Inject constructor(
 
     fun clearError() {
         _state.value = _state.value.copy(error = null)
+    }
+
+    fun clearPointsAwarded() {
+        _state.value = _state.value.copy(pointsAwarded = null)
     }
 }

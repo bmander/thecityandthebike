@@ -9,6 +9,7 @@ from ..cursor import decode_cursor, encode_cursor
 from ..database import get_db
 from ..dependencies import get_current_user
 from ..models import User, Bike, FenderSubmission
+from ..models.orm import ScoringEvent
 from ..schemas import CursorPaginatedResponse, PaginatedResponse, UserDetailResponse, UserResponse, SubmissionResponse
 from ..schemas.leaderboard import LeaderboardPeriod
 from ..schemas.user import LeaderboardRank
@@ -105,15 +106,21 @@ def get_user_detail(
     leaderboard_ranks = []
     for period in LeaderboardPeriod:
         start_dt, end_dt = _get_date_range(period)
-        rows = (
+        query = (
             db.query(
-                FenderSubmission.user_id,
-                func.count().label("cnt"),
+                ScoringEvent.user_id,
+                func.sum(ScoringEvent.points).label("score"),
             )
-            .filter(FenderSubmission.uploaded_at >= start_dt)
-            .filter(FenderSubmission.uploaded_at < end_dt)
-            .group_by(FenderSubmission.user_id)
-            .order_by(func.count().desc())
+            .filter(ScoringEvent.revoked_at.is_(None))
+        )
+        if start_dt is not None:
+            query = query.filter(ScoringEvent.created_at >= start_dt)
+        if end_dt is not None:
+            query = query.filter(ScoringEvent.created_at < end_dt)
+        rows = (
+            query
+            .group_by(ScoringEvent.user_id)
+            .order_by(func.sum(ScoringEvent.points).desc())
             .all()
         )
         rank = None

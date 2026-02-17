@@ -8,7 +8,7 @@ data class LeaderboardEntry(
     val rank: Int,
     @SerialName("user_id") val userId: String,
     val username: String,
-    @SerialName("submission_count") val submissionCount: Int
+    @SerialName("score") val score: Int
 )
 
 @Serializable

@@ -222,7 +222,7 @@ fun PhotoCaptureScreen(
                 }
             }
             Canvas(modifier = Modifier.fillMaxSize().testTag("template_overlay")) {
-                val overlayHeight = size.height * 1.0f
+                val overlayHeight = size.height * 0.95f
                 val scale = overlayHeight / fenderVector.viewportHeight
                 val overlayWidth = fenderVector.viewportWidth * scale
                 val offsetX = (size.width - overlayWidth) / 2
@@ -334,7 +334,7 @@ fun PhotoCaptureScreen(
             modifier = Modifier
                 .align(Alignment.BottomCenter)
                 .padding(bottom = 48.dp)
-                .size(72.dp)
+                .size(108.dp)
                 .semantics { contentDescription = "Capture photo" },
             shape = CircleShape,
             colors = ButtonDefaults.buttonColors(containerColor = Color.White)

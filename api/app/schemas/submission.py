@@ -34,3 +34,4 @@ class SubmissionResponse(BaseModel):
     user_caption: Optional[str] = None
     side: Optional[str] = None
     username: Optional[str] = None
+    points_awarded: Optional[int] = None

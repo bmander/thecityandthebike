@@ -97,6 +97,7 @@ fun ImageDetailScreen(
     onProcessMask: (File) -> Unit = {},
     onConfirmTag: (File) -> Unit = {},
     onBackToDrawing: () -> Unit = {},
+    onTagClick: ((String) -> Unit)? = null,
 ) {
     val imageUri = submission.imageUrl?.let { imageUrlToUri(it) }
     val thumbnailUri = submission.imageUrlThumbnail?.let { imageUrlToUri(it) }
@@ -356,6 +357,23 @@ fun ImageDetailScreen(
                             onShowDeleteDialog = { showDeleteDialog = true }
                         )
                     }
+                }
+            }
+
+            if (selectedTagId != null && !isTagMode && onTagClick != null) {
+                OutlinedButton(
+                    onClick = { onTagClick(selectedTagId) },
+                    modifier = Modifier.padding(horizontal = 16.dp),
+                    shape = RoundedCornerShape(8.dp),
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
+                ) {
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.Label,
+                        contentDescription = null,
+                        modifier = Modifier.size(16.dp)
+                    )
+                    Spacer(modifier = Modifier.size(4.dp))
+                    Text("View tag")
                 }
             }
 

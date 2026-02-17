@@ -38,18 +38,17 @@ import com.thecityandthebike.ui.components.CameraFAB
 import com.thecityandthebike.ui.components.ImageGrid
 import com.thecityandthebike.ui.components.LoginFAB
 import com.thecityandthebike.ui.components.MenuButton
+import com.thecityandthebike.ui.components.PointsAwardedOverlay
 import com.thecityandthebike.ui.viewmodel.BikesListViewModel
 import com.thecityandthebike.ui.viewmodel.LeaderboardViewModel
 import com.thecityandthebike.ui.viewmodel.MainViewModel
-import com.thecityandthebike.ui.viewmodel.UserState
 import com.thecityandthebike.util.imageUrlToUri
 import kotlinx.coroutines.launch
 
 private enum class MainTab(val title: String) {
     FEED("Feed"),
     LEADERBOARD("Leaderboard"),
-    BIKES("Bikes"),
-    ME("Me")
+    BIKES("Bikes")
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -67,27 +66,15 @@ fun MainScreen(
     onImageClick: ((String) -> Unit)? = null,
     onUserClick: (String) -> Unit = {},
     onBikeClick: (String) -> Unit = {},
-    meState: UserState? = null,
-    onMeImageClick: (String) -> Unit = {},
-    onMeLoadMore: () -> Unit = {},
-    onMeClearError: () -> Unit = {}
+    onShowMe: () -> Unit = {}
 ) {
-    val tabs = remember(isLoggedIn) {
-        if (isLoggedIn) MainTab.entries.toList() else MainTab.entries.filter { it != MainTab.ME }
-    }
+    val tabs = MainTab.entries
     val pagerState = rememberPagerState(pageCount = { tabs.size })
     val coroutineScope = rememberCoroutineScope()
 
     // Sync tab selection with pager
     LaunchedEffect(pagerState) {
         snapshotFlow { pagerState.currentPage }.collect { /* just observe for recomposition */ }
-    }
-
-    // When tab count changes (login/logout), clamp pager to valid page
-    LaunchedEffect(tabs.size) {
-        if (pagerState.currentPage >= tabs.size) {
-            pagerState.scrollToPage(tabs.size - 1)
-        }
     }
 
     Box(modifier = Modifier.fillMaxSize()) {
@@ -138,6 +125,13 @@ fun MainScreen(
                         )
                         if (isLoggedIn) {
                             DropdownMenuItem(
+                                text = { Text("Me") },
+                                onClick = {
+                                    menuExpanded = false
+                                    onShowMe()
+                                }
+                            )
+                            DropdownMenuItem(
                                 text = { Text("Log out") },
                                 onClick = {
                                     menuExpanded = false
@@ -177,16 +171,6 @@ fun MainScreen(
                             onClearError = { bikesListViewModel.clearError() }
                         )
                     }
-                    MainTab.ME -> {
-                        meState?.let { state ->
-                            MeContent(
-                                state = state,
-                                onImageClick = onMeImageClick,
-                                onLoadMore = onMeLoadMore,
-                                onClearError = onMeClearError
-                            )
-                        }
-                    }
                 }
             }
         }
@@ -207,6 +191,15 @@ fun MainScreen(
                     .align(Alignment.BottomCenter)
                     .windowInsetsPadding(WindowInsets.navigationBars)
                     .padding(16.dp)
+            )
+        }
+
+        // Points awarded overlay
+        val mainState by viewModel.state.collectAsStateWithLifecycle()
+        mainState.pointsAwarded?.let { points ->
+            PointsAwardedOverlay(
+                points = points,
+                onDismiss = { viewModel.clearPointsAwarded() }
             )
         }
     }

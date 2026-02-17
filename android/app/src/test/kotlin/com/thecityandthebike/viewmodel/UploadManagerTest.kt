@@ -59,7 +59,7 @@ class UploadManagerTest {
         uploadManager.uploadAndCreateSubmission(uri, "bike1")
         testDispatcher.scheduler.advanceUntilIdle()
 
-        assertEquals(UploadState.Success, uploadManager.state.value)
+        assertEquals(UploadState.Success(), uploadManager.state.value)
     }
 
     @Test

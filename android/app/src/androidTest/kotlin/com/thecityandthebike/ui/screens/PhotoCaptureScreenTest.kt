@@ -2,11 +2,14 @@ package com.thecityandthebike.ui.screens
 
 import android.Manifest
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertWidthIsEqualTo
+import androidx.compose.ui.test.assertHeightIsEqualTo
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.unit.dp
 import androidx.test.rule.GrantPermissionRule
 import com.thecityandthebike.setContentWithTheme
 import org.junit.Assert.assertEquals
@@ -67,6 +70,23 @@ class PhotoCaptureScreenTest {
         composeTestRule
             .onNodeWithContentDescription("Capture photo")
             .assertIsDisplayed()
+    }
+
+    @Test
+    fun photoCaptureScreen_captureButtonIs108dp() {
+        composeTestRule.setContentWithTheme {
+            PhotoCaptureScreen(
+                side = "left",
+                onSideChanged = {},
+                onPhotoCaptured = {},
+                onBack = {}
+            )
+        }
+
+        composeTestRule
+            .onNodeWithContentDescription("Capture photo")
+            .assertWidthIsEqualTo(108.dp)
+            .assertHeightIsEqualTo(108.dp)
     }
 
     @Test

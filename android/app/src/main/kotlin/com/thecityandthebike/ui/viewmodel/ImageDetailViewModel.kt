@@ -34,6 +34,7 @@ data class ImageDetailState(
     val processedRing: List<List<Float>>? = null,
     val processedMaskWidth: Int = 0,
     val processedMaskHeight: Int = 0,
+    val pointsAwarded: Int? = null,
 )
 
 @HiltViewModel
@@ -172,13 +173,15 @@ class ImageDetailViewModel @Inject constructor(
                 ringHeight = currentState.processedMaskHeight.takeIf { it > 0 }
             )) {
                 is ApiResult.Success -> {
+                    val pts = result.data.pointsAwarded
                     _state.value = _state.value.copy(
                         isCreatingTag = false,
                         isTagMode = false,
                         processedRing = null,
                         processedMaskWidth = 0,
                         processedMaskHeight = 0,
-                        tags = listOf(result.data) + _state.value.tags
+                        tags = listOf(result.data) + _state.value.tags,
+                        pointsAwarded = if (pts != null && pts > 0) pts else null
                     )
                 }
                 is ApiResult.Error -> {
@@ -214,6 +217,10 @@ class ImageDetailViewModel @Inject constructor(
                 }
             }
         }
+    }
+
+    fun clearPointsAwarded() {
+        _state.value = _state.value.copy(pointsAwarded = null)
     }
 
     fun isLoggedIn(): Boolean {
