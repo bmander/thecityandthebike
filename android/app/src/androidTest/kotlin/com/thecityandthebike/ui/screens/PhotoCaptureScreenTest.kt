@@ -85,8 +85,8 @@ class PhotoCaptureScreenTest {
 
         composeTestRule
             .onNodeWithContentDescription("Capture photo")
-            .assertWidthIsEqualTo(108.dp)
-            .assertHeightIsEqualTo(108.dp)
+            .assertWidthIsEqualTo(72.dp)
+            .assertHeightIsEqualTo(72.dp)
     }
 
     @Test

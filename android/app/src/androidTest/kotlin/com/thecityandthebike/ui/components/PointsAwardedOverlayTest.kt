@@ -1,7 +1,9 @@
 package com.thecityandthebike.ui.components
 
+import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithText
 import com.thecityandthebike.data.model.dto.ScoringBreakdown
 import com.thecityandthebike.setContentWithTheme
@@ -55,6 +57,7 @@ class PointsAwardedOverlayTest {
         }
 
         composeTestRule.onNodeWithText("Tag Created").assertIsDisplayed()
-        composeTestRule.onNodeWithText("+7").assertExists()
+        // "+7" appears twice: once in the breakdown row and once as the total
+        composeTestRule.onAllNodesWithText("+7").assertCountEquals(2)
     }
 }
