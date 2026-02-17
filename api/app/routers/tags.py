@@ -13,6 +13,7 @@ from ..dependencies import get_current_user
 from ..models import User, FenderSubmission, Tag
 from ..schemas.tag import TagResponse
 from ..schemas.auth import MessageResponse
+from ..services.scoring import award_tag_points, revoke_tag_points
 from ..services.storage import (
     ALLOWED_TAG_EXTENSIONS,
     CHUNK_SIZE,
@@ -149,7 +150,11 @@ async def create_tag(
     db.add(tag)
     db.commit()
     db.refresh(tag)
-    return tag
+    points = award_tag_points(db, current_user.user_id, submission_id, tag)
+    db.commit()
+    response = TagResponse.model_validate(tag)
+    response.points_awarded = points
+    return response
 
 
 @router.delete(
@@ -167,6 +172,7 @@ def delete_tag(
     if tag.user_id != current_user.user_id:
         raise HTTPException(status_code=403, detail="Not authorized to delete this tag")
 
+    revoke_tag_points(db, tag.tag_id)
     image_url = tag.image_url
     db.delete(tag)
     db.commit()

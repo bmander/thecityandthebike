@@ -15,7 +15,8 @@ data class SubmissionResponse(
     @SerialName("user_caption") val userCaption: String? = null,
     val username: String? = null,
     val provider: String? = null,
-    val side: String? = null
+    val side: String? = null,
+    @SerialName("points_awarded") val pointsAwarded: Int? = null
 )
 
 @Serializable
