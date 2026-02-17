@@ -334,7 +334,7 @@ fun PhotoCaptureScreen(
             modifier = Modifier
                 .align(Alignment.BottomCenter)
                 .padding(bottom = 48.dp)
-                .size(108.dp)
+                .size(72.dp)
                 .semantics { contentDescription = "Capture photo" },
             shape = CircleShape,
             colors = ButtonDefaults.buttonColors(containerColor = Color.White)
