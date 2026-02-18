@@ -27,3 +27,4 @@
 -keepclasseswithmembers class com.thecityandthebike.** {
     kotlinx.serialization.KSerializer serializer(...);
 }
+-keep class com.thecityandthebike.data.model.dto.** { *; }
