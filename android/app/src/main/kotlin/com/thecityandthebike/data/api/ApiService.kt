@@ -25,6 +25,9 @@ interface ApiService {
     @GET("users/me")
     suspend fun getCurrentUser(): Response<UserResponse>
 
+    @DELETE("users/me")
+    suspend fun deleteAccount(): Response<MessageResponse>
+
     @GET("users/me/submissions")
     suspend fun getMySubmissions(
         @Query("limit") limit: Int = 20,
