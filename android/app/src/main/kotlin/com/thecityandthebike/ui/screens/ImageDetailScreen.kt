@@ -18,12 +18,16 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Label
+import androidx.compose.material.icons.filled.Flag
+import androidx.compose.material.icons.outlined.Flag
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilledIconButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedIconButton
@@ -99,6 +103,9 @@ fun ImageDetailScreen(
     onConfirmTag: (File) -> Unit = {},
     onBackToDrawing: () -> Unit = {},
     onTagClick: ((String) -> Unit)? = null,
+    isFlagged: Boolean = false,
+    isFlagging: Boolean = false,
+    onFlag: () -> Unit = {},
 ) {
     val imageUri = submission.imageUrl?.let { imageUrlToUri(it) }
     val thumbnailUri = submission.imageUrlThumbnail?.let { imageUrlToUri(it) }
@@ -359,6 +366,36 @@ fun ImageDetailScreen(
                             style = MaterialTheme.typography.labelMedium,
                             modifier = Modifier.padding(start = 4.dp)
                         )
+                        if (isFlagged) {
+                            FilledIconButton(
+                                onClick = onFlag,
+                                enabled = !isFlagging,
+                                shape = RoundedCornerShape(8.dp),
+                                colors = IconButtonDefaults.filledIconButtonColors(
+                                    containerColor = MaterialTheme.colorScheme.error,
+                                    contentColor = MaterialTheme.colorScheme.onError
+                                ),
+                                modifier = Modifier.padding(start = 8.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Filled.Flag,
+                                    contentDescription = "Flagged"
+                                )
+                            }
+                        } else {
+                            OutlinedIconButton(
+                                onClick = onFlag,
+                                enabled = !isFlagging,
+                                shape = RoundedCornerShape(8.dp),
+                                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+                                modifier = Modifier.padding(start = 8.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Outlined.Flag,
+                                    contentDescription = "Flag photo"
+                                )
+                            }
+                        }
                     }
                     Spacer(modifier = Modifier.weight(1f))
                     if (isOwner) {

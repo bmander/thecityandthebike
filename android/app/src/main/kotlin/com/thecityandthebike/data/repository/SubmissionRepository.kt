@@ -4,6 +4,7 @@ import com.thecityandthebike.data.api.ApiService
 import com.thecityandthebike.data.model.ApiResult
 import com.thecityandthebike.data.model.AppError
 import com.thecityandthebike.data.model.dto.CursorPaginatedSubmissions
+import com.thecityandthebike.data.model.dto.FlagStatusResponse
 import com.thecityandthebike.data.model.dto.MessageResponse
 import com.thecityandthebike.data.model.dto.SubmissionResponse
 import com.thecityandthebike.data.model.dto.UploadResponse
@@ -83,5 +84,13 @@ class SubmissionRepository @Inject constructor(
             val body = MultipartBody.Part.createFormData("image", file.name, requestFile)
             apiService.uploadImage(body)
         }
+    }
+
+    suspend fun createFlag(submissionId: String): ApiResult<FlagStatusResponse> {
+        return safeApiCall { apiService.createFlag(submissionId) }
+    }
+
+    suspend fun getFlagStatus(submissionId: String): ApiResult<FlagStatusResponse> {
+        return safeApiCall { apiService.getFlagStatus(submissionId) }
     }
 }

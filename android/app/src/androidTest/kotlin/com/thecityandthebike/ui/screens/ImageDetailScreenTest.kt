@@ -576,4 +576,79 @@ class ImageDetailScreenTest {
 
         assertTrue("onTagClick should be called with tag-1", clickedTagId == "tag-1")
     }
+
+    // --- Flag button tests ---
+
+    @Test
+    fun flagButton_visibleWhenLoggedIn() {
+        composeTestRule.setContentWithTheme {
+            ImageDetailScreen(
+                submission = testSubmission,
+                onHome = {},
+                isLoggedIn = true
+            )
+        }
+
+        composeTestRule.onNodeWithContentDescription("Flag photo").assertIsDisplayed()
+    }
+
+    @Test
+    fun flagButton_hiddenWhenNotLoggedIn() {
+        composeTestRule.setContentWithTheme {
+            ImageDetailScreen(
+                submission = testSubmission,
+                onHome = {},
+                isLoggedIn = false
+            )
+        }
+
+        composeTestRule.onNodeWithContentDescription("Flag photo").assertDoesNotExist()
+    }
+
+    @Test
+    fun flagButton_hiddenInTagMode() {
+        composeTestRule.setContentWithTheme {
+            ImageDetailScreen(
+                submission = testSubmission,
+                onHome = {},
+                isLoggedIn = true,
+                isTagMode = true
+            )
+        }
+
+        composeTestRule.onNodeWithContentDescription("Flag photo").assertDoesNotExist()
+    }
+
+    @Test
+    fun flagButton_clickCallsOnFlag() {
+        var flagCalled = false
+
+        composeTestRule.setContentWithTheme {
+            ImageDetailScreen(
+                submission = testSubmission,
+                onHome = {},
+                isLoggedIn = true,
+                onFlag = { flagCalled = true }
+            )
+        }
+
+        composeTestRule.onNodeWithContentDescription("Flag photo").performClick()
+
+        assertTrue("onFlag should be called when flag button is clicked", flagCalled)
+    }
+
+    @Test
+    fun flagButton_showsFilledIconWhenFlagged() {
+        composeTestRule.setContentWithTheme {
+            ImageDetailScreen(
+                submission = testSubmission,
+                onHome = {},
+                isLoggedIn = true,
+                isFlagged = true
+            )
+        }
+
+        composeTestRule.onNodeWithContentDescription("Flagged").assertIsDisplayed()
+        composeTestRule.onNodeWithContentDescription("Flag photo").assertDoesNotExist()
+    }
 }

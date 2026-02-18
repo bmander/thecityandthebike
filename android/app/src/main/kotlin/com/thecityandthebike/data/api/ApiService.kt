@@ -117,4 +117,11 @@ interface ApiService {
         @Query("limit") limit: Int = 20,
         @Query("cursor") cursor: String? = null
     ): Response<CursorPaginatedSubmissions>
+
+    // Flag endpoints
+    @POST("submissions/{submissionId}/flags")
+    suspend fun createFlag(@Path("submissionId") submissionId: String): Response<FlagStatusResponse>
+
+    @GET("submissions/{submissionId}/flags/me")
+    suspend fun getFlagStatus(@Path("submissionId") submissionId: String): Response<FlagStatusResponse>
 }

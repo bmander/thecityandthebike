@@ -446,6 +446,9 @@ private fun ImageDetailRoute(
                     onConfirmTag = { file -> viewModel.createTag(file) },
                     onBackToDrawing = { viewModel.goBackToDrawing() },
                     onTagClick = onTagClick,
+                    isFlagged = detailState.isFlagged,
+                    isFlagging = detailState.isFlagging,
+                    onFlag = { viewModel.flagSubmission() },
                 )
                 detailState.pointsAwarded?.let { breakdown ->
                     PointsAwardedOverlay(
