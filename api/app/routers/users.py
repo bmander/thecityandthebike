@@ -10,9 +10,11 @@ from ..database import get_db
 from ..dependencies import get_current_user
 from ..models import User, Bike, FenderSubmission
 from ..models.orm import ScoringEvent
-from ..schemas import CursorPaginatedResponse, PaginatedResponse, UserDetailResponse, UserResponse, SubmissionResponse
+from ..schemas import CursorPaginatedResponse, MessageResponse, PaginatedResponse, UserDetailResponse, UserResponse, SubmissionResponse
 from ..schemas.leaderboard import LeaderboardPeriod
 from ..schemas.user import LeaderboardRank
+from ..services.account import delete_user_account
+from ..services.storage import delete_image
 from .leaderboard import _get_date_range
 
 router = APIRouter(prefix="/users", tags=["users"])
@@ -21,6 +23,18 @@ router = APIRouter(prefix="/users", tags=["users"])
 @router.get("/me", response_model=UserResponse)
 def get_profile(current_user: Annotated[User, Depends(get_current_user)]):
     return current_user
+
+
+@router.delete("/me", response_model=MessageResponse)
+def delete_account(
+    current_user: Annotated[User, Depends(get_current_user)],
+    db: Annotated[Session, Depends(get_db)],
+):
+    image_urls = delete_user_account(db, current_user)
+    db.commit()
+    for url in image_urls:
+        delete_image(url)
+    return MessageResponse(msg="Account deleted")
 
 
 @router.get("/me/submissions", response_model=CursorPaginatedResponse[SubmissionResponse])

@@ -67,7 +67,8 @@ fun MainScreen(
     onImageClick: ((String) -> Unit)? = null,
     onUserClick: (String) -> Unit = {},
     onBikeClick: (String) -> Unit = {},
-    onShowMe: () -> Unit = {}
+    onShowMe: () -> Unit = {},
+    onDeleteAccount: () -> Unit = {}
 ) {
     val tabs = MainTab.entries
     val pagerState = rememberPagerState(pageCount = { tabs.size })
@@ -130,6 +131,13 @@ fun MainScreen(
                                 onClick = {
                                     menuExpanded = false
                                     onShowMe()
+                                }
+                            )
+                            DropdownMenuItem(
+                                text = { Text("Delete Account") },
+                                onClick = {
+                                    menuExpanded = false
+                                    onDeleteAccount()
                                 }
                             )
                             DropdownMenuItem(
