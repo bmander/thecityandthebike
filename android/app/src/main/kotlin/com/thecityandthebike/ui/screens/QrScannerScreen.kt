@@ -21,6 +21,7 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Snackbar
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -46,6 +47,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
 import com.thecityandthebike.camera.BarcodeAnalyzer
+import com.thecityandthebike.util.isRecognizedProvider
+import kotlinx.coroutines.delay
 import java.util.concurrent.Executors
 import java.util.concurrent.atomic.AtomicBoolean
 
@@ -101,6 +104,8 @@ fun QrScannerScreen(
 
     if (!hasCameraPermission) return
 
+    var errorMessage by remember { mutableStateOf<String?>(null) }
+
     val cameraProviderFuture = remember { ProcessCameraProvider.getInstance(context) }
     val cameraExecutor = remember { Executors.newSingleThreadExecutor() }
     val hasScanned = remember { AtomicBoolean(false) }
@@ -108,8 +113,22 @@ fun QrScannerScreen(
     val barcodeAnalyzer = remember {
         BarcodeAnalyzer { qrValue ->
             if (hasScanned.compareAndSet(false, true)) {
-                mainHandler.post { onQrCodeScanned(qrValue) }
+                mainHandler.post {
+                    if (isRecognizedProvider(qrValue)) {
+                        onQrCodeScanned(qrValue)
+                    } else {
+                        errorMessage = "Unrecognized bike provider"
+                        hasScanned.set(false)
+                    }
+                }
             }
+        }
+    }
+
+    LaunchedEffect(errorMessage) {
+        if (errorMessage != null) {
+            delay(3000)
+            errorMessage = null
         }
     }
 
@@ -200,6 +219,17 @@ fun QrScannerScreen(
                 contentDescription = "Back",
                 tint = Color.White
             )
+        }
+
+        // Error snackbar
+        errorMessage?.let { message ->
+            Snackbar(
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .padding(16.dp)
+            ) {
+                Text(text = message)
+            }
         }
     }
 }
