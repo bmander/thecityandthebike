@@ -8,6 +8,16 @@ on:
     paths:
       - 'api/**'
       - '.github/workflows/deploy-backend.yml'
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: 'Branch to deploy'
+        required: true
+        default: 'staging'
+        type: choice
+        options:
+          - staging
+          - prod
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
