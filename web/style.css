@@ -65,6 +65,38 @@ header h1 {
   opacity: 0.85;
 }
 
+.policy h2 {
+  font-size: 1.4rem;
+  margin-bottom: 0.5rem;
+}
+
+.policy h3 {
+  margin-top: 1.5rem;
+  margin-bottom: 0.25rem;
+}
+
+.policy p,
+.policy ul {
+  margin-top: 0.5rem;
+}
+
+.policy ul {
+  padding-left: 1.25rem;
+}
+
+.policy li {
+  margin-top: 0.25rem;
+}
+
+.policy a {
+  color: var(--accent);
+}
+
+.policy-meta {
+  color: var(--text-muted);
+  font-size: 0.85rem;
+}
+
 .gallery {
   flex: 1;
   padding: 0 var(--content-margin) var(--gap);
