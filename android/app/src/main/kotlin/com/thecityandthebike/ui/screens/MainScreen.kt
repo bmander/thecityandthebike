@@ -36,6 +36,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.thecityandthebike.ui.components.CameraFAB
 import com.thecityandthebike.ui.components.ImageGrid
+import com.thecityandthebike.ui.components.LoadingIndicator
 import com.thecityandthebike.ui.components.LoginFAB
 import com.thecityandthebike.ui.components.MenuButton
 import com.thecityandthebike.ui.components.PointsAwardedOverlay
@@ -250,7 +251,7 @@ private fun FeedContent(
 
         // Loading indicator (initial data fetch only)
         if (state.isLoading) {
-            CircularProgressIndicator(
+            LoadingIndicator(
                 modifier = Modifier.align(Alignment.Center)
             )
         }

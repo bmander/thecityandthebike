@@ -29,6 +29,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.thecityandthebike.data.model.dto.BikeListItem
 import com.thecityandthebike.ui.components.BikeIdBadge
+import com.thecityandthebike.ui.components.LoadingIndicator
 import com.thecityandthebike.ui.viewmodel.BikesListState
 
 @Composable
@@ -41,7 +42,7 @@ fun BikesContent(
     Box(modifier = Modifier.fillMaxSize()) {
         when {
             state.isLoading -> {
-                CircularProgressIndicator(
+                LoadingIndicator(
                     modifier = Modifier.align(Alignment.Center)
                 )
             }

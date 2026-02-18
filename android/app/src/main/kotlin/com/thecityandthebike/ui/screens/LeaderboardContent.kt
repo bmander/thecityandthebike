@@ -25,6 +25,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.thecityandthebike.data.model.dto.LeaderboardEntry
+import com.thecityandthebike.ui.components.LoadingIndicator
 import com.thecityandthebike.ui.viewmodel.LeaderboardPeriod
 import com.thecityandthebike.ui.viewmodel.LeaderboardState
 
@@ -52,7 +53,7 @@ fun LeaderboardContent(
         Box(modifier = Modifier.fillMaxSize()) {
             when {
                 state.isLoading -> {
-                    CircularProgressIndicator(
+                    LoadingIndicator(
                         modifier = Modifier.align(Alignment.Center)
                     )
                 }
