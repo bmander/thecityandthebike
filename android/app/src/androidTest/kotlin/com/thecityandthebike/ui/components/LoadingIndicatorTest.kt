@@ -29,13 +29,13 @@ class LoadingIndicatorTest {
 
         composeTestRule.onNodeWithText("Waking up servers…").assertIsDisplayed()
 
-        // Advance time by 1 second to trigger the first cycle
-        composeTestRule.mainClock.advanceTimeBy(1100)
+        // Advance time by 2 seconds to trigger the first cycle
+        composeTestRule.mainClock.advanceTimeBy(2100)
 
         composeTestRule.onNodeWithText("Sending to space…").assertIsDisplayed()
 
         // Advance again
-        composeTestRule.mainClock.advanceTimeBy(1000)
+        composeTestRule.mainClock.advanceTimeBy(2000)
 
         composeTestRule.onNodeWithText("Tagging…").assertIsDisplayed()
     }

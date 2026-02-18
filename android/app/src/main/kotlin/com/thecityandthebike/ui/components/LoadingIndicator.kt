@@ -34,7 +34,7 @@ fun LoadingIndicator(modifier: Modifier = Modifier) {
 
     LaunchedEffect(Unit) {
         while (true) {
-            delay(1000)
+            delay(2000)
             index = (index + 1) % flavorTexts.size
         }
     }
