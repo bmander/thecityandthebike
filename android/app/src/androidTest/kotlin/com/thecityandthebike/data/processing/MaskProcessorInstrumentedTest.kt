@@ -103,6 +103,35 @@ class MaskProcessorInstrumentedTest {
     }
 
     @Test
+    fun process_largeImageProducesValidRing() = runBlocking {
+        val size = 2000
+        val bitmap = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888)
+        val canvas = Canvas(bitmap)
+        canvas.drawColor(Color.BLACK)
+        val paint = Paint().apply { color = Color.WHITE }
+        canvas.drawCircle(1000f, 1000f, 300f, paint)
+        val file = saveBitmapToFile(bitmap, "test_large_mask.png")
+        bitmap.recycle()
+        try {
+            val result = processor.process(file)
+
+            assertEquals(size, result.width)
+            assertEquals(size, result.height)
+            assertTrue("Ring should have at least 4 points", result.ring.size >= 4)
+            assertEquals("Ring should be closed", result.ring.first(), result.ring.last())
+
+            val xs = result.ring.map { it[0] }
+            val ys = result.ring.map { it[1] }
+            assertTrue("Ring x-coords should be near circle center", xs.min() >= 650f)
+            assertTrue("Ring x-coords should be near circle center", xs.max() <= 1350f)
+            assertTrue("Ring y-coords should be near circle center", ys.min() >= 650f)
+            assertTrue("Ring y-coords should be near circle center", ys.max() <= 1350f)
+        } finally {
+            file.delete()
+        }
+    }
+
+    @Test
     fun process_rectangleMaskReturnsCorrectRegion() = runBlocking {
         val bitmap = Bitmap.createBitmap(300, 300, Bitmap.Config.ARGB_8888)
         val canvas = Canvas(bitmap)

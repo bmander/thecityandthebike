@@ -286,8 +286,14 @@ suspend fun exportCompositedFromRing(
     inputStream.close()
     if (originalBitmap == null) return@withContext null
 
-    val outputWidth = originalBitmap.width
-    val outputHeight = originalBitmap.height
+    val maxCompositeDim = 1024
+    val compositeScale = if (maxOf(originalBitmap.width, originalBitmap.height) > maxCompositeDim) {
+        maxCompositeDim.toFloat() / maxOf(originalBitmap.width, originalBitmap.height)
+    } else {
+        1f
+    }
+    val outputWidth = (originalBitmap.width * compositeScale).toInt()
+    val outputHeight = (originalBitmap.height * compositeScale).toInt()
     val output = Bitmap.createBitmap(outputWidth, outputHeight, Bitmap.Config.ARGB_8888)
     val canvas = Canvas(output)
 

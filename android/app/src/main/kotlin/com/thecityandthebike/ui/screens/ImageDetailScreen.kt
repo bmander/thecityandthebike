@@ -287,8 +287,16 @@ fun ImageDetailScreen(
                         onClick = {
                             val dims = imageDimensions
                             if (dims != null) {
+                                val maxMaskDim = 512
+                                val scale = if (maxOf(dims.first, dims.second) > maxMaskDim) {
+                                    maxMaskDim.toFloat() / maxOf(dims.first, dims.second)
+                                } else {
+                                    1f
+                                }
+                                val maskW = (dims.first * scale).toInt()
+                                val maskH = (dims.second * scale).toInt()
                                 scope.launch {
-                                    maskState.exportMask(context, dims.first, dims.second)
+                                    maskState.exportMask(context, maskW, maskH)
                                         ?.let { onProcessMask(it) }
                                 }
                             }

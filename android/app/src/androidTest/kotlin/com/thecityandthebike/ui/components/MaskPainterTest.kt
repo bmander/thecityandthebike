@@ -273,6 +273,141 @@ class MaskPainterTest {
         assertTrue("Output filename should end with .png", result!!.name.endsWith(".png"))
     }
 
+    // --- exportCompositedFromRing ---
+
+    private fun createTestImageFile(width: Int, height: Int, name: String = "test_image_ring.png"): File {
+        val context = InstrumentationRegistry.getInstrumentation().targetContext
+        val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
+        val canvas = android.graphics.Canvas(bitmap)
+        val paint = android.graphics.Paint().apply { color = android.graphics.Color.RED }
+        canvas.drawRect(0f, 0f, width.toFloat(), height.toFloat(), paint)
+        val file = File(context.cacheDir, name)
+        FileOutputStream(file).use { out ->
+            bitmap.compress(Bitmap.CompressFormat.PNG, 100, out)
+        }
+        bitmap.recycle()
+        return file
+    }
+
+    @Test
+    fun exportCompositedFromRing_capsOutputAt1024ForLargeImage() {
+        val context = InstrumentationRegistry.getInstrumentation().targetContext
+        val file = createTestImageFile(2000, 2000, "test_large_ring.png")
+        val uri = Uri.fromFile(file)
+        val ring = listOf(
+            listOf(10f, 10f),
+            listOf(90f, 10f),
+            listOf(90f, 90f),
+            listOf(10f, 90f),
+        )
+        try {
+            val result = runBlocking { exportCompositedFromRing(context, uri, ring, 100, 100) }
+            assertNotNull("Should produce output file", result)
+            assertTrue("Output file should exist", result!!.exists())
+
+            val outputBitmap = android.graphics.BitmapFactory.decodeFile(result.absolutePath)
+            assertNotNull("Should be a valid image", outputBitmap)
+            assertTrue("Width should be capped at 1024", outputBitmap!!.width <= 1024)
+            assertTrue("Height should be capped at 1024", outputBitmap.height <= 1024)
+            outputBitmap.recycle()
+            result.delete()
+        } finally {
+            file.delete()
+        }
+    }
+
+    @Test
+    fun exportCompositedFromRing_smallImagePassesThroughUnchanged() {
+        val context = InstrumentationRegistry.getInstrumentation().targetContext
+        val file = createTestImageFile(400, 300, "test_small_ring.png")
+        val uri = Uri.fromFile(file)
+        val ring = listOf(
+            listOf(10f, 10f),
+            listOf(90f, 10f),
+            listOf(90f, 90f),
+            listOf(10f, 90f),
+        )
+        try {
+            val result = runBlocking { exportCompositedFromRing(context, uri, ring, 100, 100) }
+            assertNotNull("Should produce output file", result)
+
+            val outputBitmap = android.graphics.BitmapFactory.decodeFile(result!!.absolutePath)
+            assertNotNull("Should be a valid image", outputBitmap)
+            assertEquals("Width should match original", 400, outputBitmap!!.width)
+            assertEquals("Height should match original", 300, outputBitmap.height)
+            outputBitmap.recycle()
+            result.delete()
+        } finally {
+            file.delete()
+        }
+    }
+
+    @Test
+    fun exportCompositedFromRing_outputIsValidPng() {
+        val context = InstrumentationRegistry.getInstrumentation().targetContext
+        val file = createTestImageFile(500, 500, "test_ring_png.png")
+        val uri = Uri.fromFile(file)
+        val ring = listOf(
+            listOf(20f, 20f),
+            listOf(80f, 20f),
+            listOf(80f, 80f),
+            listOf(20f, 80f),
+        )
+        try {
+            val result = runBlocking { exportCompositedFromRing(context, uri, ring, 100, 100) }
+            assertNotNull("Should produce output file", result)
+            assertTrue("Output filename should end with .png", result!!.name.endsWith(".png"))
+            assertTrue("Output file should be non-empty", result.length() > 0)
+
+            val outputBitmap = android.graphics.BitmapFactory.decodeFile(result.absolutePath)
+            assertNotNull("Should decode as valid image", outputBitmap)
+            outputBitmap!!.recycle()
+            result.delete()
+        } finally {
+            file.delete()
+        }
+    }
+
+    @Test
+    fun exportCompositedFromRing_returnsNullForTooFewPoints() {
+        val context = InstrumentationRegistry.getInstrumentation().targetContext
+        val file = createTestImageFile(100, 100, "test_ring_null.png")
+        val uri = Uri.fromFile(file)
+        val ring = listOf(listOf(10f, 10f), listOf(90f, 90f))
+        try {
+            val result = runBlocking { exportCompositedFromRing(context, uri, ring, 100, 100) }
+            assertNull("Should return null for fewer than 3 points", result)
+        } finally {
+            file.delete()
+        }
+    }
+
+    @Test
+    fun exportCompositedFromRing_rectangularImageCapsLongestSide() {
+        val context = InstrumentationRegistry.getInstrumentation().targetContext
+        val file = createTestImageFile(2000, 1000, "test_rect_ring.png")
+        val uri = Uri.fromFile(file)
+        val ring = listOf(
+            listOf(10f, 10f),
+            listOf(90f, 10f),
+            listOf(90f, 90f),
+            listOf(10f, 90f),
+        )
+        try {
+            val result = runBlocking { exportCompositedFromRing(context, uri, ring, 100, 100) }
+            assertNotNull("Should produce output file", result)
+
+            val outputBitmap = android.graphics.BitmapFactory.decodeFile(result!!.absolutePath)
+            assertNotNull("Should be a valid image", outputBitmap)
+            assertEquals("Width (longest side) should be capped at 1024", 1024, outputBitmap!!.width)
+            assertEquals("Height should scale proportionally", 512, outputBitmap.height)
+            outputBitmap.recycle()
+            result.delete()
+        } finally {
+            file.delete()
+        }
+    }
+
     @Test
     fun exportComposited_worksWithHttpUrl() {
         val context = InstrumentationRegistry.getInstrumentation().targetContext
