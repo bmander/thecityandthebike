@@ -56,7 +56,7 @@ fun ImageGrid(
     }
 
     LazyVerticalGrid(
-        columns = GridCells.Fixed(3),
+        columns = GridCells.Adaptive(minSize = 120.dp),
         modifier = modifier,
         state = gridState,
         horizontalArrangement = Arrangement.spacedBy(2.dp),
