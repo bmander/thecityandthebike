@@ -323,10 +323,10 @@ class MaskPainterTest {
         val file = createTestImageFile(400, 300, "test_small_ring.png")
         val uri = Uri.fromFile(file)
         val ring = listOf(
-            listOf(10f, 10f),
-            listOf(90f, 10f),
-            listOf(90f, 90f),
-            listOf(10f, 90f),
+            listOf(0f, 0f),
+            listOf(100f, 0f),
+            listOf(100f, 100f),
+            listOf(0f, 100f),
         )
         try {
             val result = runBlocking { exportCompositedFromRing(context, uri, ring, 100, 100) }
@@ -389,10 +389,10 @@ class MaskPainterTest {
         val file = createTestImageFile(2000, 1000, "test_rect_ring.png")
         val uri = Uri.fromFile(file)
         val ring = listOf(
-            listOf(10f, 10f),
-            listOf(90f, 10f),
-            listOf(90f, 90f),
-            listOf(10f, 90f),
+            listOf(0f, 0f),
+            listOf(100f, 0f),
+            listOf(100f, 100f),
+            listOf(0f, 100f),
         )
         try {
             val result = runBlocking { exportCompositedFromRing(context, uri, ring, 100, 100) }
