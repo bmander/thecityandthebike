@@ -17,7 +17,7 @@ Images:   GCP Artifact Registry
 
 | | Staging | Production |
 |---|---|---|
-| **Branch** | `develop` | `main` |
+| **Branch** | `staging` | `prod` |
 | **API URL** | https://tcatb-api-staging-821600862601.us-central1.run.app | TBD (after first production deploy) |
 | **Cloud Run Service** | `tcatb-api-staging` | `tcatb-api-production` |
 | **Cloud SQL Instance** | `tcatb-staging-db` (db-f1-micro) | `tcatb-prod-db` (db-g1-small) |
@@ -31,17 +31,17 @@ Images:   GCP Artifact Registry
 
 Workflow: `.github/workflows/deploy-backend.yml`
 
-Triggers on push to `develop` (staging) or `main` (production) when files in `api/` change.
+Triggers on push to `staging` or `prod` when files in `api/` change.
 
-Steps: run tests -> build Docker image -> push to Artifact Registry -> deploy to Cloud Run -> verify health check.
+Steps: build Docker image -> push to Artifact Registry -> run database migrations -> deploy to Cloud Run -> verify health check.
 
 ### Android
 
 Workflow: `.github/workflows/deploy-android.yml`
 
-Triggers on push to `develop` (staging) or `main` (production) when files in `android/` change.
+Triggers on push to `staging` or `prod` when files in `android/` change.
 
-Steps: run unit tests -> build APK/AAB -> upload to Firebase (staging) or Play Store (production).
+Steps: build APK/AAB -> upload to Firebase App Distribution (staging) or Play Store internal track (production).
 
 ## Manual Deployment
 
@@ -134,6 +134,13 @@ gcloud secrets versions access latest --secret=SECRET_NAME --project=tcatb-app
 
 All secrets above are configured except `PLAY_STORE_SERVICE_ACCOUNT_JSON` (pending Play Store setup).
 
+### GitHub Repository Variables
+
+| Variable | Description |
+|----------|-------------|
+| `API_BASE_URL` | API URL injected into website config |
+| `PRODUCTION_BASE_URL` | Production API URL for Android build (set after first production backend deploy) |
+
 ## Rollback
 
 ### Backend
@@ -198,7 +205,7 @@ GitHub Actions authenticates to GCP using OIDC-based Workload Identity Federatio
 - **Attribute condition:** `assertion.repository=='bmander/thecityandthebike'` — only this repo can authenticate
 - **IAM binding:** `github-deployer` SA has `roles/iam.workloadIdentityUser` for the pool
 
-The workflow uses `google-github-actions/auth@v2` with `workload_identity_provider` and `service_account` parameters. GitHub's OIDC token is exchanged for a short-lived GCP access token on each run.
+The workflow uses `google-github-actions/auth@v3` with `workload_identity_provider` and `service_account` parameters. GitHub's OIDC token is exchanged for a short-lived GCP access token on each run.
 
 WIF requires the **IAM Service Account Credentials API** (`iamcredentials.googleapis.com`) to be enabled on the project.
 

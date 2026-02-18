@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - staging
+      - prod
     paths:
       - 'api/**'
       - '.github/workflows/deploy-backend.yml'
@@ -30,12 +31,21 @@ jobs:
 
       - name: Set environment
         run: |
-          echo "ENVIRONMENT=staging" >> $GITHUB_ENV
-          echo "SQL_INSTANCE=${{ secrets.GCP_PROJECT_ID }}:${{ env.REGION }}:tcatb-staging-db" >> $GITHUB_ENV
-          echo "STORAGE_BUCKET=tcatb-staging-uploads" >> $GITHUB_ENV
-          echo "JWT_SECRET=jwt-secret-staging" >> $GITHUB_ENV
-          echo "DB_PASSWORD_SECRET=db-password-staging" >> $GITHUB_ENV
-          echo "CORS_ORIGINS=https://www.thecityandthebike.com" >> $GITHUB_ENV
+          if [ "${{ github.ref }}" = "refs/heads/prod" ]; then
+            echo "ENVIRONMENT=production" >> $GITHUB_ENV
+            echo "SQL_INSTANCE=${{ secrets.GCP_PROJECT_ID }}:${{ env.REGION }}:tcatb-prod-db" >> $GITHUB_ENV
+            echo "STORAGE_BUCKET=tcatb-production-uploads" >> $GITHUB_ENV
+            echo "JWT_SECRET=jwt-secret-production" >> $GITHUB_ENV
+            echo "DB_PASSWORD_SECRET=db-password-production" >> $GITHUB_ENV
+            echo "CORS_ORIGINS=https://www.thecityandthebike.com" >> $GITHUB_ENV
+          else
+            echo "ENVIRONMENT=staging" >> $GITHUB_ENV
+            echo "SQL_INSTANCE=${{ secrets.GCP_PROJECT_ID }}:${{ env.REGION }}:tcatb-staging-db" >> $GITHUB_ENV
+            echo "STORAGE_BUCKET=tcatb-staging-uploads" >> $GITHUB_ENV
+            echo "JWT_SECRET=jwt-secret-staging" >> $GITHUB_ENV
+            echo "DB_PASSWORD_SECRET=db-password-staging" >> $GITHUB_ENV
+            echo "CORS_ORIGINS=https://www.thecityandthebike.com" >> $GITHUB_ENV
+          fi
 
       - name: Authenticate to Google Cloud
         uses: google-github-actions/auth@v3
