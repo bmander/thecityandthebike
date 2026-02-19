@@ -24,10 +24,10 @@ from slowapi.errors import RateLimitExceeded
 from app.admin import setup_admin
 from app.database import Base, get_db
 from app.dependencies import get_password_hash, create_access_token
-from app.models import User, Bike, FenderSubmission, Tag
+from app.models import User, Bike, FenderSubmission, Tag, Flag
 from app.main import RequestIDMiddleware, SecurityHeadersMiddleware, validation_exception_handler
 from app.rate_limit import AccountLockout, get_account_lockout, limiter, rate_limit_exceeded_handler
-from app.routers import auth_router, users_router, submissions_router, bikes_router, uploads_router, leaderboard_router, tags_router
+from app.routers import auth_router, users_router, submissions_router, bikes_router, uploads_router, leaderboard_router, tags_router, flags_router
 
 
 def create_test_image(width=800, height=600, format="JPEG", mode="RGB", color="red"):
@@ -71,6 +71,7 @@ test_app.include_router(bikes_router)
 test_app.include_router(uploads_router)
 test_app.include_router(leaderboard_router)
 test_app.include_router(tags_router)
+test_app.include_router(flags_router)
 setup_admin(test_app, test_engine, "test-secret-key")
 
 test_app.add_exception_handler(RateLimitExceeded, rate_limit_exceeded_handler)

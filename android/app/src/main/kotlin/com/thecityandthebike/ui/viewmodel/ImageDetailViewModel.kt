@@ -36,6 +36,8 @@ data class ImageDetailState(
     val processedMaskWidth: Int = 0,
     val processedMaskHeight: Int = 0,
     val pointsAwarded: List<ScoringBreakdown>? = null,
+    val isFlagged: Boolean = false,
+    val isFlagging: Boolean = false,
 )
 
 @HiltViewModel
@@ -56,6 +58,7 @@ class ImageDetailViewModel @Inject constructor(
     init {
         loadSubmission()
         loadTags()
+        loadFlagStatus()
     }
 
     private fun loadSubmission() {
@@ -226,6 +229,40 @@ class ImageDetailViewModel @Inject constructor(
 
     fun clearPointsAwarded() {
         _state.value = _state.value.copy(pointsAwarded = null)
+    }
+
+    private fun loadFlagStatus() {
+        if (tokenManager.getUserId() == null) return
+        viewModelScope.launch {
+            when (val result = submissionRepository.getFlagStatus(submissionId)) {
+                is ApiResult.Success -> {
+                    _state.value = _state.value.copy(isFlagged = result.data.flagged)
+                }
+                is ApiResult.Error -> {
+                    // Silently fail - flag status is supplementary
+                }
+            }
+        }
+    }
+
+    fun flagSubmission() {
+        viewModelScope.launch {
+            _state.value = _state.value.copy(isFlagging = true)
+            when (val result = submissionRepository.createFlag(submissionId)) {
+                is ApiResult.Success -> {
+                    _state.value = _state.value.copy(
+                        isFlagging = false,
+                        isFlagged = result.data.flagged
+                    )
+                }
+                is ApiResult.Error -> {
+                    _state.value = _state.value.copy(
+                        isFlagging = false,
+                        error = "Failed to flag submission"
+                    )
+                }
+            }
+        }
     }
 
     fun isLoggedIn(): Boolean {

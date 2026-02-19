@@ -4,6 +4,7 @@ from .submission import CursorPaginatedResponse, PaginatedResponse, SubmissionRe
 from .bike import BikeDetailResponse, BikeListItem, BikeResponse, Owner, UserSummary
 from .leaderboard import LeaderboardEntry, LeaderboardPeriod, LeaderboardResponse
 from .tag import TagDetailResponse, TagResponse
+from .flag import FlagStatusResponse
 
 __all__ = [
     "UserRegister",
@@ -27,4 +28,5 @@ __all__ = [
     "LeaderboardResponse",
     "TagDetailResponse",
     "TagResponse",
+    "FlagStatusResponse",
 ]

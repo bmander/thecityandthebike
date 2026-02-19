@@ -1,7 +1,7 @@
 from datetime import datetime, timezone
 import uuid
 
-from sqlalchemy import Boolean, Column, Index, Integer, JSON, String, Date, DateTime, Text, ForeignKey, Uuid
+from sqlalchemy import Boolean, Column, Index, Integer, JSON, String, Date, DateTime, Text, ForeignKey, UniqueConstraint, Uuid
 from sqlalchemy.orm import relationship
 
 from ..database import Base
@@ -82,6 +82,7 @@ class FenderSubmission(Base):
     bike = relationship("Bike", back_populates="submissions")
 
     tags = relationship("Tag", back_populates="submission", cascade="all, delete-orphan")
+    flags = relationship("Flag", back_populates="submission", cascade="all, delete-orphan")
 
     @property
     def bike_qr_id(self):
@@ -123,3 +124,18 @@ class ScoringEvent(Base):
     tag_id = Column(Uuid, ForeignKey("tags.tag_id"), nullable=True)
     created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
     revoked_at = Column(DateTime(timezone=True), nullable=True)
+
+
+class Flag(Base):
+    __tablename__ = "flags"
+    __table_args__ = (
+        UniqueConstraint("submission_id", "user_id", name="uq_flags_submission_user"),
+    )
+
+    flag_id = Column(Uuid, primary_key=True, default=uuid.uuid4)
+    submission_id = Column(Uuid, ForeignKey("fender_submissions.submission_id"), nullable=False, index=True)
+    user_id = Column(Uuid, ForeignKey("users.user_id"), nullable=False)
+    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
+
+    submission = relationship("FenderSubmission", back_populates="flags")
+    user = relationship("User")

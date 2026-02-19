@@ -38,6 +38,7 @@ import com.thecityandthebike.ui.screens.PrivacyCopyrightScreen
 import com.thecityandthebike.ui.screens.QrScannerScreen
 import com.thecityandthebike.ui.screens.RegisterScreen
 import com.thecityandthebike.ui.screens.SplashScreen
+import com.thecityandthebike.ui.screens.DeleteAccountScreen
 import com.thecityandthebike.ui.screens.MeScreen
 import com.thecityandthebike.ui.screens.UserScreen
 import com.thecityandthebike.util.imageUrlToUri
@@ -46,6 +47,7 @@ import com.thecityandthebike.ui.viewmodel.BikeViewModel
 import com.thecityandthebike.ui.viewmodel.BikesListViewModel
 import com.thecityandthebike.ui.viewmodel.ImageDetailViewModel
 import com.thecityandthebike.ui.viewmodel.LeaderboardViewModel
+import com.thecityandthebike.ui.viewmodel.DeleteAccountViewModel
 import com.thecityandthebike.ui.viewmodel.MainViewModel
 import com.thecityandthebike.ui.viewmodel.MeViewModel
 import com.thecityandthebike.ui.viewmodel.PhotoPreviewViewModel
@@ -157,6 +159,9 @@ fun AppNavGraph(onboardingPrefs: OnboardingPrefs) {
                 },
                 onShowMe = {
                     navController.navigate(Me)
+                },
+                onDeleteAccount = {
+                    navController.navigate(DeleteAccount)
                 }
             )
         }
@@ -278,6 +283,26 @@ fun AppNavGraph(onboardingPrefs: OnboardingPrefs) {
                 onImageClick = { submissionId ->
                     navController.navigate(MeImageDetail(submissionId))
                 }
+            )
+        }
+
+        composable<DeleteAccount> {
+            val deleteAccountViewModel: DeleteAccountViewModel = hiltViewModel()
+            val deleteState by deleteAccountViewModel.state.collectAsStateWithLifecycle()
+
+            LaunchedEffect(deleteState.isDeleted) {
+                if (deleteState.isDeleted) {
+                    navController.navigate(Main) {
+                        popUpTo<Main> { inclusive = true }
+                    }
+                }
+            }
+
+            DeleteAccountScreen(
+                state = deleteState,
+                onBack = { navController.popBackStack() },
+                onConfirmDelete = { deleteAccountViewModel.deleteAccount() },
+                onClearError = { deleteAccountViewModel.clearError() }
             )
         }
 
@@ -446,6 +471,9 @@ private fun ImageDetailRoute(
                     onConfirmTag = { file -> viewModel.createTag(file) },
                     onBackToDrawing = { viewModel.goBackToDrawing() },
                     onTagClick = onTagClick,
+                    isFlagged = detailState.isFlagged,
+                    isFlagging = detailState.isFlagging,
+                    onFlag = { viewModel.flagSubmission() },
                 )
                 detailState.pointsAwarded?.let { breakdown ->
                     PointsAwardedOverlay(

@@ -84,6 +84,22 @@ class AuthRepository @Inject constructor(
         tokenManager.clearToken()
     }
 
+    suspend fun deleteAccount(): ApiResult<Unit> {
+        return try {
+            val response = apiService.deleteAccount()
+            if (response.isSuccessful) {
+                tokenManager.clearToken()
+                ApiResult.Success(Unit)
+            } else {
+                ApiResult.Error(AppError.Server(response.code(), "Failed to delete account"))
+            }
+        } catch (e: IOException) {
+            ApiResult.Error(AppError.Network(e))
+        } catch (e: Exception) {
+            ApiResult.Error(AppError.Unknown(e))
+        }
+    }
+
     fun isLoggedIn(): Boolean {
         return tokenManager.hasToken()
     }

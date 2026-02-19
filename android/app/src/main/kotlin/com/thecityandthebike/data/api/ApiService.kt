@@ -25,6 +25,9 @@ interface ApiService {
     @GET("users/me")
     suspend fun getCurrentUser(): Response<UserResponse>
 
+    @DELETE("users/me")
+    suspend fun deleteAccount(): Response<MessageResponse>
+
     @GET("users/me/submissions")
     suspend fun getMySubmissions(
         @Query("limit") limit: Int = 20,
@@ -117,4 +120,11 @@ interface ApiService {
         @Query("limit") limit: Int = 20,
         @Query("cursor") cursor: String? = null
     ): Response<CursorPaginatedSubmissions>
+
+    // Flag endpoints
+    @POST("submissions/{submissionId}/flags")
+    suspend fun createFlag(@Path("submissionId") submissionId: String): Response<FlagStatusResponse>
+
+    @GET("submissions/{submissionId}/flags/me")
+    suspend fun getFlagStatus(@Path("submissionId") submissionId: String): Response<FlagStatusResponse>
 }
