@@ -177,6 +177,73 @@ jobs:
           path: android/app/build/reports/androidTests/
         if: always()
 
+  android-minified-instrumented-tests:
+    name: Android Minified Instrumented Tests
+    runs-on: ubuntu-latest
+    needs: [changes]
+    if: needs.changes.outputs.android == 'true'
+    defaults:
+      run:
+        working-directory: android
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Set up JDK
+        uses: actions/setup-java@v5
+        with:
+          java-version: ${{ env.JAVA_VERSION }}
+          distribution: "temurin"
+          cache: "gradle"
+
+      - name: Enable KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+
+      - name: Grant execute permission for gradlew
+        run: chmod +x gradlew
+
+      - name: AVD cache
+        uses: actions/cache@v4
+        id: avd-cache
+        with:
+          path: |
+            ~/.android/avd/*
+            ~/.android/adb*
+          key: avd-api-30-x86_64-nexus6
+
+      - name: Create AVD and generate snapshot for caching
+        if: steps.avd-cache.outputs.cache-hit != 'true'
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 30
+          arch: x86_64
+          profile: Nexus 6
+          force-avd-creation: false
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim
+          disable-animations: true
+          script: echo "Generated AVD snapshot for caching."
+
+      - name: Run minified instrumented tests
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 30
+          arch: x86_64
+          profile: Nexus 6
+          force-avd-creation: false
+          emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim
+          disable-animations: true
+          script: cd android && ./gradlew -PtestBuildType=debugMinified connectedStagingDebugMinifiedAndroidTest
+
+      - name: Upload test results
+        uses: actions/upload-artifact@v6
+        with:
+          name: android-minified-instrumented-test-results
+          path: android/app/build/reports/androidTests/
+        if: always()
+
   lint:
     name: Code Quality
     runs-on: ubuntu-latest

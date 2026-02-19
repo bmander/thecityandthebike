@@ -50,6 +50,16 @@ Run a specific test class:
 cd android && ./gradlew connectedAndroidTest -Pandroid.testInstrumentationRunnerArguments.class=com.thecityandthebike.ui.components.CameraFABTest
 ```
 
+#### Minified Instrumented Tests
+
+To catch R8/ProGuard stripping issues before production, run instrumented tests against a minified build:
+
+```bash
+export JAVA_HOME="/Applications/Android Studio.app/Contents/jbr/Contents/Home" && export ANDROID_HOME=~/Library/Android/sdk && cd android && ./gradlew -PtestBuildType=debugMinified connectedStagingDebugMinifiedAndroidTest
+```
+
+This uses the `debugMinified` build type, which applies R8 minification with debug signing so instrumented tests can detect classes or methods stripped by R8.
+
 #### Java 21 Compatibility
 
 Android Studio bundles Java 21, which requires:
