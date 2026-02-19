@@ -4,6 +4,7 @@ import androidx.lifecycle.SavedStateHandle
 import com.thecityandthebike.data.local.TokenManager
 import com.thecityandthebike.data.model.ApiResult
 import com.thecityandthebike.data.model.AppError
+import com.thecityandthebike.data.model.dto.FlagStatusResponse
 import com.thecityandthebike.data.model.dto.MessageResponse
 import com.thecityandthebike.data.model.dto.SubmissionResponse
 import com.thecityandthebike.data.model.dto.TagResponse
@@ -66,6 +67,8 @@ class ImageDetailViewModelTest {
         savedStateHandle = SavedStateHandle(mapOf("submissionId" to testSubmissionId))
         // Default: tags load empty
         coEvery { tagRepository.getTags(testSubmissionId) } returns ApiResult.Success(emptyList())
+        // Default: not flagged
+        coEvery { submissionRepository.getFlagStatus(testSubmissionId) } returns ApiResult.Success(FlagStatusResponse(flagged = false, flagCount = 0))
     }
 
     @After
