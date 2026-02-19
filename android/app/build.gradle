@@ -59,6 +59,7 @@ android {
         }
         debugMinified {
             initWith debug
+            debuggable false
             minifyEnabled true
             shrinkResources true
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro', 'proguard-rules-debugMinified.pro'

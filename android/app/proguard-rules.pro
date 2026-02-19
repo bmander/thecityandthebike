@@ -13,10 +13,11 @@
 # API service interface - preserve generic type signatures for Retrofit
 -keep interface com.thecityandthebike.data.api.ApiService { *; }
 
-# OkHttp
+# OkHttp + okio
 -dontwarn okhttp3.**
 -dontwarn okio.**
 -keep class okhttp3.** { *; }
+-keep class okio.** { *; }
 
 # kotlinx-serialization
 -keepattributes *Annotation*, InnerClasses
