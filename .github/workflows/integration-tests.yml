@@ -139,7 +139,7 @@ jobs:
         run: chmod +x gradlew
 
       - name: AVD cache
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         id: avd-cache
         with:
           path: |
@@ -206,7 +206,7 @@ jobs:
         run: chmod +x gradlew
 
       - name: AVD cache
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         id: avd-cache
         with:
           path: |
