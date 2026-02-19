@@ -122,6 +122,7 @@ fun ImageDetailScreen(
 
     var showDeleteDialog by remember { mutableStateOf(false) }
     var showDeleteTagDialog by remember { mutableStateOf<String?>(null) }
+    var showFlagDialog by remember { mutableStateOf(false) }
 
     if (showDeleteDialog) {
         AlertDialog(
@@ -163,6 +164,29 @@ fun ImageDetailScreen(
             },
             dismissButton = {
                 TextButton(onClick = { showDeleteTagDialog = null }) {
+                    Text("Cancel")
+                }
+            }
+        )
+    }
+
+    if (showFlagDialog) {
+        AlertDialog(
+            onDismissRequest = { showFlagDialog = false },
+            title = { Text("Flag Photo") },
+            text = { Text("Are you sure you want to flag this photo as inappropriate?") },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        showFlagDialog = false
+                        onFlag()
+                    }
+                ) {
+                    Text("Flag", color = MaterialTheme.colorScheme.error)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showFlagDialog = false }) {
                     Text("Cancel")
                 }
             }
@@ -318,21 +342,62 @@ fun ImageDetailScreen(
                     }
                 }
             } else {
-                ZoomableImage(
-                    imageUri = imageUri,
-                    thumbnailUri = thumbnailUri,
-                    contentDescription = "Submission photo",
-                    overlay = {
-                        TagOutlineOverlay(
-                            tags = tags,
-                            selectedTagId = selectedTagId,
-                            onTagTapped = onTagTapped,
-                            isTagDeletable = isTagDeletable,
-                            onDeleteTag = { tagId -> showDeleteTagDialog = tagId },
-                            onTagClick = onTagClick
-                        )
+                Box {
+                    ZoomableImage(
+                        imageUri = imageUri,
+                        thumbnailUri = thumbnailUri,
+                        contentDescription = "Submission photo",
+                        overlay = {
+                            TagOutlineOverlay(
+                                tags = tags,
+                                selectedTagId = selectedTagId,
+                                onTagTapped = onTagTapped,
+                                isTagDeletable = isTagDeletable,
+                                onDeleteTag = { tagId -> showDeleteTagDialog = tagId },
+                                onTagClick = onTagClick
+                            )
+                        }
+                    )
+                    if (isLoggedIn) {
+                        if (isFlagged) {
+                            FilledIconButton(
+                                onClick = { showFlagDialog = true },
+                                enabled = !isFlagging,
+                                shape = RoundedCornerShape(8.dp),
+                                colors = IconButtonDefaults.filledIconButtonColors(
+                                    containerColor = MaterialTheme.colorScheme.error.copy(alpha = 0.5f),
+                                    contentColor = MaterialTheme.colorScheme.onError
+                                ),
+                                modifier = Modifier
+                                    .align(Alignment.TopStart)
+                                    .padding(8.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Filled.Flag,
+                                    contentDescription = "Flagged"
+                                )
+                            }
+                        } else {
+                            FilledIconButton(
+                                onClick = { showFlagDialog = true },
+                                enabled = !isFlagging,
+                                shape = RoundedCornerShape(8.dp),
+                                colors = IconButtonDefaults.filledIconButtonColors(
+                                    containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.5f),
+                                    contentColor = MaterialTheme.colorScheme.onSurface
+                                ),
+                                modifier = Modifier
+                                    .align(Alignment.TopStart)
+                                    .padding(8.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Outlined.Flag,
+                                    contentDescription = "Flag photo"
+                                )
+                            }
+                        }
                     }
-                )
+                }
             }
 
             if (isOwner || (isLoggedIn && !isTagMode)) {
@@ -366,36 +431,6 @@ fun ImageDetailScreen(
                             style = MaterialTheme.typography.labelMedium,
                             modifier = Modifier.padding(start = 4.dp)
                         )
-                        if (isFlagged) {
-                            FilledIconButton(
-                                onClick = onFlag,
-                                enabled = !isFlagging,
-                                shape = RoundedCornerShape(8.dp),
-                                colors = IconButtonDefaults.filledIconButtonColors(
-                                    containerColor = MaterialTheme.colorScheme.error,
-                                    contentColor = MaterialTheme.colorScheme.onError
-                                ),
-                                modifier = Modifier.padding(start = 8.dp)
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Filled.Flag,
-                                    contentDescription = "Flagged"
-                                )
-                            }
-                        } else {
-                            OutlinedIconButton(
-                                onClick = onFlag,
-                                enabled = !isFlagging,
-                                shape = RoundedCornerShape(8.dp),
-                                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
-                                modifier = Modifier.padding(start = 8.dp)
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Outlined.Flag,
-                                    contentDescription = "Flag photo"
-                                )
-                            }
-                        }
                     }
                     Spacer(modifier = Modifier.weight(1f))
                     if (isOwner) {
