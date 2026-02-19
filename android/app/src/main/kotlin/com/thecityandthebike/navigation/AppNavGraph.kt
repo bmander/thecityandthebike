@@ -38,7 +38,6 @@ import com.thecityandthebike.ui.screens.PrivacyCopyrightScreen
 import com.thecityandthebike.ui.screens.QrScannerScreen
 import com.thecityandthebike.ui.screens.RegisterScreen
 import com.thecityandthebike.ui.screens.SplashScreen
-import com.thecityandthebike.ui.screens.DeleteAccountScreen
 import com.thecityandthebike.ui.screens.MeScreen
 import com.thecityandthebike.ui.screens.UserScreen
 import com.thecityandthebike.util.imageUrlToUri
@@ -159,9 +158,6 @@ fun AppNavGraph(onboardingPrefs: OnboardingPrefs) {
                 },
                 onShowMe = {
                     navController.navigate(Me)
-                },
-                onDeleteAccount = {
-                    navController.navigate(DeleteAccount)
                 }
             )
         }
@@ -276,19 +272,9 @@ fun AppNavGraph(onboardingPrefs: OnboardingPrefs) {
 
         composable<Me> { backStackEntry ->
             val meViewModel: MeViewModel = hiltViewModel()
-            ObserveDeletion(backStackEntry) { meViewModel.removeSubmission(it) }
-            MeScreen(
-                viewModel = meViewModel,
-                onBack = { navController.popBackStack() },
-                onImageClick = { submissionId ->
-                    navController.navigate(MeImageDetail(submissionId))
-                }
-            )
-        }
-
-        composable<DeleteAccount> {
             val deleteAccountViewModel: DeleteAccountViewModel = hiltViewModel()
             val deleteState by deleteAccountViewModel.state.collectAsStateWithLifecycle()
+            ObserveDeletion(backStackEntry) { meViewModel.removeSubmission(it) }
 
             LaunchedEffect(deleteState.isDeleted) {
                 if (deleteState.isDeleted) {
@@ -298,11 +284,15 @@ fun AppNavGraph(onboardingPrefs: OnboardingPrefs) {
                 }
             }
 
-            DeleteAccountScreen(
-                state = deleteState,
+            MeScreen(
+                viewModel = meViewModel,
                 onBack = { navController.popBackStack() },
-                onConfirmDelete = { deleteAccountViewModel.deleteAccount() },
-                onClearError = { deleteAccountViewModel.clearError() }
+                onImageClick = { submissionId ->
+                    navController.navigate(MeImageDetail(submissionId))
+                },
+                deleteAccountState = deleteState,
+                onConfirmDeleteAccount = { deleteAccountViewModel.deleteAccount() },
+                onClearDeleteError = { deleteAccountViewModel.clearError() }
             )
         }
 

@@ -16,7 +16,6 @@ import kotlinx.serialization.Serializable
 @Serializable data class UserImageDetail(val submissionId: String)
 @Serializable object Me
 @Serializable data class MeImageDetail(val submissionId: String)
-@Serializable object DeleteAccount
 @Serializable object Scanner
 @Serializable data class TagDetail(val tagId: String)
 @Serializable data class TagImageDetail(val submissionId: String)

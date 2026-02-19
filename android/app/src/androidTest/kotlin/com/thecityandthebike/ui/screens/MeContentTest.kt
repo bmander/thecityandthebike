@@ -1,12 +1,17 @@
 package com.thecityandthebike.ui.screens
 
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertIsEnabled
+import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.performClick
 import com.thecityandthebike.data.model.dto.SubmissionResponse
 import com.thecityandthebike.data.model.dto.UserDetailResponse
 import com.thecityandthebike.setContentWithTheme
+import com.thecityandthebike.ui.viewmodel.DeleteAccountState
 import com.thecityandthebike.ui.viewmodel.UserState
+import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 
@@ -113,5 +118,157 @@ class MeContentTest {
 
         composeTestRule.onNodeWithText("Jan 15").assertIsDisplayed()
         composeTestRule.onNodeWithText("Mar 20").assertIsDisplayed()
+    }
+
+    @Test
+    fun meContent_showsDeleteAccountButton() {
+        composeTestRule.setContentWithTheme {
+            MeContent(
+                state = UserState(
+                    userDetail = UserDetailResponse(
+                        userId = "user-1",
+                        username = "testuser",
+                        submissionCount = 0,
+                        ownedBikeCount = 0,
+                        leaderboardRanks = emptyList()
+                    )
+                ),
+                onImageClick = {},
+                onLoadMore = {},
+                onClearError = {},
+                deleteAccountState = DeleteAccountState()
+            )
+        }
+
+        composeTestRule.onNodeWithText("Delete My Account").assertIsDisplayed()
+    }
+
+    @Test
+    fun meContent_deleteButton_showsConfirmationDialog() {
+        composeTestRule.setContentWithTheme {
+            MeContent(
+                state = UserState(
+                    userDetail = UserDetailResponse(
+                        userId = "user-1",
+                        username = "testuser",
+                        submissionCount = 0,
+                        ownedBikeCount = 0,
+                        leaderboardRanks = emptyList()
+                    )
+                ),
+                onImageClick = {},
+                onLoadMore = {},
+                onClearError = {},
+                deleteAccountState = DeleteAccountState()
+            )
+        }
+
+        composeTestRule.onNodeWithText("Delete My Account").performClick()
+
+        composeTestRule.onNodeWithText("Are you sure?").assertIsDisplayed()
+        composeTestRule.onNodeWithText("This will permanently delete your account and all your data. This cannot be undone.").assertIsDisplayed()
+        composeTestRule.onNodeWithText("Delete").assertIsDisplayed()
+        composeTestRule.onNodeWithText("Cancel").assertIsDisplayed()
+    }
+
+    @Test
+    fun meContent_deleteConfirmDialog_cancelDismissesDialog() {
+        composeTestRule.setContentWithTheme {
+            MeContent(
+                state = UserState(
+                    userDetail = UserDetailResponse(
+                        userId = "user-1",
+                        username = "testuser",
+                        submissionCount = 0,
+                        ownedBikeCount = 0,
+                        leaderboardRanks = emptyList()
+                    )
+                ),
+                onImageClick = {},
+                onLoadMore = {},
+                onClearError = {},
+                deleteAccountState = DeleteAccountState()
+            )
+        }
+
+        composeTestRule.onNodeWithText("Delete My Account").performClick()
+        composeTestRule.onNodeWithText("Cancel").performClick()
+
+        composeTestRule.onNodeWithText("Are you sure?").assertDoesNotExist()
+    }
+
+    @Test
+    fun meContent_deleteConfirmDialog_confirmCallsCallback() {
+        var deleteConfirmed = false
+
+        composeTestRule.setContentWithTheme {
+            MeContent(
+                state = UserState(
+                    userDetail = UserDetailResponse(
+                        userId = "user-1",
+                        username = "testuser",
+                        submissionCount = 0,
+                        ownedBikeCount = 0,
+                        leaderboardRanks = emptyList()
+                    )
+                ),
+                onImageClick = {},
+                onLoadMore = {},
+                onClearError = {},
+                deleteAccountState = DeleteAccountState(),
+                onConfirmDeleteAccount = { deleteConfirmed = true }
+            )
+        }
+
+        composeTestRule.onNodeWithText("Delete My Account").performClick()
+        composeTestRule.onNodeWithText("Delete").performClick()
+
+        assertTrue(deleteConfirmed)
+    }
+
+    @Test
+    fun meContent_deletingState_disablesButton() {
+        composeTestRule.setContentWithTheme {
+            MeContent(
+                state = UserState(
+                    userDetail = UserDetailResponse(
+                        userId = "user-1",
+                        username = "testuser",
+                        submissionCount = 0,
+                        ownedBikeCount = 0,
+                        leaderboardRanks = emptyList()
+                    )
+                ),
+                onImageClick = {},
+                onLoadMore = {},
+                onClearError = {},
+                deleteAccountState = DeleteAccountState(isDeleting = true)
+            )
+        }
+
+        composeTestRule.onNodeWithText("Delete My Account").assertDoesNotExist()
+    }
+
+    @Test
+    fun meContent_deleteError_showsErrorSnackbar() {
+        composeTestRule.setContentWithTheme {
+            MeContent(
+                state = UserState(
+                    userDetail = UserDetailResponse(
+                        userId = "user-1",
+                        username = "testuser",
+                        submissionCount = 0,
+                        ownedBikeCount = 0,
+                        leaderboardRanks = emptyList()
+                    )
+                ),
+                onImageClick = {},
+                onLoadMore = {},
+                onClearError = {},
+                deleteAccountState = DeleteAccountState(error = "Failed to delete account")
+            )
+        }
+
+        composeTestRule.onNodeWithText("Failed to delete account").assertIsDisplayed()
     }
 }

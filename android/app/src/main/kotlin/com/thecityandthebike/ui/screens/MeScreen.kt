@@ -14,6 +14,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.thecityandthebike.ui.viewmodel.DeleteAccountState
 import com.thecityandthebike.ui.viewmodel.MeViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -21,7 +22,10 @@ import com.thecityandthebike.ui.viewmodel.MeViewModel
 fun MeScreen(
     viewModel: MeViewModel,
     onBack: () -> Unit,
-    onImageClick: (String) -> Unit
+    onImageClick: (String) -> Unit,
+    deleteAccountState: DeleteAccountState = DeleteAccountState(),
+    onConfirmDeleteAccount: () -> Unit = {},
+    onClearDeleteError: () -> Unit = {}
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
 
@@ -45,7 +49,10 @@ fun MeScreen(
                 state = state,
                 onImageClick = onImageClick,
                 onLoadMore = { viewModel.loadMoreSubmissions() },
-                onClearError = { viewModel.clearError() }
+                onClearError = { viewModel.clearError() },
+                deleteAccountState = deleteAccountState,
+                onConfirmDeleteAccount = onConfirmDeleteAccount,
+                onClearDeleteError = onClearDeleteError
             )
         }
     }
