@@ -148,6 +148,28 @@ fun MeContent(
                         }
                     }
 
+                    item {
+                        Column(modifier = Modifier.padding(horizontal = 16.dp)) {
+                            Button(
+                                onClick = { showDeleteConfirmDialog = true },
+                                enabled = !deleteAccountState.isDeleting,
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = MaterialTheme.colorScheme.error
+                                ),
+                                modifier = Modifier.fillMaxWidth(1f / 3f)
+                            ) {
+                                if (deleteAccountState.isDeleting) {
+                                    CircularProgressIndicator(
+                                        color = MaterialTheme.colorScheme.onError,
+                                        strokeWidth = 2.dp
+                                    )
+                                } else {
+                                    Text("Delete My Account")
+                                }
+                            }
+                        }
+                    }
+
                     items(dateGroups, key = { it.dateLabel }) { group ->
                         CalendarEntry(
                             dateLabel = group.dateLabel,
@@ -160,29 +182,6 @@ fun MeContent(
                             },
                             onImageClick = onImageClick
                         )
-                    }
-
-                    item {
-                        Column(modifier = Modifier.padding(24.dp)) {
-                            Spacer(modifier = Modifier.height(16.dp))
-                            Button(
-                                onClick = { showDeleteConfirmDialog = true },
-                                enabled = !deleteAccountState.isDeleting,
-                                colors = ButtonDefaults.buttonColors(
-                                    containerColor = MaterialTheme.colorScheme.error
-                                ),
-                                modifier = Modifier.fillMaxWidth()
-                            ) {
-                                if (deleteAccountState.isDeleting) {
-                                    CircularProgressIndicator(
-                                        color = MaterialTheme.colorScheme.onError,
-                                        strokeWidth = 2.dp
-                                    )
-                                } else {
-                                    Text("Delete My Account")
-                                }
-                            }
-                        }
                     }
                 }
             }
