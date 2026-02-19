@@ -620,7 +620,23 @@ class ImageDetailScreenTest {
     }
 
     @Test
-    fun flagButton_clickCallsOnFlag() {
+    fun flagButton_clickShowsConfirmDialog() {
+        composeTestRule.setContentWithTheme {
+            ImageDetailScreen(
+                submission = testSubmission,
+                onHome = {},
+                isLoggedIn = true
+            )
+        }
+
+        composeTestRule.onNodeWithContentDescription("Flag photo").performClick()
+
+        composeTestRule.onNodeWithText("Flag Photo").assertIsDisplayed()
+        composeTestRule.onNodeWithText("Are you sure you want to flag this photo as inappropriate?").assertIsDisplayed()
+    }
+
+    @Test
+    fun flagButton_confirmDialogCallsOnFlag() {
         var flagCalled = false
 
         composeTestRule.setContentWithTheme {
@@ -633,8 +649,28 @@ class ImageDetailScreenTest {
         }
 
         composeTestRule.onNodeWithContentDescription("Flag photo").performClick()
+        composeTestRule.onNodeWithText("Flag").performClick()
 
-        assertTrue("onFlag should be called when flag button is clicked", flagCalled)
+        assertTrue("onFlag should be called after confirming flag dialog", flagCalled)
+    }
+
+    @Test
+    fun flagButton_confirmDialogCancelDoesNotCallOnFlag() {
+        var flagCalled = false
+
+        composeTestRule.setContentWithTheme {
+            ImageDetailScreen(
+                submission = testSubmission,
+                onHome = {},
+                isLoggedIn = true,
+                onFlag = { flagCalled = true }
+            )
+        }
+
+        composeTestRule.onNodeWithContentDescription("Flag photo").performClick()
+        composeTestRule.onNodeWithText("Cancel").performClick()
+
+        assertTrue("onFlag should not be called when cancel is clicked", !flagCalled)
     }
 
     @Test

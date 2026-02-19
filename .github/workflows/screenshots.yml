@@ -1,0 +1,71 @@
+name: Generate Screenshots
+
+on:
+  push:
+    branches: [prod]
+  workflow_dispatch:
+
+env:
+  JAVA_VERSION: "17"
+
+jobs:
+  screenshots:
+    name: Screenshots (${{ matrix.device.name }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        device:
+          - name: phone
+            skin: "1080x1920"
+          - name: 7-inch-tablet
+            skin: "1200x2134"
+          - name: 10-inch-tablet
+            skin: "1920x1080"
+    defaults:
+      run:
+        working-directory: android
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Set up JDK
+        uses: actions/setup-java@v5
+        with:
+          java-version: ${{ env.JAVA_VERSION }}
+          distribution: "temurin"
+          cache: "gradle"
+
+      - name: Enable KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+
+      - name: Grant execute permission for gradlew
+        run: chmod +x gradlew
+
+      - name: Run screenshot test
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 30
+          arch: x86_64
+          force-avd-creation: true
+          emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -skin ${{ matrix.device.skin }}
+          disable-animations: true
+          script: |
+            adb shell mkdir -p /sdcard/screenshots
+            cd android && ./gradlew connectedStagingDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.class=com.thecityandthebike.ScreenshotCaptureTest
+
+      - name: Pull screenshots
+        if: always()
+        run: |
+          mkdir -p screenshots
+          adb pull /sdcard/screenshots/ ./screenshots/ || true
+
+      - name: Upload screenshots
+        uses: actions/upload-artifact@v6
+        with:
+          name: screenshots-${{ matrix.device.name }}
+          path: android/screenshots/
+        if: always()
