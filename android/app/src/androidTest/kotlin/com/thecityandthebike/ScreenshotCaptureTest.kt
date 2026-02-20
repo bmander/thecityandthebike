@@ -22,7 +22,6 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.ExternalResource
 import org.junit.rules.RuleChain
-import java.io.File
 
 @HiltAndroidTest
 class ScreenshotCaptureTest {
@@ -56,17 +55,9 @@ class ScreenshotCaptureTest {
     }
 
     private fun takeScreenshot(name: String) {
-        val dir = File(
-            InstrumentationRegistry.getInstrumentation().targetContext.getExternalFilesDir(null),
-            "screenshots"
-        )
-        dir.mkdirs()
-        val file = File(dir, name)
-        val success = device.takeScreenshot(file)
-        assert(success && file.exists()) {
-            "Failed to save screenshot: $name to ${file.absolutePath}"
-        }
-        android.util.Log.i("ScreenshotCapture", "Saved $name to ${file.absolutePath} (${file.length()} bytes)")
+        // Use screencap via shell which runs as shell user and can write to /sdcard/
+        device.executeShellCommand("mkdir -p /sdcard/screenshots")
+        device.executeShellCommand("screencap -p /sdcard/screenshots/$name")
     }
 
     @Test

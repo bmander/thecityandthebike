@@ -48,7 +48,7 @@ jobs:
       - name: Run screenshot test
         uses: reactivecircus/android-emulator-runner@v2
         with:
-          api-level: 29
+          api-level: 30
           arch: x86_64
           force-avd-creation: true
           emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -skin ${{ matrix.device.skin }}
@@ -56,7 +56,7 @@ jobs:
           script: |
             cd android && ./gradlew connectedStagingDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.class=com.thecityandthebike.ScreenshotCaptureTest
             mkdir -p screenshots
-            adb pull /sdcard/Android/data/com.thecityandthebike.staging/files/screenshots/ screenshots/
+            adb pull /sdcard/screenshots/ screenshots/
 
       - name: Upload screenshots
         uses: actions/upload-artifact@v6
