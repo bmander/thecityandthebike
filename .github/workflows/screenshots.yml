@@ -2,7 +2,7 @@ name: Generate Screenshots
 
 on:
   push:
-    branches: [prod]
+    branches: [staging]
   workflow_dispatch:
 
 env:
