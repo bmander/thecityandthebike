@@ -53,13 +53,10 @@ jobs:
           force-avd-creation: true
           emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -skin ${{ matrix.device.skin }}
           disable-animations: true
-          script: cd android && ./gradlew connectedStagingDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.class=com.thecityandthebike.ScreenshotCaptureTest
-
-      - name: Pull screenshots
-        if: always()
-        run: |
-          mkdir -p screenshots
-          adb pull /sdcard/Android/data/com.thecityandthebike.staging/files/screenshots/ ./screenshots/ || true
+          script: |
+            cd android && ./gradlew connectedStagingDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.class=com.thecityandthebike.ScreenshotCaptureTest
+            mkdir -p screenshots
+            adb pull /sdcard/Android/data/com.thecityandthebike.staging/files/screenshots/ ./screenshots/ || true
 
       - name: Upload screenshots
         uses: actions/upload-artifact@v6
