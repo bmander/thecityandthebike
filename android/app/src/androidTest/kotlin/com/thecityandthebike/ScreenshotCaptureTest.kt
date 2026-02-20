@@ -55,13 +55,28 @@ class ScreenshotCaptureTest {
     }
 
     private fun takeScreenshot(name: String) {
-        // Use screencap via shell which runs as shell user and can write to /sdcard/
+        val baseName = name.removeSuffix(".png")
         device.executeShellCommand("mkdir -p /sdcard/screenshots")
-        device.executeShellCommand("screencap -p /sdcard/screenshots/$name")
+
+        // Capture light mode (already in light mode)
+        device.executeShellCommand("screencap -p /sdcard/screenshots/${baseName}_light.png")
+
+        // Switch to dark mode and capture
+        device.executeShellCommand("cmd uimode night yes")
+        composeTestRule.waitForIdle()
+        Thread.sleep(1000)
+        device.executeShellCommand("screencap -p /sdcard/screenshots/${baseName}_dark.png")
+
+        // Switch back to light mode for navigation
+        device.executeShellCommand("cmd uimode night no")
+        composeTestRule.waitForIdle()
+        Thread.sleep(1000)
     }
 
     @Test
     fun captureAllScreenshots() {
+        // Ensure we start in light mode
+        device.executeShellCommand("cmd uimode night no")
         // Step 1: Wait for splash to pass and main feed to load
         composeTestRule.mainClock.advanceTimeBy(3000)
         composeTestRule.waitUntil(timeoutMillis = 30_000) {
