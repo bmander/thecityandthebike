@@ -56,10 +56,8 @@ class ScreenshotCaptureTest {
     }
 
     private fun takeScreenshot(name: String) {
-        // Use /sdcard/screenshots/ which is accessible via adb pull on CI emulators.
-        // On devices with scoped storage this may fail silently — that's OK,
-        // screenshots are primarily for CI.
-        val dir = File("/sdcard/screenshots")
+        val context = ApplicationProvider.getApplicationContext<Context>()
+        val dir = File(context.getExternalFilesDir(null), "screenshots")
         dir.mkdirs()
         device.takeScreenshot(File(dir, name))
     }
