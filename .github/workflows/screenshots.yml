@@ -18,13 +18,13 @@ jobs:
         device:
           - name: phone
             skin: "1080x1920"
-            dpi: 420
+            density: 420
           - name: 7-inch-tablet
             skin: "1200x2134"
-            dpi: 320
+            density: 320
           - name: 10-inch-tablet
             skin: "1920x1080"
-            dpi: 240
+            density: 240
     defaults:
       run:
         working-directory: android
@@ -54,9 +54,10 @@ jobs:
           api-level: 30
           arch: x86_64
           force-avd-creation: true
-          emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -skin ${{ matrix.device.skin }} -dpi ${{ matrix.device.dpi }}
+          emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -skin ${{ matrix.device.skin }}
           disable-animations: true
           script: |
+            adb shell wm density ${{ matrix.device.density }}
             cd android && ./gradlew connectedStagingDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.class=com.thecityandthebike.ScreenshotCaptureTest
             mkdir -p $GITHUB_WORKSPACE/android/screenshots
             adb pull /sdcard/screenshots/ $GITHUB_WORKSPACE/android/screenshots/
