@@ -55,8 +55,8 @@ jobs:
           disable-animations: true
           script: |
             cd android && ./gradlew connectedStagingDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.class=com.thecityandthebike.ScreenshotCaptureTest
-            mkdir -p screenshots
-            adb pull /sdcard/screenshots/ screenshots/
+            mkdir -p $GITHUB_WORKSPACE/android/screenshots
+            adb pull /sdcard/screenshots/ $GITHUB_WORKSPACE/android/screenshots/
 
       - name: Upload screenshots
         uses: actions/upload-artifact@v6
