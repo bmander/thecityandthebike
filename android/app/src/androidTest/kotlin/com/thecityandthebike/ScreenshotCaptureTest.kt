@@ -57,9 +57,11 @@ class ScreenshotCaptureTest {
 
     private fun takeScreenshot(name: String) {
         val context = ApplicationProvider.getApplicationContext<Context>()
-        val dir = File(context.getExternalFilesDir(null), "screenshots")
+        val dir = File(context.filesDir, "screenshots")
         dir.mkdirs()
-        device.takeScreenshot(File(dir, name))
+        val file = File(dir, name)
+        val success = device.takeScreenshot(file)
+        assert(success && file.exists()) { "Failed to save screenshot: $name" }
     }
 
     @Test

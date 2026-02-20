@@ -56,7 +56,11 @@ jobs:
           script: |
             cd android && ./gradlew connectedStagingDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.class=com.thecityandthebike.ScreenshotCaptureTest
             mkdir -p screenshots
-            adb pull /sdcard/Android/data/com.thecityandthebike.staging/files/screenshots/ ./screenshots/ || true
+            PACKAGE=com.thecityandthebike.staging
+            for f in $(adb shell run-as $PACKAGE find files/screenshots -name '*.png' 2>/dev/null); do
+              name=$(basename "$f")
+              adb shell run-as $PACKAGE cat "files/screenshots/$name" > "screenshots/$name"
+            done
 
       - name: Upload screenshots
         uses: actions/upload-artifact@v6
