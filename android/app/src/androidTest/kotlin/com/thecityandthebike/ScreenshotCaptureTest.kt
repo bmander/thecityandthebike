@@ -63,7 +63,10 @@ class ScreenshotCaptureTest {
         dir.mkdirs()
         val file = File(dir, name)
         val success = device.takeScreenshot(file)
-        assert(success && file.exists()) { "Failed to save screenshot: $name" }
+        assert(success && file.exists()) {
+            "Failed to save screenshot: $name to ${file.absolutePath}"
+        }
+        android.util.Log.i("ScreenshotCapture", "Saved $name to ${file.absolutePath} (${file.length()} bytes)")
     }
 
     @Test

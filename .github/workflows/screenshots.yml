@@ -55,8 +55,13 @@ jobs:
           disable-animations: true
           script: |
             cd android && ./gradlew connectedStagingDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.class=com.thecityandthebike.ScreenshotCaptureTest
+            adb logcat -d -s ScreenshotCapture:I | tail -20
+            echo "--- Listing external files dir ---"
+            adb shell ls -laR /sdcard/Android/data/com.thecityandthebike.staging/files/ 2>&1 || true
+            echo "--- Listing /sdcard/Android/data/ packages ---"
+            adb shell ls /sdcard/Android/data/ 2>&1 | grep city || true
             mkdir -p screenshots
-            adb pull /sdcard/Android/data/com.thecityandthebike.staging/files/screenshots/ screenshots/
+            adb pull /sdcard/Android/data/com.thecityandthebike.staging/files/screenshots/ screenshots/ || true
 
       - name: Upload screenshots
         uses: actions/upload-artifact@v6
