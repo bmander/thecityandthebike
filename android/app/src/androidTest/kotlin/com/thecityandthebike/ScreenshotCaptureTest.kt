@@ -56,8 +56,10 @@ class ScreenshotCaptureTest {
     }
 
     private fun takeScreenshot(name: String) {
-        val context = ApplicationProvider.getApplicationContext<Context>()
-        val dir = File(context.filesDir, "screenshots")
+        val dir = File(
+            InstrumentationRegistry.getInstrumentation().targetContext.getExternalFilesDir(null),
+            "screenshots"
+        )
         dir.mkdirs()
         val file = File(dir, name)
         val success = device.takeScreenshot(file)
