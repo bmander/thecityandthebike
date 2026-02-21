@@ -17,11 +17,11 @@ jobs:
       matrix:
         device:
           - name: phone
-            skin: "1080x1920"
-            density: 420
+            skin: "540x960"
+            density: 240
           - name: 7-inch-tablet
-            skin: "1200x2134"
-            density: 320
+            skin: "900x1600"
+            density: 240
           - name: 10-inch-tablet
             skin: "1920x1080"
             density: 240

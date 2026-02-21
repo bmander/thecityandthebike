@@ -55,49 +55,29 @@ class ScreenshotCaptureTest {
     }
 
     private fun takeScreenshot(name: String) {
-        val baseName = name.removeSuffix(".png")
         device.executeShellCommand("mkdir -p /sdcard/screenshots")
-
-        // Capture light mode (already in light mode)
-        device.executeShellCommand("screencap -p /sdcard/screenshots/${baseName}_light.png")
-
-        // Switch to dark mode and capture
-        device.executeShellCommand("cmd uimode night yes")
-        composeTestRule.waitForIdle()
-        Thread.sleep(1000)
-        device.executeShellCommand("screencap -p /sdcard/screenshots/${baseName}_dark.png")
-
-        // Switch back to light mode for navigation
-        device.executeShellCommand("cmd uimode night no")
-        composeTestRule.waitForIdle()
-        Thread.sleep(1000)
+        device.executeShellCommand("screencap -p /sdcard/screenshots/$name")
     }
 
-    @Test
-    fun captureAllScreenshots() {
-        // Ensure we start in light mode
-        device.executeShellCommand("cmd uimode night no")
-        // Step 1: Wait for splash to pass and main feed to load
-        composeTestRule.mainClock.advanceTimeBy(3000)
+    private fun runScreenshotFlow(suffix: String) {
+        // Wait for main feed to load
         composeTestRule.waitUntil(timeoutMillis = 30_000) {
             composeTestRule.onAllNodesWithContentDescription("Captured image")
                 .fetchSemanticsNodes().isNotEmpty()
         }
-        // Let images load
         Thread.sleep(3000)
-        takeScreenshot("01_main_screen.png")
+        takeScreenshot("01_main_screen_$suffix.png")
 
-        // Step 2: Navigate to Leaderboard tab
+        // Navigate to Leaderboard tab
         composeTestRule.onNodeWithText("Leaderboard").performClick()
         composeTestRule.waitUntil(timeoutMillis = 15_000) {
             composeTestRule.onAllNodesWithText("#1")
                 .fetchSemanticsNodes().isNotEmpty()
         }
         Thread.sleep(2000)
-        takeScreenshot("05_leaderboard.png")
+        takeScreenshot("05_leaderboard_$suffix.png")
 
-        // Step 3: Find "bmander" on leaderboard and navigate to user screen
-        // Try Weekly tab first, then All Time if not found
+        // Find "bmander" on leaderboard and navigate to user screen
         val bmanderOnWeekly = composeTestRule.onAllNodesWithText("bmander")
             .fetchSemanticsNodes().isNotEmpty()
         if (!bmanderOnWeekly) {
@@ -115,9 +95,9 @@ class ScreenshotCaptureTest {
                 .fetchSemanticsNodes().isNotEmpty()
         }
         Thread.sleep(3000)
-        takeScreenshot("02_user_screen.png")
+        takeScreenshot("02_user_screen_$suffix.png")
 
-        // Step 4: Click first photo in bmander's calendar to go to ImageDetail
+        // Click first photo to go to ImageDetail
         composeTestRule.onAllNodesWithContentDescription("Captured image")[0].performClick()
         composeTestRule.waitUntil(timeoutMillis = 15_000) {
             composeTestRule.onAllNodesWithContentDescription("Home")
@@ -125,7 +105,7 @@ class ScreenshotCaptureTest {
         }
         Thread.sleep(3000)
 
-        // Step 5: Tap tagOutlineOverlay center to select a tag (if overlay exists)
+        // Tap tagOutlineOverlay center to select a tag (if overlay exists)
         val tagOverlayExists = composeTestRule.onAllNodes(hasTestTag("tagOutlineOverlay"))
             .fetchSemanticsNodes().isNotEmpty()
 
@@ -135,9 +115,9 @@ class ScreenshotCaptureTest {
             composeTestRule.waitForIdle()
             Thread.sleep(1000)
         }
-        takeScreenshot("03_photo_detail.png")
+        takeScreenshot("03_photo_detail_$suffix.png")
 
-        // Step 6: If viewTagButton exists, click to navigate to TagDetail
+        // If viewTagButton exists, click to navigate to TagDetail
         val viewTagButtonExists = composeTestRule.onAllNodes(hasTestTag("viewTagButton"))
             .fetchSemanticsNodes().isNotEmpty()
 
@@ -148,7 +128,7 @@ class ScreenshotCaptureTest {
                     .fetchSemanticsNodes().isNotEmpty()
             }
             Thread.sleep(3000)
-            takeScreenshot("04_tag_screen.png")
+            takeScreenshot("04_tag_screen_$suffix.png")
 
             // Navigate back to ImageDetail
             device.pressBack()
@@ -159,7 +139,7 @@ class ScreenshotCaptureTest {
             Thread.sleep(1000)
         }
 
-        // Step 7: Scroll to Bike InfoRow and click to go to BikeScreen
+        // Scroll to Bike InfoRow and click to go to BikeScreen
         composeTestRule.onNode(
             hasContentDescription("Bike").and(hasClickAction())
         ).performScrollTo().performClick()
@@ -169,6 +149,25 @@ class ScreenshotCaptureTest {
                 .fetchSemanticsNodes().isNotEmpty()
         }
         Thread.sleep(3000)
-        takeScreenshot("06_bike_screen.png")
+        takeScreenshot("06_bike_screen_$suffix.png")
+    }
+
+    @Test
+    fun captureAllScreenshots() {
+        // Light mode pass
+        device.executeShellCommand("cmd uimode night no")
+        composeTestRule.mainClock.advanceTimeBy(3000)
+        runScreenshotFlow("light")
+
+        // Navigate back to main feed
+        composeTestRule.onNodeWithText("Feed").performClick()
+        composeTestRule.waitForIdle()
+        Thread.sleep(2000)
+
+        // Dark mode pass
+        device.executeShellCommand("cmd uimode night yes")
+        composeTestRule.waitForIdle()
+        Thread.sleep(2000)
+        runScreenshotFlow("dark")
     }
 }
