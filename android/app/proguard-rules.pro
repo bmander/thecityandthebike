@@ -36,3 +36,8 @@
     kotlinx.serialization.KSerializer serializer(...);
 }
 -keep class com.thecityandthebike.data.model.dto.** { *; }
+
+# ML Kit Barcode Scanning — R8 strips internal implementation classes that
+# the bundled barcode scanner loads via reflection, causing NPE at runtime.
+-keep class com.google.mlkit.** { *; }
+-keep class com.google.android.gms.internal.mlkit_vision_barcode.** { *; }
