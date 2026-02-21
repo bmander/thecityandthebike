@@ -159,7 +159,12 @@ class ScreenshotCaptureTest {
         composeTestRule.mainClock.advanceTimeBy(3000)
         runScreenshotFlow("light")
 
-        // Navigate back to main feed
+        // Navigate back to main feed (press back from detail screens to reach bottom nav)
+        repeat(4) { device.pressBack() }
+        composeTestRule.waitUntil(timeoutMillis = 10_000) {
+            composeTestRule.onAllNodesWithText("Feed")
+                .fetchSemanticsNodes().isNotEmpty()
+        }
         composeTestRule.onNodeWithText("Feed").performClick()
         composeTestRule.waitForIdle()
         Thread.sleep(2000)
