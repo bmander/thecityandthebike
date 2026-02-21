@@ -30,7 +30,7 @@ logger = logging.getLogger(__name__)
 
 
 def backfill():
-    engine = create_engine(settings.DATABASE_URL)
+    engine = create_engine(settings.database_url)
 
     with Session(engine) as session:
         rows = session.execute(

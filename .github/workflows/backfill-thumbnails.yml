@@ -1,0 +1,85 @@
+name: Backfill Thumbnails
+
+on:
+  workflow_dispatch:
+
+env:
+  REGION: us-central1
+  REPOSITORY: tcatb-api
+  SERVICE_NAME: tcatb-api
+
+jobs:
+  backfill:
+    name: Run Thumbnail Backfill
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v3
+        with:
+          workload_identity_provider: ${{ secrets.WIF_PROVIDER }}
+          service_account: ${{ secrets.WIF_SERVICE_ACCOUNT }}
+
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v3
+
+      - name: Configure Docker for Artifact Registry
+        run: gcloud auth configure-docker ${{ env.REGION }}-docker.pkg.dev --quiet
+
+      - name: Set image tag
+        run: echo "IMAGE=${{ env.REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/${{ env.REPOSITORY }}/${{ env.SERVICE_NAME }}:${{ github.sha }}" >> $GITHUB_ENV
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v6
+        with:
+          context: ./api
+          push: true
+          tags: ${{ env.IMAGE }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Run thumbnail backfill
+        run: |
+          JOB_NAME="backfill-thumbnails-staging"
+          SQL_INSTANCE="${{ secrets.GCP_PROJECT_ID }}:${{ env.REGION }}:tcatb-staging-db"
+          gcloud run jobs update "$JOB_NAME" \
+            --image="${{ env.IMAGE }}" \
+            --region=${{ env.REGION }} \
+            --command="python" \
+            --args="backfill_thumbnails.py" \
+            --set-cloudsql-instances="$SQL_INSTANCE" \
+            --set-env-vars="PGHOST=/cloudsql/$SQL_INSTANCE" \
+            --set-env-vars="PGPORT=5432" \
+            --set-env-vars="PGUSER=tcatb" \
+            --set-env-vars="PGDATABASE=tcatb" \
+            --set-env-vars="STORAGE_BUCKET=tcatb-staging-uploads" \
+            --set-secrets="PGPASSWORD=db-password-staging:latest" \
+            --set-secrets="JWT_SECRET_KEY=jwt-secret-staging:latest" \
+            --project=${{ secrets.GCP_PROJECT_ID }} \
+            2>/dev/null || \
+          gcloud run jobs create "$JOB_NAME" \
+            --image="${{ env.IMAGE }}" \
+            --region=${{ env.REGION }} \
+            --command="python" \
+            --args="backfill_thumbnails.py" \
+            --set-cloudsql-instances="$SQL_INSTANCE" \
+            --set-env-vars="PGHOST=/cloudsql/$SQL_INSTANCE" \
+            --set-env-vars="PGPORT=5432" \
+            --set-env-vars="PGUSER=tcatb" \
+            --set-env-vars="PGDATABASE=tcatb" \
+            --set-env-vars="STORAGE_BUCKET=tcatb-staging-uploads" \
+            --set-secrets="PGPASSWORD=db-password-staging:latest" \
+            --set-secrets="JWT_SECRET_KEY=jwt-secret-staging:latest" \
+            --project=${{ secrets.GCP_PROJECT_ID }}
+          gcloud run jobs execute "$JOB_NAME" \
+            --region=${{ env.REGION }} \
+            --project=${{ secrets.GCP_PROJECT_ID }} \
+            --wait
