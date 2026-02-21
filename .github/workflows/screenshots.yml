@@ -17,8 +17,8 @@ jobs:
       matrix:
         device:
           - name: phone
-            skin: "540x960"
-            density: 240
+            skin: "1080x2400"
+            density: 420
           - name: 7-inch-tablet
             skin: "900x1600"
             density: 240
