@@ -214,10 +214,9 @@ private fun FeedContent(
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
 
-    val submissionsWithImages = state.submissions.filter { it.imageUrl != null }
+    val submissionsWithImages = state.submissions.filter { it.imageUrlThumbnail != null }
     val submissionImageUris = submissionsWithImages.map { submission ->
-        val url = submission.imageUrlThumbnail ?: submission.imageUrl!!
-        imageUrlToUri(url)
+        imageUrlToUri(submission.imageUrlThumbnail!!)
     }
     val pendingUri = state.pendingUploadUri
     val imageUris = if (pendingUri != null) listOf(pendingUri) + submissionImageUris else submissionImageUris

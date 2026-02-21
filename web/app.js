@@ -33,7 +33,7 @@
     card.className = "card";
 
     var img = document.createElement("img");
-    img.src = imageUrl(item.image_url_thumbnail || item.image_url);
+    img.src = imageUrl(item.image_url_thumbnail);
     img.alt = item.user_caption || "Fender art submission";
     img.loading = "lazy";
     card.appendChild(img);

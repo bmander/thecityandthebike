@@ -34,7 +34,7 @@ class UploadResponse(BaseModel):
     thumbnail_url: Optional[str] = None
 
 
-async def process_and_store_image(image: UploadFile) -> tuple[str, str | None]:
+async def process_and_store_image(image: UploadFile) -> tuple[str, str]:
     """Validate, re-encode, store an uploaded image and generate a thumbnail.
 
     Returns (image_url, thumbnail_url). Raises HTTPException on failure.
@@ -88,16 +88,20 @@ async def process_and_store_image(image: UploadFile) -> tuple[str, str | None]:
 
     # Generate thumbnail
     thumb_bytes = await asyncio.to_thread(generate_thumbnail, contents)
+    if thumb_bytes is None:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail={"msg": "Thumbnail generation failed"},
+        )
 
     # Store original image
     await asyncio.to_thread(store_image, contents, unique_filename, "image/jpeg")
 
     # Store thumbnail
-    if thumb_bytes:
-        await asyncio.to_thread(store_image, thumb_bytes, thumb_filename, "image/jpeg")
+    await asyncio.to_thread(store_image, thumb_bytes, thumb_filename, "image/jpeg")
 
     url = resolve_image_url(unique_filename)
-    thumbnail_url = resolve_image_url(thumb_filename) if thumb_bytes else None
+    thumbnail_url = resolve_image_url(thumb_filename)
     return url, thumbnail_url
 
 

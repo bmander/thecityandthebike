@@ -117,6 +117,28 @@ class TestGCSUploadURL:
         assert not result_exif, "EXIF data should be stripped from uploaded image"
 
 
+class TestThumbnailGenerationFailure:
+    """Tests for mandatory thumbnail generation."""
+
+    @patch("app.routers.uploads.generate_thumbnail", return_value=None)
+    def test_upload_fails_500_when_thumbnail_generation_returns_none(
+        self, mock_generate_thumbnail, client, auth_headers, monkeypatch
+    ):
+        """Upload should return 500 when thumbnail generation fails."""
+        monkeypatch.setattr(settings, "STORAGE_BUCKET", "")
+
+        image_buf = create_test_image()
+
+        response = client.post(
+            "/uploads/images",
+            headers=auth_headers,
+            files={"image": ("test.jpg", image_buf, "image/jpeg")},
+        )
+
+        assert response.status_code == 500
+        assert "thumbnail" in response.json()["detail"]["msg"].lower()
+
+
 class TestGetImageGCS:
     """Tests for GET /uploads/images/{filename} via GCS."""
 
