@@ -34,3 +34,6 @@ htmlcov/
 
 # Uploaded files (created at runtime)
 uploads/
+
+# Backups
+backups/
