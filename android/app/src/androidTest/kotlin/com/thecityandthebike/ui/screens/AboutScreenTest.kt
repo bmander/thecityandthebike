@@ -75,7 +75,7 @@ class AboutScreenTest {
             AboutScreen(onBack = {})
         }
 
-        val expected = "${BuildConfig.VERSION_NAME} · ${BuildConfig.FLAVOR} · ${BuildConfig.BUILD_TYPE}"
+        val expected = "${BuildConfig.VERSION_NAME} (${BuildConfig.VERSION_CODE}) · ${BuildConfig.GIT_SHA} · ${BuildConfig.FLAVOR} · ${BuildConfig.BUILD_TYPE}"
         composeTestRule.onNodeWithText(expected).assertIsDisplayed()
     }
 }

@@ -7,6 +7,7 @@ plugins {
 }
 
 def buildVersionCode = System.getenv("GITHUB_RUN_NUMBER")?.toInteger() ?: 1
+def gitSha = providers.exec { commandLine("git", "rev-parse", "--short", "HEAD") }.standardOutput.asText.map { it.trim() }
 
 android {
     namespace 'com.thecityandthebike'
@@ -18,6 +19,7 @@ android {
         targetSdk 34
         versionCode buildVersionCode
         versionName "1.0.${buildVersionCode}"
+        buildConfigField "String", "GIT_SHA", "\"${gitSha.get()}\""
 
         testInstrumentationRunner "com.thecityandthebike.HiltTestRunner"
     }
