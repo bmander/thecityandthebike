@@ -10,7 +10,6 @@ class UserResponse(BaseModel):
 
     user_id: UUID
     username: str
-    email: str
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
 

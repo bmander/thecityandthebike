@@ -120,7 +120,6 @@ def test_user_data():
     """Return test user data for registration."""
     return {
         "username": "testuser",
-        "email": "test@example.com",
         "password": "testpassword123",
     }
 
@@ -133,7 +132,6 @@ def test_user(db_session, test_user_data):
     """
     user = User(
         username=test_user_data["username"],
-        email=test_user_data["email"],
         password_hash=get_password_hash(test_user_data["password"]),
     )
     db_session.add(user)
@@ -143,7 +141,6 @@ def test_user(db_session, test_user_data):
     user_data = type("UserData", (), {
         "user_id": user.user_id,
         "username": user.username,
-        "email": user.email,
         "password_hash": user.password_hash,
     })()
     db_session.expunge(user)
@@ -221,7 +218,6 @@ def test_admin_user(db_session):
     """Create and return an admin user in the database."""
     user = User(
         username="adminuser",
-        email="admin@example.com",
         password_hash=get_password_hash("adminpassword123"),
         is_admin=True,
     )
@@ -231,7 +227,6 @@ def test_admin_user(db_session):
     user_data = type("UserData", (), {
         "user_id": user.user_id,
         "username": user.username,
-        "email": user.email,
         "password_hash": user.password_hash,
         "is_admin": user.is_admin,
     })()

@@ -44,9 +44,9 @@ class AuthRepository @Inject constructor(
         }
     }
 
-    suspend fun register(username: String, email: String, password: String): ApiResult<Unit> {
+    suspend fun register(username: String, password: String): ApiResult<Unit> {
         return try {
-            val response = apiService.register(RegisterRequest(username, email, password))
+            val response = apiService.register(RegisterRequest(username, password))
             if (response.isSuccessful) {
                 ApiResult.Success(Unit)
             } else if (response.code() == 429) {

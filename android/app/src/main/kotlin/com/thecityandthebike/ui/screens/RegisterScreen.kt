@@ -37,13 +37,12 @@ import com.thecityandthebike.ui.viewmodel.AuthState
 @Composable
 fun RegisterScreen(
     state: AuthState,
-    onRegister: (username: String, email: String, password: String) -> Unit,
+    onRegister: (username: String, password: String) -> Unit,
     onNavigateBack: () -> Unit,
     onClearError: () -> Unit,
     onClearRegistrationSuccess: () -> Unit
 ) {
     var username by remember { mutableStateOf("") }
-    var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var confirmPassword by remember { mutableStateOf("") }
     var readUnderstood by remember { mutableStateOf(false) }
@@ -118,25 +117,6 @@ fun RegisterScreen(
                     )
 
                     OutlinedTextField(
-                        value = email,
-                        onValueChange = {
-                            email = it
-                            onClearError()
-                        },
-                        label = { Text("Email") },
-                        singleLine = true,
-                        modifier = Modifier.fillMaxWidth().semantics { contentType = ContentType.EmailAddress },
-                        keyboardOptions = KeyboardOptions(
-                            keyboardType = KeyboardType.Email,
-                            imeAction = ImeAction.Next
-                        ),
-                        keyboardActions = KeyboardActions(
-                            onNext = { focusManager.moveFocus(FocusDirection.Down) }
-                        ),
-                        enabled = !state.isLoading
-                    )
-
-                    OutlinedTextField(
                         value = password,
                         onValueChange = {
                             password = it
@@ -173,8 +153,8 @@ fun RegisterScreen(
                         keyboardActions = KeyboardActions(
                             onDone = {
                                 focusManager.clearFocus()
-                                if (isFormValid(username, email, password, confirmPassword, readUnderstood, agreedToLicense)) {
-                                    onRegister(username, email, password)
+                                if (isFormValid(username, password, confirmPassword, readUnderstood, agreedToLicense)) {
+                                    onRegister(username, password)
                                 }
                             }
                         ),
@@ -313,9 +293,9 @@ fun RegisterScreen(
 
             // Create Account button
             Button(
-                onClick = { onRegister(username, email, password) },
+                onClick = { onRegister(username, password) },
                 modifier = Modifier.widthIn(max = 400.dp).fillMaxWidth(),
-                enabled = !state.isLoading && isFormValid(username, email, password, confirmPassword, readUnderstood, agreedToLicense)
+                enabled = !state.isLoading && isFormValid(username, password, confirmPassword, readUnderstood, agreedToLicense)
             ) {
                 if (state.isLoading) {
                     CircularProgressIndicator(
@@ -333,15 +313,12 @@ fun RegisterScreen(
 
 private fun isFormValid(
     username: String,
-    email: String,
     password: String,
     confirmPassword: String,
     readUnderstood: Boolean,
     agreedToLicense: Boolean
 ): Boolean {
     return username.isNotBlank() &&
-            email.isNotBlank() &&
-            email.contains("@") &&
             password.isNotBlank() &&
             password.length >= 8 &&
             password == confirmPassword &&

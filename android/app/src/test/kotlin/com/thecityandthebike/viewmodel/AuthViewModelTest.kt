@@ -99,7 +99,7 @@ class AuthViewModelTest {
         )
         viewModel = AuthViewModel(authRepository, SavedStateHandle())
 
-        viewModel.register("user", "email@test.com", "pass")
+        viewModel.register("user", "pass")
         testDispatcher.scheduler.advanceUntilIdle()
 
         assertTrue(viewModel.state.value.registrationSuccess)
@@ -113,7 +113,7 @@ class AuthViewModelTest {
         )
         viewModel = AuthViewModel(authRepository, SavedStateHandle())
 
-        viewModel.register("user", "email@test.com", "pass")
+        viewModel.register("user", "pass")
         testDispatcher.scheduler.advanceUntilIdle()
 
         assertFalse(viewModel.state.value.registrationSuccess)

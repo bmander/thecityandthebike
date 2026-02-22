@@ -24,7 +24,7 @@ class User(Base):
 
     user_id = Column(Uuid, primary_key=True, default=uuid.uuid4)
     username = Column(String(255), unique=True, nullable=False)
-    email = Column(String(255), unique=True, nullable=False)
+    email = Column(String(255), unique=True, nullable=True)
     password_hash = Column(String(255), nullable=False)
     is_admin = Column(Boolean, default=False, nullable=False, server_default="0")
     created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))

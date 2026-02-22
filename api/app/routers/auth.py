@@ -1,7 +1,6 @@
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
-from sqlalchemy import or_
 from sqlalchemy.orm import Session
 
 from ..config import settings
@@ -17,17 +16,15 @@ router = APIRouter(prefix="/auth", tags=["auth"])
 @router.post("/register", response_model=MessageResponse, status_code=status.HTTP_201_CREATED)
 @limiter.limit(lambda: settings.REGISTER_RATE_LIMIT)
 def register(request: Request, data: UserRegister, db: Annotated[Session, Depends(get_db)]):
-    existing = db.query(User).filter(
-        or_(User.username == data.username, User.email == data.email)
-    ).first()
+    existing = db.query(User).filter(User.username == data.username).first()
     if existing:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
-            detail={"msg": "User with that username or email already exists"},
+            detail={"msg": "User with that username already exists"},
         )
 
     password_hash = get_password_hash(data.password)
-    user = User(username=data.username, email=data.email, password_hash=password_hash)
+    user = User(username=data.username, password_hash=password_hash)
     db.add(user)
     db.commit()
     return {"msg": "User created"}

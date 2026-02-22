@@ -71,10 +71,10 @@ class AuthRepositoryTest {
     fun `register success should return success`() = runTest {
         val messageResponse = MessageResponse(msg = "User created")
         coEvery {
-            apiService.register(RegisterRequest("user", "email@test.com", "pass"))
+            apiService.register(RegisterRequest("user", "pass"))
         } returns Response.success(messageResponse)
 
-        val result = repository.register("user", "email@test.com", "pass")
+        val result = repository.register("user", "pass")
 
         assertTrue(result is ApiResult.Success)
     }
@@ -82,31 +82,31 @@ class AuthRepositoryTest {
     @Test
     fun `register conflict should return server error with parsed message`() = runTest {
         coEvery {
-            apiService.register(RegisterRequest("user", "email@test.com", "pass"))
+            apiService.register(RegisterRequest("user", "pass"))
         } returns Response.error(
             409,
-            """{"detail": {"msg": "User with that username or email already exists"}}""".toResponseBody()
+            """{"detail": {"msg": "User with that username already exists"}}""".toResponseBody()
         )
 
-        val result = repository.register("user", "email@test.com", "pass")
+        val result = repository.register("user", "pass")
 
         assertTrue(result is ApiResult.Error)
         val error = (result as ApiResult.Error).error
         assertTrue(error is AppError.Server)
         assertEquals(409, (error as AppError.Server).code)
-        assertEquals("User with that username or email already exists", error.displayMessage)
+        assertEquals("User with that username already exists", error.displayMessage)
     }
 
     @Test
     fun `register non-409 error should parse server error body`() = runTest {
         coEvery {
-            apiService.register(RegisterRequest("user", "email@test.com", "pass"))
+            apiService.register(RegisterRequest("user", "pass"))
         } returns Response.error(
             400,
             """{"detail": {"msg": "Password too short"}}""".toResponseBody()
         )
 
-        val result = repository.register("user", "email@test.com", "pass")
+        val result = repository.register("user", "pass")
 
         assertTrue(result is ApiResult.Error)
         val error = (result as ApiResult.Error).error
@@ -118,13 +118,13 @@ class AuthRepositoryTest {
     @Test
     fun `register with unparseable error body should fall back gracefully`() = runTest {
         coEvery {
-            apiService.register(RegisterRequest("user", "email@test.com", "pass"))
+            apiService.register(RegisterRequest("user", "pass"))
         } returns Response.error(
             422,
             """{"detail": [{"loc": ["body", "email"], "msg": "invalid email", "type": "value_error"}]}""".toResponseBody()
         )
 
-        val result = repository.register("user", "email@test.com", "pass")
+        val result = repository.register("user", "pass")
 
         assertTrue(result is ApiResult.Error)
         val error = (result as ApiResult.Error).error
@@ -136,10 +136,10 @@ class AuthRepositoryTest {
     @Test
     fun `register rate limited should return rate limit error`() = runTest {
         coEvery {
-            apiService.register(RegisterRequest("user", "email@test.com", "pass"))
+            apiService.register(RegisterRequest("user", "pass"))
         } returns Response.error(429, "{}".toResponseBody())
 
-        val result = repository.register("user", "email@test.com", "pass")
+        val result = repository.register("user", "pass")
 
         assertTrue(result is ApiResult.Error)
         val error = (result as ApiResult.Error).error

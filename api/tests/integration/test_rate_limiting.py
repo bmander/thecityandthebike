@@ -35,10 +35,10 @@ def lockout_client(setup_database):
     test_app.dependency_overrides.clear()
 
 
-def _register_user(client, username="locktest", email="lock@example.com", password="password123"):
+def _register_user(client, username="locktest", password="password123"):
     resp = client.post(
         "/auth/register",
-        json={"username": username, "email": email, "password": password},
+        json={"username": username, "password": password},
     )
     assert resp.status_code == 201
 
@@ -77,7 +77,6 @@ class TestRegisterRateLimit:
                 "/auth/register",
                 json={
                     "username": f"user{i}",
-                    "email": f"user{i}@example.com",
                     "password": "password123",
                 },
             )
@@ -88,7 +87,6 @@ class TestRegisterRateLimit:
             "/auth/register",
             json={
                 "username": "user2",
-                "email": "user2@example.com",
                 "password": "password123",
             },
         )
@@ -100,7 +98,6 @@ class TestRegisterRateLimit:
             "/auth/register",
             json={
                 "username": "newuser",
-                "email": "new@example.com",
                 "password": "password123",
             },
         )
@@ -186,8 +183,8 @@ class TestAccountLockout:
 
     def test_lockout_per_username(self, lockout_client):
         """Lockout should be per-username, not global."""
-        _register_user(lockout_client, username="user_a", email="a@example.com")
-        _register_user(lockout_client, username="user_b", email="b@example.com")
+        _register_user(lockout_client, username="user_a")
+        _register_user(lockout_client, username="user_b")
 
         # Lock out user_a
         for _ in range(3):

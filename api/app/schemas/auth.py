@@ -3,7 +3,6 @@ from pydantic import BaseModel, Field
 
 class UserRegister(BaseModel):
     username: str = Field(min_length=3, max_length=50, pattern=r'^[a-zA-Z0-9_]+$')
-    email: str
     password: str = Field(min_length=8)
 
 

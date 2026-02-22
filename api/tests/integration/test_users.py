@@ -15,7 +15,6 @@ class TestGetProfile:
         data = response.json()
         assert data["user_id"] == str(test_user.user_id)
         assert data["username"] == test_user.username
-        assert data["email"] == test_user.email
 
     def test_get_profile_no_auth(self, client):
         """Request without auth should return 401."""

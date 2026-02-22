@@ -109,8 +109,8 @@ fun AppNavGraph(onboardingPrefs: OnboardingPrefs) {
         composable<Register> {
             RegisterScreen(
                 state = authState,
-                onRegister = { username, email, password ->
-                    authViewModel.register(username, email, password)
+                onRegister = { username, password ->
+                    authViewModel.register(username, password)
                 },
                 onNavigateBack = {
                     navController.popBackStack()

@@ -17,7 +17,6 @@ class TestRegister:
             "/auth/register",
             json={
                 "username": "newuser",
-                "email": "newuser@example.com",
                 "password": "password123",
             },
         )
@@ -30,20 +29,6 @@ class TestRegister:
             "/auth/register",
             json={
                 "username": test_user_data["username"],
-                "email": "different@example.com",
-                "password": "password123",
-            },
-        )
-        assert response.status_code == 409
-        assert "already exists" in response.json()["detail"]["msg"]
-
-    def test_register_duplicate_email(self, client, test_user, test_user_data):
-        """Registration with existing email should return 409."""
-        response = client.post(
-            "/auth/register",
-            json={
-                "username": "differentuser",
-                "email": test_user_data["email"],
                 "password": "password123",
             },
         )
@@ -55,18 +40,6 @@ class TestRegister:
         response = client.post(
             "/auth/register",
             json={
-                "email": "test@example.com",
-                "password": "password123",
-            },
-        )
-        assert response.status_code == 422
-
-    def test_register_missing_email(self, client):
-        """Registration without email should return 422."""
-        response = client.post(
-            "/auth/register",
-            json={
-                "username": "testuser",
                 "password": "password123",
             },
         )
@@ -78,7 +51,6 @@ class TestRegister:
             "/auth/register",
             json={
                 "username": "testuser",
-                "email": "test@example.com",
             },
         )
         assert response.status_code == 422
@@ -89,7 +61,6 @@ class TestRegister:
             "/auth/register",
             json={
                 "username": "newuser",
-                "email": "new@example.com",
                 "password": "short",
             },
         )
@@ -101,7 +72,6 @@ class TestRegister:
             "/auth/register",
             json={
                 "username": "newuser",
-                "email": "new@example.com",
                 "password": "exactly8",
             },
         )
@@ -113,7 +83,6 @@ class TestRegister:
             "/auth/register",
             json={
                 "username": "ab",
-                "email": "new@example.com",
                 "password": "password123",
             },
         )
@@ -125,7 +94,6 @@ class TestRegister:
             "/auth/register",
             json={
                 "username": "a" * 51,
-                "email": "new@example.com",
                 "password": "password123",
             },
         )
@@ -137,7 +105,6 @@ class TestRegister:
             "/auth/register",
             json={
                 "username": "user@name!",
-                "email": "new@example.com",
                 "password": "password123",
             },
         )
@@ -149,7 +116,6 @@ class TestRegister:
             "/auth/register",
             json={
                 "username": "user name",
-                "email": "new@example.com",
                 "password": "password123",
             },
         )
@@ -161,7 +127,6 @@ class TestRegister:
             "/auth/register",
             json={
                 "username": "new_user_1",
-                "email": "new@example.com",
                 "password": "password123",
             },
         )
@@ -173,7 +138,6 @@ class TestRegister:
             "/auth/register",
             json={
                 "username": "abc",
-                "email": "abc@example.com",
                 "password": "password123",
             },
         )
@@ -185,7 +149,6 @@ class TestRegister:
             "/auth/register",
             json={
                 "username": "a" * 50,
-                "email": "long@example.com",
                 "password": "password123",
             },
         )
@@ -202,7 +165,6 @@ class TestRegisterValidationLogging:
                 "/auth/register",
                 json={
                     "username": "ab",
-                    "email": "test@example.com",
                     "password": "password123",
                 },
             )
@@ -218,7 +180,6 @@ class TestRegisterValidationLogging:
                 "/auth/register",
                 json={
                     "username": "ab",
-                    "email": "test@example.com",
                     "password": "password123",
                 },
             )
@@ -232,29 +193,12 @@ class TestRegisterValidationLogging:
                 "/auth/register",
                 json={
                     "username": "validuser",
-                    "email": "test@example.com",
                     "password": "x9y8z7",
                 },
             )
         log_messages = " ".join(r.message for r in caplog.records)
         assert "x9y8z7" not in log_messages
         assert "[REDACTED]" in log_messages
-
-    def test_validation_log_redacts_email(self, client, caplog):
-        """Logged validation error must not include the raw email value."""
-        with caplog.at_level(logging.WARNING, logger="app.main"):
-            client.post(
-                "/auth/register",
-                json={
-                    "username": "validuser",
-                    "email": "not-an-email",
-                    "password": "password123",
-                },
-            )
-        # If email validation fires, the raw value should be redacted
-        log_messages = " ".join(r.message for r in caplog.records)
-        if caplog.records:
-            assert "not-an-email" not in log_messages
 
     def test_validation_log_does_not_redact_non_sensitive_fields(self, client, caplog):
         """Non-sensitive field values (like username) should appear in the log."""
@@ -263,7 +207,6 @@ class TestRegisterValidationLogging:
                 "/auth/register",
                 json={
                     "username": "a!",
-                    "email": "test@example.com",
                     "password": "password123",
                 },
             )
@@ -277,7 +220,6 @@ class TestRegisterValidationLogging:
                 "/auth/register",
                 json={
                     "username": "ab",
-                    "email": "test@example.com",
                     "password": "password123",
                 },
             )

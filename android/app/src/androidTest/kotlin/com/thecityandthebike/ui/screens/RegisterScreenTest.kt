@@ -25,7 +25,7 @@ class RegisterScreenTest {
         composeTestRule.setContentWithTheme {
             RegisterScreen(
                 state = AuthState(),
-                onRegister = { _, _, _ -> },
+                onRegister = { _, _ -> },
                 onNavigateBack = {},
                 onClearError = {},
                 onClearRegistrationSuccess = {}
@@ -33,7 +33,6 @@ class RegisterScreenTest {
         }
 
         composeTestRule.onNodeWithText("Username").assertIsDisplayed()
-        composeTestRule.onNodeWithText("Email").assertIsDisplayed()
         composeTestRule.onNodeWithText("Password").assertIsDisplayed()
         composeTestRule.onNodeWithText("Confirm Password").assertIsDisplayed()
         composeTestRule.onNode(hasText("Create Account") and hasClickAction())
@@ -46,7 +45,7 @@ class RegisterScreenTest {
         composeTestRule.setContentWithTheme {
             RegisterScreen(
                 state = AuthState(),
-                onRegister = { _, _, _ -> },
+                onRegister = { _, _ -> },
                 onNavigateBack = {},
                 onClearError = {},
                 onClearRegistrationSuccess = {}
@@ -63,7 +62,7 @@ class RegisterScreenTest {
         composeTestRule.setContentWithTheme {
             RegisterScreen(
                 state = AuthState(),
-                onRegister = { _, _, _ -> },
+                onRegister = { _, _ -> },
                 onNavigateBack = {},
                 onClearError = {},
                 onClearRegistrationSuccess = {}
@@ -71,7 +70,6 @@ class RegisterScreenTest {
         }
 
         composeTestRule.onNodeWithText("Username").performTextInput("testuser")
-        composeTestRule.onNodeWithText("Email").performTextInput("test@example.com")
         composeTestRule.onNodeWithText("Password").performTextInput("password123")
         composeTestRule.onNodeWithText("Confirm Password").performTextInput("password123")
 
@@ -93,7 +91,7 @@ class RegisterScreenTest {
         composeTestRule.setContentWithTheme {
             RegisterScreen(
                 state = AuthState(error = "Username already taken"),
-                onRegister = { _, _, _ -> },
+                onRegister = { _, _ -> },
                 onNavigateBack = {},
                 onClearError = {},
                 onClearRegistrationSuccess = {}
@@ -110,7 +108,7 @@ class RegisterScreenTest {
         composeTestRule.setContentWithTheme {
             RegisterScreen(
                 state = AuthState(isLoading = true),
-                onRegister = { _, _, _ -> },
+                onRegister = { _, _ -> },
                 onNavigateBack = {},
                 onClearError = {},
                 onClearRegistrationSuccess = {}
@@ -118,7 +116,6 @@ class RegisterScreenTest {
         }
 
         composeTestRule.onNodeWithText("Username").assertIsNotEnabled()
-        composeTestRule.onNodeWithText("Email").assertIsNotEnabled()
         composeTestRule.onNodeWithText("Password").assertIsNotEnabled()
         composeTestRule.onNodeWithText("Confirm Password").assertIsNotEnabled()
     }
@@ -128,7 +125,7 @@ class RegisterScreenTest {
         composeTestRule.setContentWithTheme {
             RegisterScreen(
                 state = AuthState(),
-                onRegister = { _, _, _ -> },
+                onRegister = { _, _ -> },
                 onNavigateBack = {},
                 onClearError = {},
                 onClearRegistrationSuccess = {}
@@ -136,7 +133,6 @@ class RegisterScreenTest {
         }
 
         composeTestRule.onNodeWithText("Username").performTextInput("testuser")
-        composeTestRule.onNodeWithText("Email").performTextInput("test@example.com")
         composeTestRule.onNodeWithText("Password").performTextInput("short7x")
         composeTestRule.onNodeWithText("Confirm Password").performTextInput("short7x")
 
@@ -157,7 +153,7 @@ class RegisterScreenTest {
         composeTestRule.setContentWithTheme {
             RegisterScreen(
                 state = AuthState(),
-                onRegister = { _, _, _ -> },
+                onRegister = { _, _ -> },
                 onNavigateBack = {},
                 onClearError = {},
                 onClearRegistrationSuccess = {}

@@ -60,7 +60,7 @@ if settings.cors_origins_list:
 
 app.add_exception_handler(RateLimitExceeded, rate_limit_exceeded_handler)
 
-SENSITIVE_FIELDS = {"password", "email"}
+SENSITIVE_FIELDS = {"password"}
 
 
 @app.exception_handler(RequestValidationError)
