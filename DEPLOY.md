@@ -18,7 +18,7 @@ Images:   GCP Artifact Registry
 | | Staging | Production |
 |---|---|---|
 | **Branch** | `staging` | `prod` |
-| **API URL** | https://tcatb-api-staging-821600862601.us-central1.run.app | TBD (after first production deploy) |
+| **API URL** | https://tcatb-api-staging-821600862601.us-central1.run.app | https://tcatb-api-production-gj6zdcsumq-uc.a.run.app |
 | **Cloud Run Service** | `tcatb-api-staging` | `tcatb-api-production` |
 | **Cloud SQL Instance** | `tcatb-staging-db` (db-f1-micro) | `tcatb-prod-db` (db-g1-small) |
 | **Storage Bucket** | `tcatb-staging-uploads` | `tcatb-production-uploads` |
@@ -220,4 +220,4 @@ The deployer service account (`github-deployer`) needs `roles/iam.serviceAccount
 - [x] Generate Android release keystore and add signing secrets to GitHub
 - [x] Set up Firebase project and App Distribution
 - [ ] Create Google Play developer account and app listing
-- [ ] First production deploy (then update production `BASE_URL` in `android/app/build.gradle`)
+- [x] First production deploy (then update production `BASE_URL` in `android/app/build.gradle`)

@@ -44,7 +44,7 @@ android {
         }
         production {
             dimension "environment"
-            buildConfigField "String", "BASE_URL", "\"${System.getenv("PRODUCTION_BASE_URL") ?: ""}\""
+            buildConfigField "String", "BASE_URL", "\"${System.getenv("PRODUCTION_BASE_URL") ?: "https://tcatb-api-production-gj6zdcsumq-uc.a.run.app"}\""
         }
     }
 
