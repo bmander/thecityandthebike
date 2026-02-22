@@ -112,7 +112,7 @@ class MockWebServerTest {
         )
 
         val response = apiService.register(
-            RegisterRequest("newuser", "new@email.com", "password123")
+            RegisterRequest("newuser", "password123")
         )
 
         assertTrue(response.isSuccessful)
@@ -139,7 +139,7 @@ class MockWebServerTest {
         )
 
         val response = apiService.register(
-            RegisterRequest("existinguser", "existing@email.com", "password123")
+            RegisterRequest("existinguser", "password123")
         )
 
         assertFalse(response.isSuccessful)

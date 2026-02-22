@@ -5,6 +5,7 @@ import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
+import com.thecityandthebike.BuildConfig
 import com.thecityandthebike.setContentWithTheme
 import org.junit.Rule
 import org.junit.Test
@@ -66,5 +67,15 @@ class AboutScreenTest {
         }
 
         composeTestRule.onNodeWithText("github.com/bmander/thecityandthebike").assertIsDisplayed()
+    }
+
+    @Test
+    fun aboutScreen_displaysBuildInfo() {
+        composeTestRule.setContentWithTheme {
+            AboutScreen(onBack = {})
+        }
+
+        val expected = "${BuildConfig.VERSION_NAME} · ${BuildConfig.FLAVOR} · ${BuildConfig.BUILD_TYPE}"
+        composeTestRule.onNodeWithText(expected).assertIsDisplayed()
     }
 }

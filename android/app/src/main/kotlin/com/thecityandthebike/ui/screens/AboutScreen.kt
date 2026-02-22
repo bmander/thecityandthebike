@@ -20,6 +20,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.core.net.toUri
+import com.thecityandthebike.BuildConfig
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -78,6 +79,12 @@ fun AboutScreen(onBack: () -> Unit) {
                     }
                     context.startActivity(intent)
                 }
+            )
+            Spacer(modifier = Modifier.height(16.dp))
+            Text(
+                text = "${BuildConfig.VERSION_NAME} · ${BuildConfig.FLAVOR} · ${BuildConfig.BUILD_TYPE}",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
     }
