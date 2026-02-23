@@ -59,6 +59,7 @@ import android.graphics.BitmapFactory
 import android.widget.Toast
 import com.thecityandthebike.ui.components.MaskConfirmView
 import com.thecityandthebike.ui.components.MaskPainter
+import com.thecityandthebike.ui.components.AdminFlagActions
 import com.thecityandthebike.ui.components.OwnerActions
 import com.thecityandthebike.ui.components.SubmissionInfo
 import com.thecityandthebike.ui.components.TagOutlineOverlay
@@ -448,30 +449,11 @@ fun ImageDetailScreen(
             }
 
             if (isAdmin && flagCount > 0) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 8.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
-                    Text(
-                        text = "$flagCount ${if (flagCount == 1) "flag" else "flags"}",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.error
-                    )
-                    OutlinedButton(
-                        onClick = onClearFlags,
-                        enabled = !isClearingFlags,
-                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.error)
-                    ) {
-                        if (isClearingFlags) {
-                            CircularProgressIndicator(modifier = Modifier.size(16.dp))
-                        } else {
-                            Text("Clear flags", color = MaterialTheme.colorScheme.error)
-                        }
-                    }
-                }
+                AdminFlagActions(
+                    flagCount = flagCount,
+                    isClearingFlags = isClearingFlags,
+                    onClearFlags = onClearFlags,
+                )
             }
 
             Spacer(modifier = Modifier.height(16.dp))

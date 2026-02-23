@@ -82,27 +82,20 @@ class TokenManager @Inject constructor(
         return !getToken().isNullOrEmpty()
     }
 
-    fun getUserId(): String? {
+    private fun decodePayload(): JSONObject? {
         val token = getToken() ?: return null
         return try {
             val payload = token.split(".")[1]
             val decoded = Base64.decode(payload, Base64.URL_SAFE or Base64.NO_PADDING)
-            JSONObject(String(decoded)).getString("sub")
+            JSONObject(String(decoded))
         } catch (e: Exception) {
             null
         }
     }
 
-    fun isAdmin(): Boolean {
-        val token = getToken() ?: return false
-        return try {
-            val payload = token.split(".")[1]
-            val decoded = Base64.decode(payload, Base64.URL_SAFE or Base64.NO_PADDING)
-            JSONObject(String(decoded)).optBoolean("admin", false)
-        } catch (e: Exception) {
-            false
-        }
-    }
+    fun getUserId(): String? = decodePayload()?.optString("sub", null)
+
+    fun isAdmin(): Boolean = decodePayload()?.optBoolean("admin", false) ?: false
 
     companion object {
         private const val PREFS_FILENAME = "secure_prefs"

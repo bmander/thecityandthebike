@@ -6,7 +6,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from ..database import get_db
-from ..dependencies import get_current_user
+from ..dependencies import get_current_admin_user, get_current_user
 from ..models import User, FenderSubmission, Flag
 from ..schemas.flag import FlagStatusResponse
 
@@ -81,12 +81,9 @@ def get_my_flag_status(
 )
 def clear_flags(
     submission_id: UUID,
-    current_user: Annotated[User, Depends(get_current_user)],
+    current_user: Annotated[User, Depends(get_current_admin_user)],
     db: Annotated[Session, Depends(get_db)],
 ):
-    if not current_user.is_admin:
-        raise HTTPException(status_code=403, detail="Admin access required")
-
     submission = (
         db.query(FenderSubmission)
         .filter(FenderSubmission.submission_id == submission_id)

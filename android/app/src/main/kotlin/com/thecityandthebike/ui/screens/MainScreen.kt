@@ -223,8 +223,9 @@ private fun FeedContent(
     val uploadingUris = if (pendingUri != null && !state.uploadFailed) setOf(pendingUri) else emptySet()
     val failedUris = if (pendingUri != null && state.uploadFailed) setOf(pendingUri) else emptySet()
     val flaggedUris = submissionsWithImages
-        .filter { (it.flagCount ?: 0) > 0 }
-        .map { imageUrlToUri(it.imageUrlThumbnail!!) }
+        .mapIndexedNotNull { index, submission ->
+            if ((submission.flagCount ?: 0) > 0) submissionImageUris[index] else null
+        }
         .toSet()
 
     Box(modifier = Modifier.fillMaxSize()) {

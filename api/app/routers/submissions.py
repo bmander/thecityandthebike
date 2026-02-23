@@ -22,6 +22,15 @@ from .uploads import process_and_store_image
 router = APIRouter(prefix="/submissions", tags=["submissions"])
 
 
+def _enrich_with_flag_count(submission, db, flag_counts=None):
+    resp = SubmissionResponse.model_validate(submission)
+    if flag_counts is not None:
+        resp.flag_count = flag_counts.get(submission.submission_id, 0)
+    else:
+        resp.flag_count = db.query(Flag).filter(Flag.submission_id == submission.submission_id).count()
+    return resp
+
+
 @router.get("", response_model=CursorPaginatedResponse[SubmissionResponse])
 def get_global_submissions(
     db: Annotated[Session, Depends(get_db)],
@@ -63,11 +72,7 @@ def get_global_submissions(
             .group_by(Flag.submission_id)
             .all()
         )
-        response_items = []
-        for sub in items:
-            resp = SubmissionResponse.model_validate(sub)
-            resp.flag_count = flag_counts.get(sub.submission_id, 0)
-            response_items.append(resp)
+        response_items = [_enrich_with_flag_count(sub, db, flag_counts) for sub in items]
         return CursorPaginatedResponse(items=response_items, next_cursor=next_cursor, has_more=has_more)
 
     return CursorPaginatedResponse(items=items, next_cursor=next_cursor, has_more=has_more)
@@ -89,10 +94,7 @@ def get_submission(
         raise HTTPException(status_code=404, detail="Submission not found")
 
     if current_user and current_user.is_admin:
-        flag_count = db.query(Flag).filter(Flag.submission_id == submission_id).count()
-        resp = SubmissionResponse.model_validate(submission)
-        resp.flag_count = flag_count
-        return resp
+        return _enrich_with_flag_count(submission, db)
 
     return submission
 

@@ -30,6 +30,18 @@ import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 
 @Composable
+private fun ImageOverlay(alpha: Float, content: @Composable () -> Unit) {
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color.Black.copy(alpha = alpha)),
+        contentAlignment = Alignment.Center
+    ) {
+        content()
+    }
+}
+
+@Composable
 fun ImageGrid(
     imageUris: List<Uri>,
     modifier: Modifier = Modifier,
@@ -89,22 +101,12 @@ fun ImageGrid(
                     contentScale = ContentScale.Crop
                 )
                 if (isUploading) {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .background(Color.Black.copy(alpha = 0.4f)),
-                        contentAlignment = Alignment.Center
-                    ) {
+                    ImageOverlay(alpha = 0.4f) {
                         CircularProgressIndicator(color = Color.White)
                     }
                 }
                 if (isFailed) {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .background(Color.Black.copy(alpha = 0.4f)),
-                        contentAlignment = Alignment.Center
-                    ) {
+                    ImageOverlay(alpha = 0.4f) {
                         Icon(
                             imageVector = Icons.Default.Warning,
                             contentDescription = "Upload failed",
@@ -114,12 +116,7 @@ fun ImageGrid(
                     }
                 }
                 if (isFlagged) {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .background(Color.Black.copy(alpha = 0.3f)),
-                        contentAlignment = Alignment.Center
-                    ) {
+                    ImageOverlay(alpha = 0.3f) {
                         Icon(
                             imageVector = Icons.Default.Close,
                             contentDescription = "Flagged",
