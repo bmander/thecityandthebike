@@ -93,4 +93,8 @@ class SubmissionRepository @Inject constructor(
     suspend fun getFlagStatus(submissionId: String): ApiResult<FlagStatusResponse> {
         return safeApiCall { apiService.getFlagStatus(submissionId) }
     }
+
+    suspend fun clearFlags(submissionId: String): ApiResult<FlagStatusResponse> {
+        return safeApiCall { apiService.clearFlags(submissionId) }
+    }
 }

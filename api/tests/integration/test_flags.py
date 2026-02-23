@@ -1,6 +1,7 @@
 import uuid
 
-from app.models import Flag
+from app.dependencies import create_access_token, get_password_hash
+from app.models import Flag, User
 
 
 class TestCreateFlag:
@@ -111,6 +112,64 @@ class TestGetFlagStatus:
         response = client.get(
             f"/submissions/{fake_id}/flags/me",
             headers=auth_headers,
+        )
+        assert response.status_code == 404
+
+
+class TestClearFlags:
+    def test_admin_can_clear_flags(self, client, auth_headers, test_submission, test_admin_user, db_session):
+        """Admin should be able to clear all flags on a submission."""
+        # Regular user flags the submission
+        client.post(
+            f"/submissions/{test_submission.submission_id}/flags",
+            headers=auth_headers,
+        )
+
+        # Admin clears flags
+        admin_token = create_access_token(
+            subject=str(test_admin_user.user_id), is_admin=True
+        )
+        admin_headers = {"Authorization": f"Bearer {admin_token}"}
+        response = client.delete(
+            f"/submissions/{test_submission.submission_id}/flags",
+            headers=admin_headers,
+        )
+        assert response.status_code == 200
+        data = response.json()
+        assert data["flagged"] is False
+        assert data["flag_count"] == 0
+
+        # Verify flags are actually gone
+        remaining = db_session.query(Flag).filter(
+            Flag.submission_id == test_submission.submission_id
+        ).count()
+        assert remaining == 0
+
+    def test_non_admin_cannot_clear_flags(self, client, auth_headers, test_submission):
+        """Non-admin should get 403 when trying to clear flags."""
+        response = client.delete(
+            f"/submissions/{test_submission.submission_id}/flags",
+            headers=auth_headers,
+        )
+        assert response.status_code == 403
+
+    def test_clear_flags_no_auth(self, client, test_submission):
+        """Unauthenticated request should get 401."""
+        response = client.delete(
+            f"/submissions/{test_submission.submission_id}/flags",
+        )
+        assert response.status_code == 401
+
+    def test_clear_flags_nonexistent_submission(self, client, test_admin_user):
+        """Clearing flags on nonexistent submission should return 404."""
+        admin_token = create_access_token(
+            subject=str(test_admin_user.user_id), is_admin=True
+        )
+        admin_headers = {"Authorization": f"Bearer {admin_token}"}
+        fake_id = str(uuid.uuid4())
+        response = client.delete(
+            f"/submissions/{fake_id}/flags",
+            headers=admin_headers,
         )
         assert response.status_code == 404
 

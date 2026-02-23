@@ -201,6 +201,96 @@ class TestGetSubmissions:
         assert len(all_ids) == len(set(all_ids)) == 3
 
 
+class TestSubmissionFlagCount:
+    """Tests for flag_count in submission responses for admin users."""
+
+    def test_admin_sees_flag_count_in_list(
+        self, client, auth_headers, test_submission, test_admin_user, db_session
+    ):
+        """Admin should see flag_count in submission list responses."""
+        # Flag the submission as regular user
+        client.post(
+            f"/submissions/{test_submission.submission_id}/flags",
+            headers=auth_headers,
+        )
+
+        admin_token = create_access_token(
+            subject=str(test_admin_user.user_id), is_admin=True
+        )
+        admin_headers = {"Authorization": f"Bearer {admin_token}"}
+        response = client.get("/submissions", headers=admin_headers)
+        assert response.status_code == 200
+        items = response.json()["items"]
+        assert len(items) == 1
+        assert items[0]["flag_count"] == 1
+
+    def test_non_admin_does_not_see_flag_count_in_list(
+        self, client, auth_headers, test_submission
+    ):
+        """Non-admin should see flag_count as null in submission list."""
+        client.post(
+            f"/submissions/{test_submission.submission_id}/flags",
+            headers=auth_headers,
+        )
+        response = client.get("/submissions", headers=auth_headers)
+        assert response.status_code == 200
+        items = response.json()["items"]
+        assert items[0]["flag_count"] is None
+
+    def test_unauthenticated_does_not_see_flag_count(
+        self, client, test_submission
+    ):
+        """Unauthenticated user should see flag_count as null."""
+        response = client.get("/submissions")
+        assert response.status_code == 200
+        items = response.json()["items"]
+        assert items[0]["flag_count"] is None
+
+    def test_admin_sees_zero_flag_count(
+        self, client, test_submission, test_admin_user
+    ):
+        """Admin should see flag_count=0 for unflagged submissions."""
+        admin_token = create_access_token(
+            subject=str(test_admin_user.user_id), is_admin=True
+        )
+        admin_headers = {"Authorization": f"Bearer {admin_token}"}
+        response = client.get("/submissions", headers=admin_headers)
+        assert response.status_code == 200
+        items = response.json()["items"]
+        assert items[0]["flag_count"] == 0
+
+    def test_admin_sees_flag_count_in_detail(
+        self, client, auth_headers, test_submission, test_admin_user
+    ):
+        """Admin should see flag_count in single submission detail."""
+        client.post(
+            f"/submissions/{test_submission.submission_id}/flags",
+            headers=auth_headers,
+        )
+
+        admin_token = create_access_token(
+            subject=str(test_admin_user.user_id), is_admin=True
+        )
+        admin_headers = {"Authorization": f"Bearer {admin_token}"}
+        response = client.get(
+            f"/submissions/{test_submission.submission_id}",
+            headers=admin_headers,
+        )
+        assert response.status_code == 200
+        assert response.json()["flag_count"] == 1
+
+    def test_non_admin_does_not_see_flag_count_in_detail(
+        self, client, auth_headers, test_submission
+    ):
+        """Non-admin should see flag_count as null in submission detail."""
+        response = client.get(
+            f"/submissions/{test_submission.submission_id}",
+            headers=auth_headers,
+        )
+        assert response.status_code == 200
+        assert response.json()["flag_count"] is None
+
+
 class TestGetSubmission:
     """Tests for GET /submissions/{submission_id} endpoint."""
 

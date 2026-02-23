@@ -73,3 +73,29 @@ def get_my_flag_status(
     )
     flag_count = db.query(Flag).filter(Flag.submission_id == submission_id).count()
     return FlagStatusResponse(flagged=my_flag is not None, flag_count=flag_count)
+
+
+@router.delete(
+    "/submissions/{submission_id}/flags",
+    response_model=FlagStatusResponse,
+)
+def clear_flags(
+    submission_id: UUID,
+    current_user: Annotated[User, Depends(get_current_user)],
+    db: Annotated[Session, Depends(get_db)],
+):
+    if not current_user.is_admin:
+        raise HTTPException(status_code=403, detail="Admin access required")
+
+    submission = (
+        db.query(FenderSubmission)
+        .filter(FenderSubmission.submission_id == submission_id)
+        .first()
+    )
+    if submission is None:
+        raise HTTPException(status_code=404, detail="Submission not found")
+
+    db.query(Flag).filter(Flag.submission_id == submission_id).delete()
+    db.commit()
+
+    return FlagStatusResponse(flagged=False, flag_count=0)

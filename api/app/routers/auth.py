@@ -55,7 +55,7 @@ def login(
         )
 
     lockout.clear(data.username, db)
-    access_token = create_access_token(subject=str(user.user_id))
+    access_token = create_access_token(subject=str(user.user_id), is_admin=user.is_admin)
     refresh_token = create_refresh_token(user_id=user.user_id, db=db)
     return {"access_token": access_token, "refresh_token": refresh_token, "token_type": "bearer"}
 

@@ -38,6 +38,9 @@ data class ImageDetailState(
     val pointsAwarded: List<ScoringBreakdown>? = null,
     val isFlagged: Boolean = false,
     val isFlagging: Boolean = false,
+    val flagCount: Int = 0,
+    val isAdmin: Boolean = false,
+    val isClearingFlags: Boolean = false,
 )
 
 @HiltViewModel
@@ -51,7 +54,7 @@ class ImageDetailViewModel @Inject constructor(
 
     val submissionId: String = checkNotNull(savedStateHandle["submissionId"])
 
-    private val _state = MutableStateFlow(ImageDetailState(isLoading = true))
+    private val _state = MutableStateFlow(ImageDetailState(isLoading = true, isAdmin = tokenManager.isAdmin()))
     val state: StateFlow<ImageDetailState> = _state.asStateFlow()
     private var processMaskJob: Job? = null
 
@@ -236,7 +239,10 @@ class ImageDetailViewModel @Inject constructor(
         viewModelScope.launch {
             when (val result = submissionRepository.getFlagStatus(submissionId)) {
                 is ApiResult.Success -> {
-                    _state.value = _state.value.copy(isFlagged = result.data.flagged)
+                    _state.value = _state.value.copy(
+                        isFlagged = result.data.flagged,
+                        flagCount = result.data.flagCount
+                    )
                 }
                 is ApiResult.Error -> {
                     // Silently fail - flag status is supplementary
@@ -252,13 +258,35 @@ class ImageDetailViewModel @Inject constructor(
                 is ApiResult.Success -> {
                     _state.value = _state.value.copy(
                         isFlagging = false,
-                        isFlagged = result.data.flagged
+                        isFlagged = result.data.flagged,
+                        flagCount = result.data.flagCount
                     )
                 }
                 is ApiResult.Error -> {
                     _state.value = _state.value.copy(
                         isFlagging = false,
                         error = "Failed to flag submission"
+                    )
+                }
+            }
+        }
+    }
+
+    fun clearFlags() {
+        viewModelScope.launch {
+            _state.value = _state.value.copy(isClearingFlags = true)
+            when (val result = submissionRepository.clearFlags(submissionId)) {
+                is ApiResult.Success -> {
+                    _state.value = _state.value.copy(
+                        isClearingFlags = false,
+                        flagCount = result.data.flagCount,
+                        isFlagged = result.data.flagged
+                    )
+                }
+                is ApiResult.Error -> {
+                    _state.value = _state.value.copy(
+                        isClearingFlags = false,
+                        error = "Failed to clear flags"
                     )
                 }
             }

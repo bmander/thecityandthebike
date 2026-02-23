@@ -24,7 +24,8 @@ data class SubmissionResponse(
     val provider: String? = null,
     val side: String? = null,
     @SerialName("points_awarded") val pointsAwarded: Int? = null,
-    @SerialName("points_breakdown") val pointsBreakdown: List<ScoringBreakdown>? = null
+    @SerialName("points_breakdown") val pointsBreakdown: List<ScoringBreakdown>? = null,
+    @SerialName("flag_count") val flagCount: Int? = null
 )
 
 @Serializable

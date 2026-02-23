@@ -42,3 +42,4 @@ class SubmissionResponse(BaseModel):
     username: Optional[str] = None
     points_awarded: Optional[int] = None
     points_breakdown: Optional[List[ScoringBreakdown]] = None
+    flag_count: Optional[int] = None

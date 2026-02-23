@@ -222,6 +222,10 @@ private fun FeedContent(
     val imageUris = if (pendingUri != null) listOf(pendingUri) + submissionImageUris else submissionImageUris
     val uploadingUris = if (pendingUri != null && !state.uploadFailed) setOf(pendingUri) else emptySet()
     val failedUris = if (pendingUri != null && state.uploadFailed) setOf(pendingUri) else emptySet()
+    val flaggedUris = submissionsWithImages
+        .filter { (it.flagCount ?: 0) > 0 }
+        .map { imageUrlToUri(it.imageUrlThumbnail!!) }
+        .toSet()
 
     Box(modifier = Modifier.fillMaxSize()) {
         PullToRefreshBox(
@@ -233,6 +237,7 @@ private fun FeedContent(
                 imageUris = imageUris,
                 uploadingUris = uploadingUris,
                 failedUris = failedUris,
+                flaggedUris = flaggedUris,
                 modifier = Modifier.fillMaxSize(),
                 onImageClick = onImageClick?.let { callback ->
                     { index ->

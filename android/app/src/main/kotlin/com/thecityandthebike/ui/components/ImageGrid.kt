@@ -13,6 +13,7 @@ import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.itemsIndexed
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
@@ -34,6 +35,7 @@ fun ImageGrid(
     modifier: Modifier = Modifier,
     uploadingUris: Set<Uri> = emptySet(),
     failedUris: Set<Uri> = emptySet(),
+    flaggedUris: Set<Uri> = emptySet(),
     onImageClick: ((Int) -> Unit)? = null,
     onFailedImageClick: ((Uri) -> Unit)? = null,
     onLoadMore: (() -> Unit)? = null
@@ -65,6 +67,7 @@ fun ImageGrid(
         itemsIndexed(imageUris, key = { _, uri -> uri.toString() }) { index, uri ->
             val isUploading = uri in uploadingUris
             val isFailed = uri in failedUris
+            val isFlagged = uri in flaggedUris
             Box(
                 modifier = Modifier
                     .aspectRatio(1f)
@@ -107,6 +110,21 @@ fun ImageGrid(
                             contentDescription = "Upload failed",
                             tint = Color.White,
                             modifier = Modifier.size(36.dp)
+                        )
+                    }
+                }
+                if (isFlagged) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .background(Color.Black.copy(alpha = 0.3f)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Close,
+                            contentDescription = "Flagged",
+                            tint = Color.Red,
+                            modifier = Modifier.size(48.dp)
                         )
                     }
                 }

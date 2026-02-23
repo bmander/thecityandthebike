@@ -106,6 +106,10 @@ fun ImageDetailScreen(
     isFlagged: Boolean = false,
     isFlagging: Boolean = false,
     onFlag: () -> Unit = {},
+    isAdmin: Boolean = false,
+    flagCount: Int = 0,
+    isClearingFlags: Boolean = false,
+    onClearFlags: () -> Unit = {},
 ) {
     val imageUri = submission.imageUrl?.let { imageUrlToUri(it) }
     val thumbnailUri = submission.imageUrlThumbnail?.let { imageUrlToUri(it) }
@@ -439,6 +443,33 @@ fun ImageDetailScreen(
                             onDownload = onDownload,
                             onShowDeleteDialog = { showDeleteDialog = true }
                         )
+                    }
+                }
+            }
+
+            if (isAdmin && flagCount > 0) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Text(
+                        text = "$flagCount ${if (flagCount == 1) "flag" else "flags"}",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.error
+                    )
+                    OutlinedButton(
+                        onClick = onClearFlags,
+                        enabled = !isClearingFlags,
+                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.error)
+                    ) {
+                        if (isClearingFlags) {
+                            CircularProgressIndicator(modifier = Modifier.size(16.dp))
+                        } else {
+                            Text("Clear flags", color = MaterialTheme.colorScheme.error)
+                        }
                     }
                 }
             }

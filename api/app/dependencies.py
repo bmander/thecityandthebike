@@ -32,9 +32,9 @@ def get_password_hash(password: str) -> str:
     return bcrypt.hashpw(password.encode("utf-8"), bcrypt.gensalt()).decode("utf-8")
 
 
-def create_access_token(subject: str) -> str:
+def create_access_token(subject: str, is_admin: bool = False) -> str:
     expire = datetime.now(timezone.utc) + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
-    to_encode = {"sub": subject, "exp": expire}
+    to_encode = {"sub": subject, "exp": expire, "admin": is_admin}
     return jwt.encode(to_encode, settings.JWT_SECRET_KEY, algorithm=ALGORITHM)
 
 
@@ -108,8 +108,9 @@ def rotate_refresh_token(old_token: str, db: Session) -> tuple[str, str]:
         db.commit()
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail={"msg": "Refresh token expired"})
     user_id = record.user_id
+    user = db.query(User).filter(User.user_id == user_id).first()
     db.delete(record)
-    access_token = create_access_token(subject=str(user_id))
+    access_token = create_access_token(subject=str(user_id), is_admin=user.is_admin if user else False)
     new_refresh_token = create_refresh_token(user_id, db, commit=False)
     db.commit()
     return access_token, new_refresh_token

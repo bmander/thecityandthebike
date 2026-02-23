@@ -464,6 +464,10 @@ private fun ImageDetailRoute(
                     isFlagged = detailState.isFlagged,
                     isFlagging = detailState.isFlagging,
                     onFlag = { viewModel.flagSubmission() },
+                    isAdmin = detailState.isAdmin,
+                    flagCount = detailState.flagCount,
+                    isClearingFlags = detailState.isClearingFlags,
+                    onClearFlags = { viewModel.clearFlags() },
                 )
                 detailState.pointsAwarded?.let { breakdown ->
                     PointsAwardedOverlay(

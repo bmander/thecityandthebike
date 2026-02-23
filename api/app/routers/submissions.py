@@ -3,7 +3,7 @@ from typing import Annotated, Optional
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, UploadFile, status
-from sqlalchemy import or_, and_, tuple_
+from sqlalchemy import func, or_, and_, tuple_
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session, joinedload
 
@@ -11,7 +11,7 @@ from ..bike_url_parser import WHITELISTED_PROVIDERS, parse_bike_url
 from ..cursor import decode_cursor, encode_cursor
 from ..database import get_db
 from ..dependencies import get_current_user, get_current_user_optional
-from ..models import User, Bike, FenderSubmission
+from ..models import User, Bike, FenderSubmission, Flag
 from ..schemas import CursorPaginatedResponse, SubmissionResponse
 from ..schemas.auth import MessageResponse
 from ..schemas.submission import ScoringBreakdown
@@ -55,11 +55,30 @@ def get_global_submissions(
     has_more = len(submissions) > limit
     items = submissions[:limit]
     next_cursor = encode_cursor(items[-1].uploaded_at, items[-1].submission_id) if has_more else None
+
+    if current_user and current_user.is_admin and items:
+        flag_counts = dict(
+            db.query(Flag.submission_id, func.count(Flag.flag_id))
+            .filter(Flag.submission_id.in_([s.submission_id for s in items]))
+            .group_by(Flag.submission_id)
+            .all()
+        )
+        response_items = []
+        for sub in items:
+            resp = SubmissionResponse.model_validate(sub)
+            resp.flag_count = flag_counts.get(sub.submission_id, 0)
+            response_items.append(resp)
+        return CursorPaginatedResponse(items=response_items, next_cursor=next_cursor, has_more=has_more)
+
     return CursorPaginatedResponse(items=items, next_cursor=next_cursor, has_more=has_more)
 
 
 @router.get("/{submission_id}", response_model=SubmissionResponse)
-def get_submission(submission_id: UUID, db: Annotated[Session, Depends(get_db)]):
+def get_submission(
+    submission_id: UUID,
+    db: Annotated[Session, Depends(get_db)],
+    current_user: Annotated[Optional[User], Depends(get_current_user_optional)] = None,
+):
     submission = (
         db.query(FenderSubmission)
         .options(joinedload(FenderSubmission.user), joinedload(FenderSubmission.bike))
@@ -68,6 +87,13 @@ def get_submission(submission_id: UUID, db: Annotated[Session, Depends(get_db)])
     )
     if submission is None:
         raise HTTPException(status_code=404, detail="Submission not found")
+
+    if current_user and current_user.is_admin:
+        flag_count = db.query(Flag).filter(Flag.submission_id == submission_id).count()
+        resp = SubmissionResponse.model_validate(submission)
+        resp.flag_count = flag_count
+        return resp
+
     return submission
 
 

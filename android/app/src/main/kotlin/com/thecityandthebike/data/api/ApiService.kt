@@ -127,4 +127,7 @@ interface ApiService {
 
     @GET("submissions/{submissionId}/flags/me")
     suspend fun getFlagStatus(@Path("submissionId") submissionId: String): Response<FlagStatusResponse>
+
+    @DELETE("submissions/{submissionId}/flags")
+    suspend fun clearFlags(@Path("submissionId") submissionId: String): Response<FlagStatusResponse>
 }
