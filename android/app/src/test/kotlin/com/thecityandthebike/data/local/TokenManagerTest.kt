@@ -168,6 +168,65 @@ class TokenManagerTest {
     }
 
     @Test
+    fun `isAdmin returns true when JWT has admin true`() {
+        mockkStatic(Base64::class)
+        val payload = """{"sub":"user123","admin":true}"""
+        val encodedPayload = java.util.Base64.getUrlEncoder()
+            .withoutPadding()
+            .encodeToString(payload.toByteArray())
+        store["auth_token"] = "header.$encodedPayload.signature"
+
+        every { Base64.decode(any<String>(), any<Int>()) } answers {
+            java.util.Base64.getUrlDecoder().decode(firstArg<String>())
+        }
+
+        assertTrue(tokenManager.isAdmin())
+    }
+
+    @Test
+    fun `isAdmin returns false when JWT has admin false`() {
+        mockkStatic(Base64::class)
+        val payload = """{"sub":"user123","admin":false}"""
+        val encodedPayload = java.util.Base64.getUrlEncoder()
+            .withoutPadding()
+            .encodeToString(payload.toByteArray())
+        store["auth_token"] = "header.$encodedPayload.signature"
+
+        every { Base64.decode(any<String>(), any<Int>()) } answers {
+            java.util.Base64.getUrlDecoder().decode(firstArg<String>())
+        }
+
+        assertFalse(tokenManager.isAdmin())
+    }
+
+    @Test
+    fun `isAdmin returns false when JWT has no admin claim`() {
+        mockkStatic(Base64::class)
+        val payload = """{"sub":"user123"}"""
+        val encodedPayload = java.util.Base64.getUrlEncoder()
+            .withoutPadding()
+            .encodeToString(payload.toByteArray())
+        store["auth_token"] = "header.$encodedPayload.signature"
+
+        every { Base64.decode(any<String>(), any<Int>()) } answers {
+            java.util.Base64.getUrlDecoder().decode(firstArg<String>())
+        }
+
+        assertFalse(tokenManager.isAdmin())
+    }
+
+    @Test
+    fun `isAdmin returns false when no token`() {
+        assertFalse(tokenManager.isAdmin())
+    }
+
+    @Test
+    fun `isAdmin returns false for malformed token`() {
+        store["auth_token"] = "not-a-jwt"
+        assertFalse(tokenManager.isAdmin())
+    }
+
+    @Test
     fun `constructor recovers from corrupted encrypted preferences`() {
         // Clean up default setup mocks
         unmockkAll()

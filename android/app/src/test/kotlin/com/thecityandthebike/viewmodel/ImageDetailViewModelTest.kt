@@ -69,6 +69,8 @@ class ImageDetailViewModelTest {
         coEvery { tagRepository.getTags(testSubmissionId) } returns ApiResult.Success(emptyList())
         // Default: not flagged
         coEvery { submissionRepository.getFlagStatus(testSubmissionId) } returns ApiResult.Success(FlagStatusResponse(flagged = false, flagCount = 0))
+        // Default: not admin
+        every { tokenManager.isAdmin() } returns false
     }
 
     @After
@@ -719,6 +721,126 @@ class ImageDetailViewModelTest {
 
         assertEquals("tag-1", viewModel.state.value.selectedTagId)
         assertEquals(1, viewModel.state.value.tags.size)
+    }
+
+    // --- Flag and admin tests ---
+
+    @Test
+    fun `loadFlagStatus populates flagCount and isFlagged`() = runTest {
+        coEvery { submissionRepository.getSubmission(testSubmissionId) } returns ApiResult.Success(testSubmission)
+        coEvery { submissionRepository.getFlagStatus(testSubmissionId) } returns ApiResult.Success(FlagStatusResponse(flagged = true, flagCount = 3))
+        every { tokenManager.getUserId() } returns "user1"
+        every { tokenManager.isAdmin() } returns false
+
+        val viewModel = createViewModel()
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        assertTrue(viewModel.state.value.isFlagged)
+        assertEquals(3, viewModel.state.value.flagCount)
+    }
+
+    @Test
+    fun `isAdmin state is true when tokenManager isAdmin returns true`() = runTest {
+        coEvery { submissionRepository.getSubmission(testSubmissionId) } returns ApiResult.Success(testSubmission)
+        every { tokenManager.getUserId() } returns "user1"
+        every { tokenManager.isAdmin() } returns true
+
+        val viewModel = createViewModel()
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        assertTrue(viewModel.state.value.isAdmin)
+    }
+
+    @Test
+    fun `isAdmin state is false when tokenManager isAdmin returns false`() = runTest {
+        coEvery { submissionRepository.getSubmission(testSubmissionId) } returns ApiResult.Success(testSubmission)
+        every { tokenManager.getUserId() } returns "user1"
+        every { tokenManager.isAdmin() } returns false
+
+        val viewModel = createViewModel()
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        assertFalse(viewModel.state.value.isAdmin)
+    }
+
+    @Test
+    fun `clearFlags success resets flagCount and isFlagged`() = runTest {
+        coEvery { submissionRepository.getSubmission(testSubmissionId) } returns ApiResult.Success(testSubmission)
+        coEvery { submissionRepository.getFlagStatus(testSubmissionId) } returns ApiResult.Success(FlagStatusResponse(flagged = true, flagCount = 3))
+        coEvery { submissionRepository.clearFlags(testSubmissionId) } returns ApiResult.Success(FlagStatusResponse(flagged = false, flagCount = 0))
+        every { tokenManager.getUserId() } returns "user1"
+        every { tokenManager.isAdmin() } returns true
+
+        val viewModel = createViewModel()
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        assertEquals(3, viewModel.state.value.flagCount)
+
+        viewModel.clearFlags()
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        assertEquals(0, viewModel.state.value.flagCount)
+        assertFalse(viewModel.state.value.isFlagged)
+        assertFalse(viewModel.state.value.isClearingFlags)
+    }
+
+    @Test
+    fun `clearFlags failure sets error and keeps flags`() = runTest {
+        coEvery { submissionRepository.getSubmission(testSubmissionId) } returns ApiResult.Success(testSubmission)
+        coEvery { submissionRepository.getFlagStatus(testSubmissionId) } returns ApiResult.Success(FlagStatusResponse(flagged = true, flagCount = 3))
+        coEvery { submissionRepository.clearFlags(testSubmissionId) } returns ApiResult.Error(AppError.Server(500, "Error"))
+        every { tokenManager.getUserId() } returns "user1"
+        every { tokenManager.isAdmin() } returns true
+
+        val viewModel = createViewModel()
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        viewModel.clearFlags()
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        assertEquals(3, viewModel.state.value.flagCount)
+        assertEquals("Failed to clear flags", viewModel.state.value.error)
+        assertFalse(viewModel.state.value.isClearingFlags)
+    }
+
+    @Test
+    fun `clearFlags sets isClearingFlags while in progress`() = runTest {
+        coEvery { submissionRepository.getSubmission(testSubmissionId) } returns ApiResult.Success(testSubmission)
+        every { tokenManager.getUserId() } returns "user1"
+        every { tokenManager.isAdmin() } returns true
+
+        val deferred = kotlinx.coroutines.CompletableDeferred<ApiResult<FlagStatusResponse>>()
+        coEvery { submissionRepository.clearFlags(testSubmissionId) } coAnswers { deferred.await() }
+
+        val viewModel = createViewModel()
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        viewModel.clearFlags()
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        assertTrue(viewModel.state.value.isClearingFlags)
+
+        deferred.complete(ApiResult.Success(FlagStatusResponse(flagged = false, flagCount = 0)))
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        assertFalse(viewModel.state.value.isClearingFlags)
+    }
+
+    @Test
+    fun `flagSubmission updates flagCount`() = runTest {
+        coEvery { submissionRepository.getSubmission(testSubmissionId) } returns ApiResult.Success(testSubmission)
+        coEvery { submissionRepository.createFlag(testSubmissionId) } returns ApiResult.Success(FlagStatusResponse(flagged = true, flagCount = 1))
+        every { tokenManager.getUserId() } returns "user1"
+        every { tokenManager.isAdmin() } returns false
+
+        val viewModel = createViewModel()
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        viewModel.flagSubmission()
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        assertTrue(viewModel.state.value.isFlagged)
+        assertEquals(1, viewModel.state.value.flagCount)
     }
 
     @Test

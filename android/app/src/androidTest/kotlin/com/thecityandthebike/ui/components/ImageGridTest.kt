@@ -254,4 +254,58 @@ class ImageGridTest {
             .onNode(hasProgressBarRangeInfo(ProgressBarRangeInfo.Indeterminate))
             .assertDoesNotExist()
     }
+
+    @Test
+    fun imageGrid_flaggedUri_showsFlaggedIcon() {
+        val testUris = createTestUriList(3)
+        val flaggedUris = setOf(testUris[0])
+
+        composeTestRule.setContentWithTheme {
+            ImageGrid(
+                imageUris = testUris,
+                flaggedUris = flaggedUris,
+                modifier = Modifier.fillMaxSize()
+            )
+        }
+
+        composeTestRule
+            .onNodeWithContentDescription("Flagged")
+            .assertIsDisplayed()
+    }
+
+    @Test
+    fun imageGrid_noFlaggedUris_noFlaggedIcon() {
+        val testUris = createTestUriList(3)
+
+        composeTestRule.setContentWithTheme {
+            ImageGrid(
+                imageUris = testUris,
+                modifier = Modifier.fillMaxSize()
+            )
+        }
+
+        composeTestRule
+            .onNodeWithContentDescription("Flagged")
+            .assertDoesNotExist()
+    }
+
+    @Test
+    fun imageGrid_flaggedUri_isStillClickable() {
+        val testUris = createTestUriList(3)
+        val flaggedUris = setOf(testUris[0])
+
+        composeTestRule.setContentWithTheme {
+            ImageGrid(
+                imageUris = testUris,
+                flaggedUris = flaggedUris,
+                modifier = Modifier.fillMaxSize(),
+                onImageClick = {}
+            )
+        }
+
+        // All 3 items should be clickable (flagged items are still navigable)
+        composeTestRule
+            .onAllNodes(hasClickAction())
+            .assertCountEquals(3)
+    }
 }

@@ -18,7 +18,7 @@ from app.dependencies import (
     create_refresh_token,
     rotate_refresh_token,
 )
-from app.models import RefreshToken
+from app.models import RefreshToken, User
 
 
 class TestPasswordHashing:
@@ -117,6 +117,24 @@ class TestJWTTokens:
         token1 = create_access_token(subject="user1")
         token2 = create_access_token(subject="user2")
         assert token1 != token2
+
+    def test_token_contains_admin_claim_when_true(self):
+        """Token should contain admin=True when is_admin=True."""
+        token = create_access_token(subject="user123", is_admin=True)
+        payload = jwt.decode(token, settings.JWT_SECRET_KEY, algorithms=[ALGORITHM])
+        assert payload["admin"] is True
+
+    def test_token_contains_admin_claim_when_false(self):
+        """Token should contain admin=False when is_admin=False."""
+        token = create_access_token(subject="user123", is_admin=False)
+        payload = jwt.decode(token, settings.JWT_SECRET_KEY, algorithms=[ALGORITHM])
+        assert payload["admin"] is False
+
+    def test_token_admin_defaults_to_false(self):
+        """Token admin claim should default to False when not specified."""
+        token = create_access_token(subject="user123")
+        payload = jwt.decode(token, settings.JWT_SECRET_KEY, algorithms=[ALGORITHM])
+        assert payload["admin"] is False
 
 
 class TestGetCurrentUser:
@@ -296,3 +314,25 @@ class TestRotateRefreshToken:
         # Access token should be a valid JWT for the same user
         payload = jwt.decode(access_token, settings.JWT_SECRET_KEY, algorithms=[ALGORITHM])
         assert payload["sub"] == str(test_user.user_id)
+
+    def test_rotated_token_includes_admin_claim(self, db_session, test_user):
+        db_user = db_session.query(User).filter(User.user_id == test_user.user_id).first()
+        db_user.is_admin = True
+        db_session.commit()
+        old_token = create_refresh_token(test_user.user_id, db_session)
+
+        access_token, _ = rotate_refresh_token(old_token, db_session)
+
+        payload = jwt.decode(access_token, settings.JWT_SECRET_KEY, algorithms=[ALGORITHM])
+        assert payload["admin"] is True
+
+    def test_rotated_token_admin_false_for_non_admin(self, db_session, test_user):
+        db_user = db_session.query(User).filter(User.user_id == test_user.user_id).first()
+        db_user.is_admin = False
+        db_session.commit()
+        old_token = create_refresh_token(test_user.user_id, db_session)
+
+        access_token, _ = rotate_refresh_token(old_token, db_session)
+
+        payload = jwt.decode(access_token, settings.JWT_SECRET_KEY, algorithms=[ALGORITHM])
+        assert payload["admin"] is False

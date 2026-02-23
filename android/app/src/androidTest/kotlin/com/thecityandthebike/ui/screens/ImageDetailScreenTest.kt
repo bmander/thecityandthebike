@@ -687,4 +687,98 @@ class ImageDetailScreenTest {
         composeTestRule.onNodeWithContentDescription("Flagged").assertIsDisplayed()
         composeTestRule.onNodeWithContentDescription("Flag photo").assertDoesNotExist()
     }
+
+    // --- Admin flag section tests ---
+
+    @Test
+    fun adminFlagSection_visibleWhenAdminAndFlagged() {
+        composeTestRule.setContentWithTheme {
+            ImageDetailScreen(
+                submission = testSubmission,
+                onHome = {},
+                isAdmin = true,
+                flagCount = 3
+            )
+        }
+
+        composeTestRule.onNodeWithText("3 flags").assertIsDisplayed()
+        composeTestRule.onNodeWithText("Clear flags").assertIsDisplayed()
+    }
+
+    @Test
+    fun adminFlagSection_showsSingularFlagText() {
+        composeTestRule.setContentWithTheme {
+            ImageDetailScreen(
+                submission = testSubmission,
+                onHome = {},
+                isAdmin = true,
+                flagCount = 1
+            )
+        }
+
+        composeTestRule.onNodeWithText("1 flag").assertIsDisplayed()
+    }
+
+    @Test
+    fun adminFlagSection_hiddenWhenNotAdmin() {
+        composeTestRule.setContentWithTheme {
+            ImageDetailScreen(
+                submission = testSubmission,
+                onHome = {},
+                isAdmin = false,
+                flagCount = 3
+            )
+        }
+
+        composeTestRule.onNodeWithText("3 flags").assertDoesNotExist()
+        composeTestRule.onNodeWithText("Clear flags").assertDoesNotExist()
+    }
+
+    @Test
+    fun adminFlagSection_hiddenWhenZeroFlags() {
+        composeTestRule.setContentWithTheme {
+            ImageDetailScreen(
+                submission = testSubmission,
+                onHome = {},
+                isAdmin = true,
+                flagCount = 0
+            )
+        }
+
+        composeTestRule.onNodeWithText("Clear flags").assertDoesNotExist()
+    }
+
+    @Test
+    fun adminFlagSection_clearFlagsCallsCallback() {
+        var clearCalled = false
+
+        composeTestRule.setContentWithTheme {
+            ImageDetailScreen(
+                submission = testSubmission,
+                onHome = {},
+                isAdmin = true,
+                flagCount = 2,
+                onClearFlags = { clearCalled = true }
+            )
+        }
+
+        composeTestRule.onNodeWithText("Clear flags").performClick()
+
+        assertTrue("onClearFlags should be called", clearCalled)
+    }
+
+    @Test
+    fun adminFlagSection_clearFlagsDisabledWhileClearing() {
+        composeTestRule.setContentWithTheme {
+            ImageDetailScreen(
+                submission = testSubmission,
+                onHome = {},
+                isAdmin = true,
+                flagCount = 2,
+                isClearingFlags = true
+            )
+        }
+
+        composeTestRule.onNodeWithText("Clear flags").assertDoesNotExist()
+    }
 }
