@@ -7,7 +7,7 @@ from sqlalchemy.orm import Session, joinedload
 
 from ..cursor import decode_cursor, encode_cursor
 from ..database import get_db
-from ..dependencies import get_current_user
+from ..dependencies import get_current_admin_user, get_current_user
 from ..models import User, Bike, FenderSubmission, DeviceBan
 from ..models.orm import ScoringEvent
 from ..schemas import BanRequest, BanResponse, CursorPaginatedResponse, MessageResponse, PaginatedResponse, UserDetailResponse, UserResponse, SubmissionResponse
@@ -205,15 +205,9 @@ def get_user_submissions(
 def ban_user(
     user_id: UUID,
     data: BanRequest,
-    current_user: Annotated[User, Depends(get_current_user)],
+    current_user: Annotated[User, Depends(get_current_admin_user)],
     db: Annotated[Session, Depends(get_db)],
 ):
-    if not current_user.is_admin:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail={"msg": "Admin privileges required"},
-        )
-
     user = db.query(User).filter(User.user_id == user_id).first()
     if not user:
         raise HTTPException(
@@ -242,15 +236,9 @@ def ban_user(
 @router.delete("/{user_id}/ban", response_model=BanResponse)
 def unban_user(
     user_id: UUID,
-    current_user: Annotated[User, Depends(get_current_user)],
+    current_user: Annotated[User, Depends(get_current_admin_user)],
     db: Annotated[Session, Depends(get_db)],
 ):
-    if not current_user.is_admin:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail={"msg": "Admin privileges required"},
-        )
-
     user = db.query(User).filter(User.user_id == user_id).first()
     if not user:
         raise HTTPException(

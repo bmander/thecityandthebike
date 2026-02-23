@@ -10,7 +10,7 @@ from sqlalchemy.orm import Session, joinedload
 from ..bike_url_parser import WHITELISTED_PROVIDERS, parse_bike_url
 from ..cursor import decode_cursor, encode_cursor
 from ..database import get_db
-from ..dependencies import get_current_user, get_current_user_optional
+from ..dependencies import get_current_active_user, get_current_user, get_current_user_optional
 from ..models import User, Bike, FenderSubmission
 from ..schemas import CursorPaginatedResponse, SubmissionResponse
 from ..schemas.auth import MessageResponse
@@ -100,7 +100,7 @@ def delete_submission(
 
 @router.post("", response_model=SubmissionResponse, status_code=status.HTTP_201_CREATED)
 async def create_submission(
-    current_user: Annotated[User, Depends(get_current_user)],
+    current_user: Annotated[User, Depends(get_current_active_user)],
     db: Annotated[Session, Depends(get_db)],
     image: UploadFile = File(...),
     bike_qr_id: str = Form(...),
@@ -108,12 +108,6 @@ async def create_submission(
     user_caption: Optional[str] = Form(None),
     side: Optional[str] = Form(None),
 ):
-    if current_user.is_banned:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail={"msg": "This account has been banned"},
-        )
-
     parsed = parse_bike_url(bike_qr_id)
     if parsed.provider not in WHITELISTED_PROVIDERS:
         raise HTTPException(status_code=422, detail="Unrecognized bike provider")

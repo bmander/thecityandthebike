@@ -2,6 +2,8 @@ import io
 
 from PIL import Image
 
+from app.models import DeviceBan, User
+
 
 def create_test_image():
     img = Image.new("RGB", (100, 100), color="red")
@@ -42,8 +44,6 @@ class TestBanEndpoint:
         assert response.status_code == 404
 
     def test_ban_creates_device_ban(self, client, admin_auth_headers, db_session, test_user):
-        from app.models import User, DeviceBan
-
         # Give user an android_id
         user = db_session.query(User).filter(User.user_id == test_user.user_id).first()
         user.android_id = "device-abc-123"
@@ -86,8 +86,6 @@ class TestUnbanEndpoint:
         assert data["msg"] == "User unbanned"
 
     def test_unban_removes_device_ban(self, client, admin_auth_headers, test_banned_user, db_session):
-        from app.models import DeviceBan
-
         # Create a device ban for the banned user's android_id
         device_ban = DeviceBan(
             android_id=test_banned_user.android_id,
@@ -152,23 +150,10 @@ class TestBannedUserCannotCreateContent:
 class TestDeviceBanOnRegister:
     """Tests that registration is rejected when android_id is banned."""
 
-    def test_register_with_banned_device_rejected(self, client, db_session):
-        from app.models import DeviceBan, User
-
-        # Create a device ban
-        # Need an admin user for banned_by
-        admin = User(
-            username="tempadmin",
-            password_hash="unused",
-            is_admin=True,
-        )
-        db_session.add(admin)
-        db_session.commit()
-        db_session.refresh(admin)
-
+    def test_register_with_banned_device_rejected(self, client, db_session, test_admin_user):
         device_ban = DeviceBan(
             android_id="banned-device-xyz",
-            banned_by=admin.user_id,
+            banned_by=test_admin_user.user_id,
         )
         db_session.add(device_ban)
         db_session.commit()
@@ -196,8 +181,6 @@ class TestDeviceBanOnRegister:
         assert response.status_code == 201
 
     def test_register_stores_android_id(self, client, db_session):
-        from app.models import User
-
         client.post(
             "/auth/register",
             json={
@@ -225,18 +208,10 @@ class TestBannedUserLogin:
         assert response.status_code == 403
         assert "banned" in response.json()["detail"]["msg"].lower()
 
-    def test_login_with_banned_device_rejected(self, client, db_session, test_user, test_user_data):
-        from app.models import DeviceBan, User
-
-        # Create a device ban
-        admin = User(username="tempadmin2", password_hash="unused", is_admin=True)
-        db_session.add(admin)
-        db_session.commit()
-        db_session.refresh(admin)
-
+    def test_login_with_banned_device_rejected(self, client, db_session, test_user, test_user_data, test_admin_user):
         device_ban = DeviceBan(
             android_id="banned-login-device",
-            banned_by=admin.user_id,
+            banned_by=test_admin_user.user_id,
         )
         db_session.add(device_ban)
         db_session.commit()
@@ -254,8 +229,6 @@ class TestBannedUserLogin:
 
     def test_login_does_not_overwrite_android_id(self, client, db_session, test_user, test_user_data):
         """Login should not update android_id — only registration sets it."""
-        from app.models import User
-
         # Give user an existing android_id (as if they registered with it)
         user = db_session.query(User).filter(User.user_id == test_user.user_id).first()
         user.android_id = "original-device"
