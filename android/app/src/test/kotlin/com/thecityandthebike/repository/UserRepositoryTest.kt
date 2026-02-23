@@ -186,7 +186,7 @@ class UserRepositoryTest {
     }
 
     @Test
-    fun `banUser HTTP error returns Server error`() = runTest {
+    fun `banUser HTTP 403 returns Auth error`() = runTest {
         coEvery { apiService.banUser("u1") } returns
                 Response.error(403, "forbidden".toResponseBody())
 
@@ -194,8 +194,8 @@ class UserRepositoryTest {
 
         assertTrue(result is ApiResult.Error)
         val error = (result as ApiResult.Error).error
-        assertTrue(error is AppError.Server)
-        assertEquals(403, (error as AppError.Server).code)
+        assertTrue(error is AppError.Auth)
+        assertEquals(403, (error as AppError.Auth).code)
     }
 
     @Test

@@ -6,6 +6,7 @@ import com.thecityandthebike.data.model.AppError
 import com.thecityandthebike.data.model.dto.BanResponse
 import com.thecityandthebike.data.model.dto.CursorPaginatedSubmissions
 import com.thecityandthebike.data.model.dto.UserDetailResponse
+import com.thecityandthebike.data.model.safeApiCall
 import java.io.IOException
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -54,35 +55,9 @@ class UserRepository @Inject constructor(
         }
     }
 
-    suspend fun banUser(userId: String): ApiResult<BanResponse> {
-        return try {
-            val response = apiService.banUser(userId)
-            if (response.isSuccessful) {
-                response.body()?.let { ApiResult.Success(it) }
-                    ?: ApiResult.Error(AppError.Server(response.code(), "Empty response"))
-            } else {
-                ApiResult.Error(AppError.Server(response.code(), "Failed to ban user"))
-            }
-        } catch (e: IOException) {
-            ApiResult.Error(AppError.Network(e))
-        } catch (e: Exception) {
-            ApiResult.Error(AppError.Unknown(e))
-        }
-    }
+    suspend fun banUser(userId: String): ApiResult<BanResponse> =
+        safeApiCall { apiService.banUser(userId) }
 
-    suspend fun unbanUser(userId: String): ApiResult<BanResponse> {
-        return try {
-            val response = apiService.unbanUser(userId)
-            if (response.isSuccessful) {
-                response.body()?.let { ApiResult.Success(it) }
-                    ?: ApiResult.Error(AppError.Server(response.code(), "Empty response"))
-            } else {
-                ApiResult.Error(AppError.Server(response.code(), "Failed to unban user"))
-            }
-        } catch (e: IOException) {
-            ApiResult.Error(AppError.Network(e))
-        } catch (e: Exception) {
-            ApiResult.Error(AppError.Unknown(e))
-        }
-    }
+    suspend fun unbanUser(userId: String): ApiResult<BanResponse> =
+        safeApiCall { apiService.unbanUser(userId) }
 }

@@ -112,45 +112,21 @@ class UserViewModel @Inject constructor(
         )
     }
 
-    fun banUser() {
+    fun banUser() = toggleBan(ban = true)
+
+    fun unbanUser() = toggleBan(ban = false)
+
+    private fun toggleBan(ban: Boolean) {
         viewModelScope.launch {
             _state.value = _state.value.copy(isBanning = true)
-            when (val result = userRepository.banUser(userId)) {
+            val result = if (ban) userRepository.banUser(userId) else userRepository.unbanUser(userId)
+            when (result) {
                 is ApiResult.Success -> {
                     val detail = _state.value.userDetail
-                    if (detail != null) {
-                        _state.value = _state.value.copy(
-                            isBanning = false,
-                            userDetail = detail.copy(isBanned = true)
-                        )
-                    } else {
-                        _state.value = _state.value.copy(isBanning = false)
-                    }
-                }
-                is ApiResult.Error -> {
                     _state.value = _state.value.copy(
                         isBanning = false,
-                        error = result.error.displayMessage
+                        userDetail = detail?.copy(isBanned = ban)
                     )
-                }
-            }
-        }
-    }
-
-    fun unbanUser() {
-        viewModelScope.launch {
-            _state.value = _state.value.copy(isBanning = true)
-            when (val result = userRepository.unbanUser(userId)) {
-                is ApiResult.Success -> {
-                    val detail = _state.value.userDetail
-                    if (detail != null) {
-                        _state.value = _state.value.copy(
-                            isBanning = false,
-                            userDetail = detail.copy(isBanned = false)
-                        )
-                    } else {
-                        _state.value = _state.value.copy(isBanning = false)
-                    }
                 }
                 is ApiResult.Error -> {
                     _state.value = _state.value.copy(
