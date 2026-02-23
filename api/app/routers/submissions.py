@@ -84,7 +84,7 @@ def delete_submission(
     )
     if submission is None:
         raise HTTPException(status_code=404, detail="Submission not found")
-    if submission.user_id != current_user.user_id:
+    if submission.user_id != current_user.user_id and not current_user.is_admin:
         raise HTTPException(status_code=403, detail="Not authorized to delete this submission")
     revoke_submission_points(db, submission.submission_id)
     image_urls = [
