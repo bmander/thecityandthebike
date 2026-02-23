@@ -3,6 +3,7 @@ package com.thecityandthebike.ui.screens
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.performClick
 import com.thecityandthebike.data.model.dto.SubmissionResponse
 import com.thecityandthebike.data.model.dto.UserDetailResponse
 import com.thecityandthebike.setContentWithTheme
@@ -152,5 +153,218 @@ class UserScreenContentTest {
 
         composeTestRule.onNodeWithText("Jan 15").assertIsDisplayed()
         composeTestRule.onNodeWithText("Mar 20").assertIsDisplayed()
+    }
+
+    // --- Ban button visibility ---
+
+    @Test
+    fun userScreen_adminViewingNonBannedUser_showsBanButton() {
+        composeTestRule.setContentWithTheme {
+            UserScreenContent(
+                state = UserState(
+                    currentUserIsAdmin = true,
+                    userDetail = UserDetailResponse(
+                        userId = "user-1",
+                        username = "testuser",
+                        isAdmin = false,
+                        isBanned = false,
+                        submissionCount = 5,
+                        ownedBikeCount = 0,
+                        leaderboardRanks = emptyList()
+                    )
+                ),
+                onBack = {},
+                onImageClick = {}
+            )
+        }
+
+        composeTestRule.onNodeWithText("Ban User").assertIsDisplayed()
+        composeTestRule.onNodeWithText("Unban User").assertDoesNotExist()
+    }
+
+    @Test
+    fun userScreen_adminViewingBannedUser_showsUnbanButton() {
+        composeTestRule.setContentWithTheme {
+            UserScreenContent(
+                state = UserState(
+                    currentUserIsAdmin = true,
+                    userDetail = UserDetailResponse(
+                        userId = "user-1",
+                        username = "testuser",
+                        isAdmin = false,
+                        isBanned = true,
+                        submissionCount = 5,
+                        ownedBikeCount = 0,
+                        leaderboardRanks = emptyList()
+                    )
+                ),
+                onBack = {},
+                onImageClick = {}
+            )
+        }
+
+        composeTestRule.onNodeWithText("Unban User").assertIsDisplayed()
+        composeTestRule.onNodeWithText("Ban User").assertDoesNotExist()
+    }
+
+    @Test
+    fun userScreen_nonAdminViewing_noBanButtons() {
+        composeTestRule.setContentWithTheme {
+            UserScreenContent(
+                state = UserState(
+                    currentUserIsAdmin = false,
+                    userDetail = UserDetailResponse(
+                        userId = "user-1",
+                        username = "testuser",
+                        isBanned = false,
+                        submissionCount = 5,
+                        ownedBikeCount = 0,
+                        leaderboardRanks = emptyList()
+                    )
+                ),
+                onBack = {},
+                onImageClick = {}
+            )
+        }
+
+        composeTestRule.onNodeWithText("Ban User").assertDoesNotExist()
+        composeTestRule.onNodeWithText("Unban User").assertDoesNotExist()
+    }
+
+    @Test
+    fun userScreen_adminViewingAdmin_noBanButtons() {
+        composeTestRule.setContentWithTheme {
+            UserScreenContent(
+                state = UserState(
+                    currentUserIsAdmin = true,
+                    userDetail = UserDetailResponse(
+                        userId = "admin-2",
+                        username = "otheradmin",
+                        isAdmin = true,
+                        isBanned = false,
+                        submissionCount = 5,
+                        ownedBikeCount = 0,
+                        leaderboardRanks = emptyList()
+                    )
+                ),
+                onBack = {},
+                onImageClick = {}
+            )
+        }
+
+        composeTestRule.onNodeWithText("Ban User").assertDoesNotExist()
+        composeTestRule.onNodeWithText("Unban User").assertDoesNotExist()
+    }
+
+    // --- Ban confirmation dialog ---
+
+    @Test
+    fun userScreen_banButtonClick_showsConfirmationDialog() {
+        composeTestRule.setContentWithTheme {
+            UserScreenContent(
+                state = UserState(
+                    currentUserIsAdmin = true,
+                    userDetail = UserDetailResponse(
+                        userId = "user-1",
+                        username = "baduser",
+                        isAdmin = false,
+                        isBanned = false,
+                        submissionCount = 0,
+                        ownedBikeCount = 0,
+                        leaderboardRanks = emptyList()
+                    )
+                ),
+                onBack = {},
+                onImageClick = {}
+            )
+        }
+
+        composeTestRule.onNodeWithText("Ban User").performClick()
+
+        composeTestRule.onNodeWithText("Are you sure you want to ban baduser? They will no longer be able to post content or log in.")
+            .assertIsDisplayed()
+        composeTestRule.onNodeWithText("Ban").assertIsDisplayed()
+        composeTestRule.onNodeWithText("Cancel").assertIsDisplayed()
+    }
+
+    @Test
+    fun userScreen_unbanButtonClick_showsConfirmationDialog() {
+        composeTestRule.setContentWithTheme {
+            UserScreenContent(
+                state = UserState(
+                    currentUserIsAdmin = true,
+                    userDetail = UserDetailResponse(
+                        userId = "user-1",
+                        username = "baduser",
+                        isAdmin = false,
+                        isBanned = true,
+                        submissionCount = 0,
+                        ownedBikeCount = 0,
+                        leaderboardRanks = emptyList()
+                    )
+                ),
+                onBack = {},
+                onImageClick = {}
+            )
+        }
+
+        composeTestRule.onNodeWithText("Unban User").performClick()
+
+        composeTestRule.onNodeWithText("Are you sure you want to unban baduser? They will be able to post content and log in again.")
+            .assertIsDisplayed()
+        composeTestRule.onNodeWithText("Unban").assertIsDisplayed()
+        composeTestRule.onNodeWithText("Cancel").assertIsDisplayed()
+    }
+
+    // --- Ban button disabled while banning ---
+
+    @Test
+    fun userScreen_isBanningTrue_banButtonDisabled() {
+        composeTestRule.setContentWithTheme {
+            UserScreenContent(
+                state = UserState(
+                    currentUserIsAdmin = true,
+                    isBanning = true,
+                    userDetail = UserDetailResponse(
+                        userId = "user-1",
+                        username = "testuser",
+                        isAdmin = false,
+                        isBanned = false,
+                        submissionCount = 0,
+                        ownedBikeCount = 0,
+                        leaderboardRanks = emptyList()
+                    )
+                ),
+                onBack = {},
+                onImageClick = {}
+            )
+        }
+
+        composeTestRule.onNodeWithText("Ban User").assertDoesNotExist()
+    }
+
+    @Test
+    fun userScreen_isBanningTrue_unbanButtonDisabled() {
+        composeTestRule.setContentWithTheme {
+            UserScreenContent(
+                state = UserState(
+                    currentUserIsAdmin = true,
+                    isBanning = true,
+                    userDetail = UserDetailResponse(
+                        userId = "user-1",
+                        username = "testuser",
+                        isAdmin = false,
+                        isBanned = true,
+                        submissionCount = 0,
+                        ownedBikeCount = 0,
+                        leaderboardRanks = emptyList()
+                    )
+                ),
+                onBack = {},
+                onImageClick = {}
+            )
+        }
+
+        composeTestRule.onNodeWithText("Unban User").assertDoesNotExist()
     }
 }

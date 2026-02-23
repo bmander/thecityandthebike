@@ -8,6 +8,7 @@ import com.thecityandthebike.data.model.dto.LoginRequest
 import com.thecityandthebike.data.model.dto.RegisterRequest
 import com.thecityandthebike.data.model.dto.TokenResponse
 import com.thecityandthebike.data.model.dto.MessageResponse
+import com.thecityandthebike.data.model.dto.UserResponse
 import com.thecityandthebike.data.repository.AuthRepository
 import io.mockk.*
 import kotlinx.coroutines.test.runTest
@@ -175,5 +176,142 @@ class AuthRepositoryTest {
 
         every { tokenManager.hasToken() } returns false
         assertFalse(repository.isLoggedIn())
+    }
+
+    // --- android_id support ---
+
+    @Test
+    fun `login passes androidId to LoginRequest`() = runTest {
+        val tokenResponse = TokenResponse(accessToken = "tok", refreshToken = "ref", tokenType = "bearer")
+        coEvery { apiService.login(LoginRequest("user", "pass", "device-123")) } returns Response.success(tokenResponse)
+        coEvery { apiService.getCurrentUser() } returns Response.success(
+            UserResponse(userId = "u1", username = "user")
+        )
+
+        val result = repository.login("user", "pass", androidId = "device-123")
+
+        assertTrue(result is ApiResult.Success)
+        coVerify { apiService.login(LoginRequest("user", "pass", "device-123")) }
+    }
+
+    @Test
+    fun `register passes androidId to RegisterRequest`() = runTest {
+        val messageResponse = MessageResponse(msg = "User created")
+        coEvery {
+            apiService.register(RegisterRequest("user", "pass", "device-456"))
+        } returns Response.success(messageResponse)
+
+        val result = repository.register("user", "pass", androidId = "device-456")
+
+        assertTrue(result is ApiResult.Success)
+        coVerify { apiService.register(RegisterRequest("user", "pass", "device-456")) }
+    }
+
+    // --- login fetches isAdmin ---
+
+    @Test
+    fun `login success fetches current user and saves isAdmin true`() = runTest {
+        val tokenResponse = TokenResponse(accessToken = "tok", refreshToken = "ref", tokenType = "bearer")
+        coEvery { apiService.login(LoginRequest("admin", "pass")) } returns Response.success(tokenResponse)
+        coEvery { apiService.getCurrentUser() } returns Response.success(
+            UserResponse(userId = "u1", username = "admin", isAdmin = true)
+        )
+
+        repository.login("admin", "pass")
+
+        verify { tokenManager.saveIsAdmin(true) }
+    }
+
+    @Test
+    fun `login success fetches current user and saves isAdmin false`() = runTest {
+        val tokenResponse = TokenResponse(accessToken = "tok", refreshToken = "ref", tokenType = "bearer")
+        coEvery { apiService.login(LoginRequest("user", "pass")) } returns Response.success(tokenResponse)
+        coEvery { apiService.getCurrentUser() } returns Response.success(
+            UserResponse(userId = "u1", username = "user", isAdmin = false)
+        )
+
+        repository.login("user", "pass")
+
+        verify { tokenManager.saveIsAdmin(false) }
+    }
+
+    @Test
+    fun `login success still succeeds if getCurrentUser fails`() = runTest {
+        val tokenResponse = TokenResponse(accessToken = "tok", refreshToken = "ref", tokenType = "bearer")
+        coEvery { apiService.login(LoginRequest("user", "pass")) } returns Response.success(tokenResponse)
+        coEvery { apiService.getCurrentUser() } throws java.io.IOException("network error")
+
+        val result = repository.login("user", "pass")
+
+        assertTrue(result is ApiResult.Success)
+        verify { tokenManager.saveTokens("tok", "ref") }
+    }
+
+    // --- login 403 banned handling ---
+
+    @Test
+    fun `login 403 with banned message returns auth error`() = runTest {
+        coEvery { apiService.login(LoginRequest("user", "pass")) } returns Response.error(
+            403,
+            """{"detail": {"msg": "This account has been banned"}}""".toResponseBody()
+        )
+
+        val result = repository.login("user", "pass")
+
+        assertTrue(result is ApiResult.Error)
+        val error = (result as ApiResult.Error).error
+        assertTrue(error is AppError.Auth)
+        assertEquals(403, (error as AppError.Auth).code)
+        assertEquals("This account has been banned", error.message)
+    }
+
+    @Test
+    fun `login 403 with device banned message returns auth error`() = runTest {
+        coEvery { apiService.login(LoginRequest("user", "pass", "banned-device")) } returns Response.error(
+            403,
+            """{"detail": {"msg": "This device has been banned"}}""".toResponseBody()
+        )
+
+        val result = repository.login("user", "pass", androidId = "banned-device")
+
+        assertTrue(result is ApiResult.Error)
+        val error = (result as ApiResult.Error).error
+        assertTrue(error is AppError.Auth)
+        assertEquals("This device has been banned", (error as AppError.Auth).message)
+    }
+
+    @Test
+    fun `login 403 with unparseable body falls back to default message`() = runTest {
+        coEvery { apiService.login(LoginRequest("user", "pass")) } returns Response.error(
+            403,
+            "not json".toResponseBody()
+        )
+
+        val result = repository.login("user", "pass")
+
+        assertTrue(result is ApiResult.Error)
+        val error = (result as ApiResult.Error).error
+        assertTrue(error is AppError.Auth)
+        assertEquals("This account or device has been banned", (error as AppError.Auth).message)
+    }
+
+    // --- register 403 banned device ---
+
+    @Test
+    fun `register 403 with banned device returns server error with message`() = runTest {
+        coEvery {
+            apiService.register(RegisterRequest("user", "pass", "banned-device"))
+        } returns Response.error(
+            403,
+            """{"detail": {"msg": "This device has been banned"}}""".toResponseBody()
+        )
+
+        val result = repository.register("user", "pass", androidId = "banned-device")
+
+        assertTrue(result is ApiResult.Error)
+        val error = (result as ApiResult.Error).error
+        assertTrue(error is AppError.Server)
+        assertEquals(403, (error as AppError.Server).code)
+        assertEquals("This device has been banned", error.displayMessage)
     }
 }

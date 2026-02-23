@@ -1,5 +1,7 @@
 package com.thecityandthebike.viewmodel
 
+import android.app.Application
+import android.content.ContentResolver
 import com.thecityandthebike.data.api.ApiService
 import com.thecityandthebike.data.local.TokenManager
 import androidx.lifecycle.SavedStateHandle
@@ -28,6 +30,7 @@ class AuthViewModelTest {
     private lateinit var apiService: ApiService
     private lateinit var tokenManager: TokenManager
     private lateinit var authRepository: AuthRepository
+    private lateinit var application: Application
     private lateinit var viewModel: AuthViewModel
     private val isLoggedInFlow = MutableStateFlow(false)
 
@@ -36,6 +39,7 @@ class AuthViewModelTest {
         Dispatchers.setMain(testDispatcher)
         apiService = mockk(relaxed = true)
         tokenManager = mockk(relaxed = true)
+        application = mockk(relaxed = true)
         every { tokenManager.isLoggedIn } returns isLoggedInFlow
         every { tokenManager.hasToken() } returns false
         authRepository = AuthRepository(apiService, tokenManager)
@@ -48,7 +52,7 @@ class AuthViewModelTest {
 
     @Test
     fun `initial state should not be logged in when no token`() {
-        viewModel = AuthViewModel(authRepository, SavedStateHandle())
+        viewModel = AuthViewModel(authRepository, SavedStateHandle(), application)
         assertFalse(viewModel.state.value.isLoggedIn)
     }
 
@@ -57,7 +61,7 @@ class AuthViewModelTest {
         isLoggedInFlow.value = true
         every { tokenManager.hasToken() } returns true
         authRepository = AuthRepository(apiService, tokenManager)
-        viewModel = AuthViewModel(authRepository, SavedStateHandle())
+        viewModel = AuthViewModel(authRepository, SavedStateHandle(), application)
         assertTrue(viewModel.state.value.isLoggedIn)
     }
 
@@ -67,7 +71,7 @@ class AuthViewModelTest {
             accessToken = "token", refreshToken = "refresh"
         )
         coEvery { apiService.login(any()) } returns retrofit2.Response.success(tokenResponse)
-        viewModel = AuthViewModel(authRepository, SavedStateHandle())
+        viewModel = AuthViewModel(authRepository, SavedStateHandle(), application)
 
         viewModel.login("user", "pass")
         testDispatcher.scheduler.advanceUntilIdle()
@@ -82,7 +86,7 @@ class AuthViewModelTest {
         coEvery { apiService.login(any()) } returns retrofit2.Response.error(
             401, "{}".toResponseBody()
         )
-        viewModel = AuthViewModel(authRepository, SavedStateHandle())
+        viewModel = AuthViewModel(authRepository, SavedStateHandle(), application)
 
         viewModel.login("user", "wrong")
         testDispatcher.scheduler.advanceUntilIdle()
@@ -97,7 +101,7 @@ class AuthViewModelTest {
         coEvery { apiService.register(any()) } returns retrofit2.Response.success(
             com.thecityandthebike.data.model.dto.MessageResponse(msg = "User created")
         )
-        viewModel = AuthViewModel(authRepository, SavedStateHandle())
+        viewModel = AuthViewModel(authRepository, SavedStateHandle(), application)
 
         viewModel.register("user", "pass")
         testDispatcher.scheduler.advanceUntilIdle()
@@ -111,7 +115,7 @@ class AuthViewModelTest {
         coEvery { apiService.register(any()) } returns retrofit2.Response.error(
             409, "{}".toResponseBody()
         )
-        viewModel = AuthViewModel(authRepository, SavedStateHandle())
+        viewModel = AuthViewModel(authRepository, SavedStateHandle(), application)
 
         viewModel.register("user", "pass")
         testDispatcher.scheduler.advanceUntilIdle()
@@ -125,7 +129,7 @@ class AuthViewModelTest {
         isLoggedInFlow.value = true
         every { tokenManager.hasToken() } returns true
         authRepository = AuthRepository(apiService, tokenManager)
-        viewModel = AuthViewModel(authRepository, SavedStateHandle())
+        viewModel = AuthViewModel(authRepository, SavedStateHandle(), application)
 
         viewModel.logout()
         testDispatcher.scheduler.advanceUntilIdle()
@@ -138,7 +142,7 @@ class AuthViewModelTest {
         coEvery { apiService.login(any()) } returns retrofit2.Response.error(
             401, "{}".toResponseBody()
         )
-        viewModel = AuthViewModel(authRepository, SavedStateHandle())
+        viewModel = AuthViewModel(authRepository, SavedStateHandle(), application)
 
         viewModel.login("user", "wrong")
         testDispatcher.scheduler.advanceUntilIdle()
