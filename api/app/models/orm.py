@@ -27,12 +27,26 @@ class User(Base):
     email = Column(String(255), unique=True, nullable=True)
     password_hash = Column(String(255), nullable=False)
     is_admin = Column(Boolean, default=False, nullable=False, server_default="0")
+    is_banned = Column(Boolean, default=False, nullable=False, server_default="0")
+    android_id = Column(String(64), nullable=True, index=True)
     created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
     updated_at = Column(
         DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc)
     )
 
     submissions = relationship("FenderSubmission", back_populates="user")
+
+
+class DeviceBan(Base):
+    __tablename__ = "device_bans"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    android_id = Column(String(64), unique=True, nullable=False, index=True)
+    banned_by = Column(Uuid, ForeignKey("users.user_id"), nullable=False)
+    reason = Column(Text, nullable=True)
+    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
+
+    admin = relationship("User", foreign_keys=[banned_by])
 
 
 class RefreshToken(Base):

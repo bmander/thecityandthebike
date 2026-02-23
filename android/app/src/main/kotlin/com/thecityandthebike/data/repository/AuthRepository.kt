@@ -23,17 +23,34 @@ class AuthRepository @Inject constructor(
 ) {
     val isLoggedIn: StateFlow<Boolean> get() = tokenManager.isLoggedIn
 
-    suspend fun login(username: String, password: String): ApiResult<Unit> {
+    suspend fun login(username: String, password: String, androidId: String? = null): ApiResult<Unit> {
         return try {
-            val response = apiService.login(LoginRequest(username, password))
+            val response = apiService.login(LoginRequest(username, password, androidId))
             if (response.isSuccessful) {
                 response.body()?.let { tokenResponse ->
                     tokenManager.saveTokens(tokenResponse.accessToken, tokenResponse.refreshToken)
+                    // Fetch user info to store isAdmin
+                    try {
+                        val userResponse = apiService.getCurrentUser()
+                        userResponse.body()?.let { user ->
+                            tokenManager.saveIsAdmin(user.isAdmin)
+                        }
+                    } catch (_: Exception) {
+                        // Non-critical, continue
+                    }
                     ApiResult.Success(Unit)
                 } ?: ApiResult.Error(AppError.Server(response.code(), "Empty response"))
             } else if (response.code() == 429) {
                 val retryAfter = response.headers()["Retry-After"]?.toIntOrNull()
                 ApiResult.Error(AppError.RateLimit(retryAfter))
+            } else if (response.code() == 403) {
+                val errorMessage = try {
+                    val body = response.errorBody()?.string()
+                    body?.let { Json.decodeFromString<ErrorResponse>(it).detail?.msg }
+                } catch (_: Exception) {
+                    null
+                } ?: "This account or device has been banned"
+                ApiResult.Error(AppError.Auth(response.code(), errorMessage))
             } else {
                 ApiResult.Error(AppError.Auth(response.code(), "Invalid credentials"))
             }
@@ -44,9 +61,9 @@ class AuthRepository @Inject constructor(
         }
     }
 
-    suspend fun register(username: String, password: String): ApiResult<Unit> {
+    suspend fun register(username: String, password: String, androidId: String? = null): ApiResult<Unit> {
         return try {
-            val response = apiService.register(RegisterRequest(username, password))
+            val response = apiService.register(RegisterRequest(username, password, androidId))
             if (response.isSuccessful) {
                 ApiResult.Success(Unit)
             } else if (response.code() == 429) {

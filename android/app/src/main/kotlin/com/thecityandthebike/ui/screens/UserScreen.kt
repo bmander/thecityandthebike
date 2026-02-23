@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
@@ -11,6 +12,9 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -18,13 +22,16 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
@@ -50,7 +57,9 @@ fun UserScreen(
         state = state,
         onBack = onBack,
         onImageClick = onImageClick,
-        onLoadMore = { viewModel.loadMoreSubmissions() }
+        onLoadMore = { viewModel.loadMoreSubmissions() },
+        onBan = { viewModel.banUser() },
+        onUnban = { viewModel.unbanUser() }
     )
 }
 
@@ -60,9 +69,13 @@ internal fun UserScreenContent(
     state: UserState,
     onBack: () -> Unit,
     onImageClick: (String) -> Unit,
-    onLoadMore: () -> Unit = {}
+    onLoadMore: () -> Unit = {},
+    onBan: () -> Unit = {},
+    onUnban: () -> Unit = {}
 ) {
     val title = state.userDetail?.username ?: "User"
+    var showBanDialog by remember { mutableStateOf(false) }
+    var showUnbanDialog by remember { mutableStateOf(false) }
 
     Scaffold(
         topBar = {
@@ -170,6 +183,46 @@ internal fun UserScreenContent(
                                         color = MaterialTheme.colorScheme.onSurfaceVariant
                                     )
                                 }
+                                if (state.currentUserIsAdmin && !detail.isAdmin) {
+                                    Spacer(modifier = Modifier.height(12.dp))
+                                    if (detail.isBanned) {
+                                        Button(
+                                            onClick = { showUnbanDialog = true },
+                                            enabled = !state.isBanning,
+                                            modifier = Modifier.fillMaxWidth(),
+                                            colors = ButtonDefaults.buttonColors(
+                                                containerColor = MaterialTheme.colorScheme.primary
+                                            )
+                                        ) {
+                                            if (state.isBanning) {
+                                                CircularProgressIndicator(
+                                                    modifier = Modifier.height(16.dp),
+                                                    strokeWidth = 2.dp
+                                                )
+                                            } else {
+                                                Text("Unban User")
+                                            }
+                                        }
+                                    } else {
+                                        Button(
+                                            onClick = { showBanDialog = true },
+                                            enabled = !state.isBanning,
+                                            modifier = Modifier.fillMaxWidth(),
+                                            colors = ButtonDefaults.buttonColors(
+                                                containerColor = MaterialTheme.colorScheme.error
+                                            )
+                                        ) {
+                                            if (state.isBanning) {
+                                                CircularProgressIndicator(
+                                                    modifier = Modifier.height(16.dp),
+                                                    strokeWidth = 2.dp
+                                                )
+                                            } else {
+                                                Text("Ban User")
+                                            }
+                                        }
+                                    }
+                                }
                             }
                         }
                     }
@@ -189,6 +242,52 @@ internal fun UserScreenContent(
                     }
                 }
             }
+        }
+
+        if (showBanDialog) {
+            AlertDialog(
+                onDismissRequest = { showBanDialog = false },
+                title = { Text("Ban User") },
+                text = { Text("Are you sure you want to ban ${state.userDetail?.username}? They will no longer be able to post content or log in.") },
+                confirmButton = {
+                    TextButton(
+                        onClick = {
+                            showBanDialog = false
+                            onBan()
+                        }
+                    ) {
+                        Text("Ban", color = MaterialTheme.colorScheme.error)
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = { showBanDialog = false }) {
+                        Text("Cancel")
+                    }
+                }
+            )
+        }
+
+        if (showUnbanDialog) {
+            AlertDialog(
+                onDismissRequest = { showUnbanDialog = false },
+                title = { Text("Unban User") },
+                text = { Text("Are you sure you want to unban ${state.userDetail?.username}? They will be able to post content and log in again.") },
+                confirmButton = {
+                    TextButton(
+                        onClick = {
+                            showUnbanDialog = false
+                            onUnban()
+                        }
+                    ) {
+                        Text("Unban")
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = { showUnbanDialog = false }) {
+                        Text("Cancel")
+                    }
+                }
+            )
         }
     }
 }

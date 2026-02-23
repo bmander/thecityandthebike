@@ -8,9 +8,9 @@ from sqlalchemy.orm import Session, joinedload
 from ..cursor import decode_cursor, encode_cursor
 from ..database import get_db
 from ..dependencies import get_current_user
-from ..models import User, Bike, FenderSubmission
+from ..models import User, Bike, FenderSubmission, DeviceBan
 from ..models.orm import ScoringEvent
-from ..schemas import CursorPaginatedResponse, MessageResponse, PaginatedResponse, UserDetailResponse, UserResponse, SubmissionResponse
+from ..schemas import BanRequest, BanResponse, CursorPaginatedResponse, MessageResponse, PaginatedResponse, UserDetailResponse, UserResponse, SubmissionResponse
 from ..schemas.leaderboard import LeaderboardPeriod
 from ..schemas.user import LeaderboardRank
 from ..services.account import delete_user_account
@@ -147,6 +147,8 @@ def get_user_detail(
     return UserDetailResponse(
         user_id=user.user_id,
         username=user.username,
+        is_admin=user.is_admin,
+        is_banned=user.is_banned,
         submission_count=stats[0],
         first_seen_at=stats[1],
         last_seen_at=stats[2],
@@ -197,3 +199,73 @@ def get_user_submissions(
     items = submissions[:limit]
     next_cursor = encode_cursor(items[-1].uploaded_at, items[-1].submission_id) if has_more else None
     return CursorPaginatedResponse(items=items, next_cursor=next_cursor, has_more=has_more)
+
+
+@router.post("/{user_id}/ban", response_model=BanResponse)
+def ban_user(
+    user_id: UUID,
+    data: BanRequest,
+    current_user: Annotated[User, Depends(get_current_user)],
+    db: Annotated[Session, Depends(get_db)],
+):
+    if not current_user.is_admin:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail={"msg": "Admin privileges required"},
+        )
+
+    user = db.query(User).filter(User.user_id == user_id).first()
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail={"msg": "User not found"},
+        )
+
+    user.is_banned = True
+    device_banned = False
+
+    if user.android_id:
+        existing_ban = db.query(DeviceBan).filter(DeviceBan.android_id == user.android_id).first()
+        if not existing_ban:
+            device_ban = DeviceBan(
+                android_id=user.android_id,
+                banned_by=current_user.user_id,
+                reason=data.reason,
+            )
+            db.add(device_ban)
+        device_banned = True
+
+    db.commit()
+    return BanResponse(msg="User banned", is_banned=True, device_banned=device_banned)
+
+
+@router.delete("/{user_id}/ban", response_model=BanResponse)
+def unban_user(
+    user_id: UUID,
+    current_user: Annotated[User, Depends(get_current_user)],
+    db: Annotated[Session, Depends(get_db)],
+):
+    if not current_user.is_admin:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail={"msg": "Admin privileges required"},
+        )
+
+    user = db.query(User).filter(User.user_id == user_id).first()
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail={"msg": "User not found"},
+        )
+
+    user.is_banned = False
+    device_banned = False
+
+    if user.android_id:
+        device_ban = db.query(DeviceBan).filter(DeviceBan.android_id == user.android_id).first()
+        if device_ban:
+            db.delete(device_ban)
+            device_banned = True
+
+    db.commit()
+    return BanResponse(msg="User unbanned", is_banned=False, device_banned=device_banned)

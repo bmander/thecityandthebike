@@ -3,6 +3,7 @@ package com.thecityandthebike.data.repository
 import com.thecityandthebike.data.api.ApiService
 import com.thecityandthebike.data.model.ApiResult
 import com.thecityandthebike.data.model.AppError
+import com.thecityandthebike.data.model.dto.BanResponse
 import com.thecityandthebike.data.model.dto.CursorPaginatedSubmissions
 import com.thecityandthebike.data.model.dto.UserDetailResponse
 import java.io.IOException
@@ -45,6 +46,38 @@ class UserRepository @Inject constructor(
                 )
             } else {
                 ApiResult.Error(AppError.Server(response.code(), "Failed to fetch user submissions"))
+            }
+        } catch (e: IOException) {
+            ApiResult.Error(AppError.Network(e))
+        } catch (e: Exception) {
+            ApiResult.Error(AppError.Unknown(e))
+        }
+    }
+
+    suspend fun banUser(userId: String): ApiResult<BanResponse> {
+        return try {
+            val response = apiService.banUser(userId)
+            if (response.isSuccessful) {
+                response.body()?.let { ApiResult.Success(it) }
+                    ?: ApiResult.Error(AppError.Server(response.code(), "Empty response"))
+            } else {
+                ApiResult.Error(AppError.Server(response.code(), "Failed to ban user"))
+            }
+        } catch (e: IOException) {
+            ApiResult.Error(AppError.Network(e))
+        } catch (e: Exception) {
+            ApiResult.Error(AppError.Unknown(e))
+        }
+    }
+
+    suspend fun unbanUser(userId: String): ApiResult<BanResponse> {
+        return try {
+            val response = apiService.unbanUser(userId)
+            if (response.isSuccessful) {
+                response.body()?.let { ApiResult.Success(it) }
+                    ?: ApiResult.Error(AppError.Server(response.code(), "Empty response"))
+            } else {
+                ApiResult.Error(AppError.Server(response.code(), "Failed to unban user"))
             }
         } catch (e: IOException) {
             ApiResult.Error(AppError.Network(e))

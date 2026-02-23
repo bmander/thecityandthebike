@@ -5,6 +5,7 @@ from .bike import BikeDetailResponse, BikeListItem, BikeResponse, Owner, UserSum
 from .leaderboard import LeaderboardEntry, LeaderboardPeriod, LeaderboardResponse
 from .tag import TagDetailResponse, TagResponse
 from .flag import FlagStatusResponse
+from .ban import BanRequest, BanResponse
 
 __all__ = [
     "UserRegister",
@@ -29,4 +30,6 @@ __all__ = [
     "TagDetailResponse",
     "TagResponse",
     "FlagStatusResponse",
+    "BanRequest",
+    "BanResponse",
 ]

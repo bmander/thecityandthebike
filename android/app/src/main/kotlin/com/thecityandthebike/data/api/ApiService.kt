@@ -121,6 +121,16 @@ interface ApiService {
         @Query("cursor") cursor: String? = null
     ): Response<CursorPaginatedSubmissions>
 
+    // Ban endpoints
+    @POST("users/{userId}/ban")
+    suspend fun banUser(
+        @Path("userId") userId: String,
+        @Body request: Map<String, String?> = emptyMap()
+    ): Response<BanResponse>
+
+    @DELETE("users/{userId}/ban")
+    suspend fun unbanUser(@Path("userId") userId: String): Response<BanResponse>
+
     // Flag endpoints
     @POST("submissions/{submissionId}/flags")
     suspend fun createFlag(@Path("submissionId") submissionId: String): Response<FlagStatusResponse>

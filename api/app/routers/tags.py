@@ -161,6 +161,12 @@ async def create_tag(
     ring_width: int | None = Form(None),
     ring_height: int | None = Form(None),
 ):
+    if current_user.is_banned:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail={"msg": "This account has been banned"},
+        )
+
     # Verify submission exists
     submission = (
         db.query(FenderSubmission)

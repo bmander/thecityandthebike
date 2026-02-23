@@ -108,6 +108,12 @@ async def create_submission(
     user_caption: Optional[str] = Form(None),
     side: Optional[str] = Form(None),
 ):
+    if current_user.is_banned:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail={"msg": "This account has been banned"},
+        )
+
     parsed = parse_bike_url(bike_qr_id)
     if parsed.provider not in WHITELISTED_PROVIDERS:
         raise HTTPException(status_code=422, detail="Unrecognized bike provider")

@@ -24,7 +24,7 @@ from slowapi.errors import RateLimitExceeded
 from app.admin import setup_admin
 from app.database import Base, get_db
 from app.dependencies import get_password_hash, create_access_token
-from app.models import User, Bike, FenderSubmission, Tag, Flag
+from app.models import User, Bike, FenderSubmission, Tag, Flag, DeviceBan
 from app.main import RequestIDMiddleware, SecurityHeadersMiddleware, validation_exception_handler
 from app.rate_limit import AccountLockout, get_account_lockout, limiter, rate_limit_exceeded_handler
 from app.routers import auth_router, users_router, submissions_router, bikes_router, uploads_router, leaderboard_router, tags_router, flags_router
@@ -232,6 +232,53 @@ def test_admin_user(db_session):
     })()
     db_session.expunge(user)
     return user_data
+
+
+@pytest.fixture
+def test_banned_user(db_session):
+    """Create and return a banned user with an android_id."""
+    user = User(
+        username="banneduser",
+        password_hash=get_password_hash("bannedpassword123"),
+        is_banned=True,
+        android_id="banned-device-123",
+    )
+    db_session.add(user)
+    db_session.commit()
+    db_session.refresh(user)
+    user_data = type("UserData", (), {
+        "user_id": user.user_id,
+        "username": user.username,
+        "password_hash": user.password_hash,
+        "is_banned": user.is_banned,
+        "android_id": user.android_id,
+    })()
+    db_session.expunge(user)
+    return user_data
+
+
+@pytest.fixture
+def banned_auth_token(test_banned_user):
+    """Create a valid JWT token for the banned test user."""
+    return create_access_token(subject=str(test_banned_user.user_id))
+
+
+@pytest.fixture
+def banned_auth_headers(banned_auth_token):
+    """Return authorization headers for the banned user."""
+    return {"Authorization": f"Bearer {banned_auth_token}"}
+
+
+@pytest.fixture
+def admin_auth_token(test_admin_user):
+    """Create a valid JWT token for the admin user."""
+    return create_access_token(subject=str(test_admin_user.user_id))
+
+
+@pytest.fixture
+def admin_auth_headers(admin_auth_token):
+    """Return authorization headers for the admin user."""
+    return {"Authorization": f"Bearer {admin_auth_token}"}
 
 
 @pytest.fixture

@@ -10,6 +10,8 @@ class UserResponse(BaseModel):
 
     user_id: UUID
     username: str
+    is_admin: bool = False
+    is_banned: bool = False
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
 
@@ -24,6 +26,8 @@ class UserDetailResponse(BaseModel):
 
     user_id: UUID
     username: str
+    is_admin: bool = False
+    is_banned: bool = False
     submission_count: int
     first_seen_at: Optional[datetime] = None
     last_seen_at: Optional[datetime] = None

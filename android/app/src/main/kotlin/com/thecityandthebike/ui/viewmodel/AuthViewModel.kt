@@ -1,5 +1,7 @@
 package com.thecityandthebike.ui.viewmodel
 
+import android.app.Application
+import android.provider.Settings
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -22,8 +24,15 @@ data class AuthState(
 @HiltViewModel
 class AuthViewModel @Inject constructor(
     private val authRepository: AuthRepository,
-    private val savedStateHandle: SavedStateHandle
+    private val savedStateHandle: SavedStateHandle,
+    application: Application
 ) : ViewModel() {
+
+    private val androidId: String? = try {
+        Settings.Secure.getString(application.contentResolver, Settings.Secure.ANDROID_ID)
+    } catch (_: Exception) {
+        null
+    }
 
     private val _state = MutableStateFlow(
         AuthState(
@@ -49,7 +58,7 @@ class AuthViewModel @Inject constructor(
     fun login(username: String, password: String) {
         viewModelScope.launch {
             _state.value = _state.value.copy(isLoading = true, error = null)
-            when (val result = authRepository.login(username, password)) {
+            when (val result = authRepository.login(username, password, androidId)) {
                 is ApiResult.Success -> {
                     _state.value = _state.value.copy(isLoading = false, isLoggedIn = true)
                 }
@@ -64,7 +73,7 @@ class AuthViewModel @Inject constructor(
         viewModelScope.launch {
             _state.value = _state.value.copy(isLoading = true, error = null, registrationSuccess = false)
             savedStateHandle[REGISTRATION_SUCCESS_KEY] = false
-            when (val result = authRepository.register(username, password)) {
+            when (val result = authRepository.register(username, password, androidId)) {
                 is ApiResult.Success -> {
                     _state.value = _state.value.copy(isLoading = false, registrationSuccess = true)
                     savedStateHandle[REGISTRATION_SUCCESS_KEY] = true
