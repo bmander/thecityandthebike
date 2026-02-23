@@ -3,6 +3,7 @@ package com.thecityandthebike.ui.viewmodel
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.thecityandthebike.data.local.TokenManager
 import com.thecityandthebike.data.model.ApiResult
 import com.thecityandthebike.data.model.dto.SubmissionResponse
 import com.thecityandthebike.data.model.dto.UserDetailResponse
@@ -21,18 +22,21 @@ data class UserState(
     val error: String? = null,
     val isLoadingMore: Boolean = false,
     val hasMorePages: Boolean = true,
-    val nextCursor: String? = null
+    val nextCursor: String? = null,
+    val isBanning: Boolean = false,
+    val currentUserIsAdmin: Boolean = false
 )
 
 @HiltViewModel
 class UserViewModel @Inject constructor(
     private val userRepository: UserRepository,
+    private val tokenManager: TokenManager,
     savedStateHandle: SavedStateHandle
 ) : ViewModel() {
 
     val userId: String = checkNotNull(savedStateHandle["userId"])
 
-    private val _state = MutableStateFlow(UserState())
+    private val _state = MutableStateFlow(UserState(currentUserIsAdmin = tokenManager.getIsAdmin()))
     val state: StateFlow<UserState> = _state.asStateFlow()
 
     init {
@@ -106,6 +110,32 @@ class UserViewModel @Inject constructor(
         _state.value = _state.value.copy(
             submissions = _state.value.submissions.filter { it.submissionId != submissionId }
         )
+    }
+
+    fun banUser() = toggleBan(ban = true)
+
+    fun unbanUser() = toggleBan(ban = false)
+
+    private fun toggleBan(ban: Boolean) {
+        viewModelScope.launch {
+            _state.value = _state.value.copy(isBanning = true)
+            val result = if (ban) userRepository.banUser(userId) else userRepository.unbanUser(userId)
+            when (result) {
+                is ApiResult.Success -> {
+                    val detail = _state.value.userDetail
+                    _state.value = _state.value.copy(
+                        isBanning = false,
+                        userDetail = detail?.copy(isBanned = ban)
+                    )
+                }
+                is ApiResult.Error -> {
+                    _state.value = _state.value.copy(
+                        isBanning = false,
+                        error = result.error.displayMessage
+                    )
+                }
+            }
+        }
     }
 
     fun clearError() {

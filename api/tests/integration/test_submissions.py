@@ -349,6 +349,24 @@ class TestDeleteSubmission:
         )
         assert response.status_code == 403
 
+    def test_admin_can_delete_other_users_submission(
+        self, client, test_submission, test_admin_user, db_session
+    ):
+        """Admin should be able to delete any user's submission."""
+        admin_token = create_access_token(subject=str(test_admin_user.user_id))
+        admin_headers = {"Authorization": f"Bearer {admin_token}"}
+
+        response = client.delete(
+            f"/submissions/{test_submission.submission_id}",
+            headers=admin_headers,
+        )
+        assert response.status_code == 200
+        assert response.json()["msg"] == "Submission deleted"
+
+        # Verify submission is gone
+        get_response = client.get(f"/submissions/{test_submission.submission_id}")
+        assert get_response.status_code == 404
+
     def test_delete_nonexistent_submission(self, client, auth_headers):
         """Deleting a non-existent submission should return 404."""
         response = client.delete(

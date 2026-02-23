@@ -1,14 +1,17 @@
 package com.thecityandthebike.viewmodel
 
 import androidx.lifecycle.SavedStateHandle
+import com.thecityandthebike.data.local.TokenManager
 import com.thecityandthebike.data.model.ApiResult
 import com.thecityandthebike.data.model.AppError
+import com.thecityandthebike.data.model.dto.BanResponse
 import com.thecityandthebike.data.model.dto.CursorPaginatedSubmissions
 import com.thecityandthebike.data.model.dto.SubmissionResponse
 import com.thecityandthebike.data.model.dto.UserDetailResponse
 import com.thecityandthebike.data.repository.UserRepository
 import com.thecityandthebike.ui.viewmodel.UserViewModel
 import io.mockk.coEvery
+import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -26,6 +29,7 @@ class UserViewModelTest {
 
     private val testDispatcher = StandardTestDispatcher()
     private lateinit var userRepository: UserRepository
+    private lateinit var tokenManager: TokenManager
     private lateinit var savedStateHandle: SavedStateHandle
 
     private val testUserId = "550e8400-e29b-41d4-a716-446655440000"
@@ -44,6 +48,8 @@ class UserViewModelTest {
     fun setup() {
         Dispatchers.setMain(testDispatcher)
         userRepository = mockk()
+        tokenManager = mockk(relaxed = true)
+        every { tokenManager.getIsAdmin() } returns false
         savedStateHandle = SavedStateHandle(mapOf("userId" to testUserId))
     }
 
@@ -53,7 +59,7 @@ class UserViewModelTest {
     }
 
     private fun createViewModel(): UserViewModel {
-        return UserViewModel(userRepository, savedStateHandle)
+        return UserViewModel(userRepository, tokenManager, savedStateHandle)
     }
 
     @Test
@@ -251,5 +257,146 @@ class UserViewModelTest {
 
         assertEquals(1, viewModel.state.value.submissions.size)
         assertEquals("1", viewModel.state.value.submissions[0].submissionId)
+    }
+
+    // --- currentUserIsAdmin ---
+
+    @Test
+    fun `currentUserIsAdmin should be true when TokenManager returns true`() = runTest {
+        every { tokenManager.getIsAdmin() } returns true
+
+        coEvery { userRepository.getUserDetail(testUserId) } returns ApiResult.Success(testUserDetail)
+        coEvery { userRepository.getUserSubmissions(testUserId, any(), any()) } returns
+            ApiResult.Success(CursorPaginatedSubmissions(items = emptyList(), nextCursor = null, hasMore = false))
+
+        val viewModel = createViewModel()
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        assertTrue(viewModel.state.value.currentUserIsAdmin)
+    }
+
+    @Test
+    fun `currentUserIsAdmin should be false when TokenManager returns false`() = runTest {
+        every { tokenManager.getIsAdmin() } returns false
+
+        coEvery { userRepository.getUserDetail(testUserId) } returns ApiResult.Success(testUserDetail)
+        coEvery { userRepository.getUserSubmissions(testUserId, any(), any()) } returns
+            ApiResult.Success(CursorPaginatedSubmissions(items = emptyList(), nextCursor = null, hasMore = false))
+
+        val viewModel = createViewModel()
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        assertFalse(viewModel.state.value.currentUserIsAdmin)
+    }
+
+    // --- banUser ---
+
+    @Test
+    fun `banUser success should update isBanned to true`() = runTest {
+        val detail = testUserDetail.copy(isBanned = false)
+        val banResponse = BanResponse(msg = "User banned", isBanned = true)
+
+        coEvery { userRepository.getUserDetail(testUserId) } returns ApiResult.Success(detail)
+        coEvery { userRepository.getUserSubmissions(testUserId, any(), any()) } returns
+            ApiResult.Success(CursorPaginatedSubmissions(items = emptyList(), nextCursor = null, hasMore = false))
+        coEvery { userRepository.banUser(testUserId) } returns ApiResult.Success(banResponse)
+
+        val viewModel = createViewModel()
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        assertFalse(viewModel.state.value.userDetail!!.isBanned)
+
+        viewModel.banUser()
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        val state = viewModel.state.value
+        assertFalse(state.isBanning)
+        assertTrue(state.userDetail!!.isBanned)
+        assertNull(state.error)
+    }
+
+    @Test
+    fun `banUser failure should set error and clear isBanning`() = runTest {
+        coEvery { userRepository.getUserDetail(testUserId) } returns ApiResult.Success(testUserDetail)
+        coEvery { userRepository.getUserSubmissions(testUserId, any(), any()) } returns
+            ApiResult.Success(CursorPaginatedSubmissions(items = emptyList(), nextCursor = null, hasMore = false))
+        coEvery { userRepository.banUser(testUserId) } returns
+            ApiResult.Error(AppError.Server(500, "Internal server error"))
+
+        val viewModel = createViewModel()
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        viewModel.banUser()
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        val state = viewModel.state.value
+        assertFalse(state.isBanning)
+        assertEquals("Internal server error", state.error)
+    }
+
+    @Test
+    fun `banUser network error should set error`() = runTest {
+        coEvery { userRepository.getUserDetail(testUserId) } returns ApiResult.Success(testUserDetail)
+        coEvery { userRepository.getUserSubmissions(testUserId, any(), any()) } returns
+            ApiResult.Success(CursorPaginatedSubmissions(items = emptyList(), nextCursor = null, hasMore = false))
+        coEvery { userRepository.banUser(testUserId) } returns
+            ApiResult.Error(AppError.Network(java.io.IOException("timeout")))
+
+        val viewModel = createViewModel()
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        viewModel.banUser()
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        val state = viewModel.state.value
+        assertFalse(state.isBanning)
+        assertEquals("Network error. Check your connection and try again.", state.error)
+    }
+
+    // --- unbanUser ---
+
+    @Test
+    fun `unbanUser success should update isBanned to false`() = runTest {
+        val detail = testUserDetail.copy(isBanned = true)
+        val unbanResponse = BanResponse(msg = "User unbanned", isBanned = false)
+
+        coEvery { userRepository.getUserDetail(testUserId) } returns ApiResult.Success(detail)
+        coEvery { userRepository.getUserSubmissions(testUserId, any(), any()) } returns
+            ApiResult.Success(CursorPaginatedSubmissions(items = emptyList(), nextCursor = null, hasMore = false))
+        coEvery { userRepository.unbanUser(testUserId) } returns ApiResult.Success(unbanResponse)
+
+        val viewModel = createViewModel()
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        assertTrue(viewModel.state.value.userDetail!!.isBanned)
+
+        viewModel.unbanUser()
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        val state = viewModel.state.value
+        assertFalse(state.isBanning)
+        assertFalse(state.userDetail!!.isBanned)
+        assertNull(state.error)
+    }
+
+    @Test
+    fun `unbanUser failure should set error and clear isBanning`() = runTest {
+        val detail = testUserDetail.copy(isBanned = true)
+
+        coEvery { userRepository.getUserDetail(testUserId) } returns ApiResult.Success(detail)
+        coEvery { userRepository.getUserSubmissions(testUserId, any(), any()) } returns
+            ApiResult.Success(CursorPaginatedSubmissions(items = emptyList(), nextCursor = null, hasMore = false))
+        coEvery { userRepository.unbanUser(testUserId) } returns
+            ApiResult.Error(AppError.Server(404, "User not found"))
+
+        val viewModel = createViewModel()
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        viewModel.unbanUser()
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        val state = viewModel.state.value
+        assertFalse(state.isBanning)
+        assertEquals("User not found", state.error)
     }
 }

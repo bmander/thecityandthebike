@@ -3,6 +3,7 @@ package com.thecityandthebike.repository
 import com.thecityandthebike.data.api.ApiService
 import com.thecityandthebike.data.model.ApiResult
 import com.thecityandthebike.data.model.AppError
+import com.thecityandthebike.data.model.dto.BanResponse
 import com.thecityandthebike.data.model.dto.CursorPaginatedSubmissions
 import com.thecityandthebike.data.model.dto.SubmissionResponse
 import com.thecityandthebike.data.model.dto.UserDetailResponse
@@ -151,6 +152,108 @@ class UserRepositoryTest {
                 IOException("timeout")
 
         val result = repository.getUserSubmissions("u1")
+
+        assertTrue(result is ApiResult.Error)
+        assertTrue((result as ApiResult.Error).error is AppError.Network)
+    }
+
+    // --- banUser ---
+
+    @Test
+    fun `banUser success returns BanResponse`() = runTest {
+        val banResponse = BanResponse(msg = "User banned", isBanned = true, deviceBanned = true)
+        coEvery { apiService.banUser("u1") } returns Response.success(banResponse)
+
+        val result = repository.banUser("u1")
+
+        assertTrue(result is ApiResult.Success)
+        val data = (result as ApiResult.Success).data
+        assertEquals("User banned", data.msg)
+        assertTrue(data.isBanned)
+        assertTrue(data.deviceBanned)
+    }
+
+    @Test
+    fun `banUser empty body returns Server error`() = runTest {
+        coEvery { apiService.banUser("u1") } returns Response.success(null)
+
+        val result = repository.banUser("u1")
+
+        assertTrue(result is ApiResult.Error)
+        val error = (result as ApiResult.Error).error
+        assertTrue(error is AppError.Server)
+        assertEquals("Empty response", (error as AppError.Server).message)
+    }
+
+    @Test
+    fun `banUser HTTP 403 returns Auth error`() = runTest {
+        coEvery { apiService.banUser("u1") } returns
+                Response.error(403, "forbidden".toResponseBody())
+
+        val result = repository.banUser("u1")
+
+        assertTrue(result is ApiResult.Error)
+        val error = (result as ApiResult.Error).error
+        assertTrue(error is AppError.Auth)
+        assertEquals(403, (error as AppError.Auth).code)
+    }
+
+    @Test
+    fun `banUser IOException returns Network error`() = runTest {
+        coEvery { apiService.banUser("u1") } throws IOException("connection reset")
+
+        val result = repository.banUser("u1")
+
+        assertTrue(result is ApiResult.Error)
+        assertTrue((result as ApiResult.Error).error is AppError.Network)
+    }
+
+    // --- unbanUser ---
+
+    @Test
+    fun `unbanUser success returns BanResponse`() = runTest {
+        val banResponse = BanResponse(msg = "User unbanned", isBanned = false, deviceBanned = true)
+        coEvery { apiService.unbanUser("u1") } returns Response.success(banResponse)
+
+        val result = repository.unbanUser("u1")
+
+        assertTrue(result is ApiResult.Success)
+        val data = (result as ApiResult.Success).data
+        assertEquals("User unbanned", data.msg)
+        assertFalse(data.isBanned)
+        assertTrue(data.deviceBanned)
+    }
+
+    @Test
+    fun `unbanUser empty body returns Server error`() = runTest {
+        coEvery { apiService.unbanUser("u1") } returns Response.success(null)
+
+        val result = repository.unbanUser("u1")
+
+        assertTrue(result is ApiResult.Error)
+        val error = (result as ApiResult.Error).error
+        assertTrue(error is AppError.Server)
+        assertEquals("Empty response", (error as AppError.Server).message)
+    }
+
+    @Test
+    fun `unbanUser HTTP error returns Server error`() = runTest {
+        coEvery { apiService.unbanUser("u1") } returns
+                Response.error(404, "not found".toResponseBody())
+
+        val result = repository.unbanUser("u1")
+
+        assertTrue(result is ApiResult.Error)
+        val error = (result as ApiResult.Error).error
+        assertTrue(error is AppError.Server)
+        assertEquals(404, (error as AppError.Server).code)
+    }
+
+    @Test
+    fun `unbanUser IOException returns Network error`() = runTest {
+        coEvery { apiService.unbanUser("u1") } throws IOException("timeout")
+
+        val result = repository.unbanUser("u1")
 
         assertTrue(result is ApiResult.Error)
         assertTrue((result as ApiResult.Error).error is AppError.Network)

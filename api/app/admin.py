@@ -6,7 +6,7 @@ from sqlalchemy.orm import sessionmaker
 from starlette.requests import Request
 
 from .dependencies import verify_password
-from .models import User, Bike, FenderSubmission, RefreshToken, LoginAttempt, Tag, ScoringEvent
+from .models import User, Bike, FenderSubmission, RefreshToken, LoginAttempt, Tag, ScoringEvent, DeviceBan
 
 
 class AdminAuth(AuthenticationBackend):
@@ -55,10 +55,16 @@ class AdminAuth(AuthenticationBackend):
 
 
 class UserAdmin(ModelView, model=User):
-    column_list = [User.user_id, User.username, User.email, User.is_admin, User.created_at]
+    column_list = [User.user_id, User.username, User.email, User.is_admin, User.is_banned, User.android_id, User.created_at]
     column_searchable_list = [User.username, User.email]
     column_sortable_list = [User.username, User.email, User.created_at]
     form_excluded_columns = [User.password_hash, User.submissions]
+
+
+class DeviceBanAdmin(ModelView, model=DeviceBan):
+    column_list = [DeviceBan.id, DeviceBan.android_id, DeviceBan.banned_by, DeviceBan.reason, DeviceBan.created_at]
+    column_searchable_list = [DeviceBan.android_id]
+    column_sortable_list = [DeviceBan.created_at]
 
 
 class BikeAdmin(ModelView, model=Bike):
@@ -116,6 +122,7 @@ def setup_admin(app, engine, secret_key):
     auth_backend = AdminAuth(secret_key=secret_key, session_factory=session_factory)
     admin = Admin(app=app, engine=engine, authentication_backend=auth_backend)
     admin.add_view(UserAdmin)
+    admin.add_view(DeviceBanAdmin)
     admin.add_view(BikeAdmin)
     admin.add_view(FenderSubmissionAdmin)
     admin.add_view(RefreshTokenAdmin)

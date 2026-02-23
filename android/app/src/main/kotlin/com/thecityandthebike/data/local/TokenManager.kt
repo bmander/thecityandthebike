@@ -61,10 +61,19 @@ class TokenManager @Inject constructor(
         return sharedPreferences.getString(KEY_REFRESH_TOKEN, null)
     }
 
+    fun saveIsAdmin(isAdmin: Boolean) {
+        sharedPreferences.edit { putBoolean(KEY_IS_ADMIN, isAdmin) }
+    }
+
+    fun getIsAdmin(): Boolean {
+        return sharedPreferences.getBoolean(KEY_IS_ADMIN, false)
+    }
+
     fun clearToken() {
         sharedPreferences.edit {
             remove(KEY_TOKEN)
             remove(KEY_REFRESH_TOKEN)
+            remove(KEY_IS_ADMIN)
         }
         _isLoggedIn.value = false
     }
@@ -99,5 +108,6 @@ class TokenManager @Inject constructor(
         private const val PREFS_FILENAME = "secure_prefs"
         private const val KEY_TOKEN = "auth_token"
         private const val KEY_REFRESH_TOKEN = "refresh_token"
+        private const val KEY_IS_ADMIN = "is_admin"
     }
 }

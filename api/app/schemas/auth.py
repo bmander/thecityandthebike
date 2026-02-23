@@ -1,14 +1,18 @@
+from typing import Optional
+
 from pydantic import BaseModel, Field
 
 
 class UserRegister(BaseModel):
     username: str = Field(min_length=3, max_length=50, pattern=r'^[a-zA-Z0-9_]+$')
     password: str = Field(min_length=8)
+    android_id: Optional[str] = None
 
 
 class UserLogin(BaseModel):
     username: str
     password: str
+    android_id: Optional[str] = None
 
 
 class Token(BaseModel):

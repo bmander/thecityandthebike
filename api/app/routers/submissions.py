@@ -10,7 +10,7 @@ from sqlalchemy.orm import Session, joinedload
 from ..bike_url_parser import WHITELISTED_PROVIDERS, parse_bike_url
 from ..cursor import decode_cursor, encode_cursor
 from ..database import get_db
-from ..dependencies import get_current_user, get_current_user_optional
+from ..dependencies import get_current_active_user, get_current_user, get_current_user_optional
 from ..models import User, Bike, FenderSubmission, Flag
 from ..schemas import CursorPaginatedResponse, SubmissionResponse
 from ..schemas.auth import MessageResponse
@@ -110,7 +110,7 @@ def delete_submission(
     )
     if submission is None:
         raise HTTPException(status_code=404, detail="Submission not found")
-    if submission.user_id != current_user.user_id:
+    if submission.user_id != current_user.user_id and not current_user.is_admin:
         raise HTTPException(status_code=403, detail="Not authorized to delete this submission")
     revoke_submission_points(db, submission.submission_id)
     image_urls = [
@@ -126,7 +126,7 @@ def delete_submission(
 
 @router.post("", response_model=SubmissionResponse, status_code=status.HTTP_201_CREATED)
 async def create_submission(
-    current_user: Annotated[User, Depends(get_current_user)],
+    current_user: Annotated[User, Depends(get_current_active_user)],
     db: Annotated[Session, Depends(get_db)],
     image: UploadFile = File(...),
     bike_qr_id: str = Form(...),

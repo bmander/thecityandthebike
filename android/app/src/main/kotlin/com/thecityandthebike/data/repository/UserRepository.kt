@@ -3,8 +3,10 @@ package com.thecityandthebike.data.repository
 import com.thecityandthebike.data.api.ApiService
 import com.thecityandthebike.data.model.ApiResult
 import com.thecityandthebike.data.model.AppError
+import com.thecityandthebike.data.model.dto.BanResponse
 import com.thecityandthebike.data.model.dto.CursorPaginatedSubmissions
 import com.thecityandthebike.data.model.dto.UserDetailResponse
+import com.thecityandthebike.data.model.safeApiCall
 import java.io.IOException
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -52,4 +54,10 @@ class UserRepository @Inject constructor(
             ApiResult.Error(AppError.Unknown(e))
         }
     }
+
+    suspend fun banUser(userId: String): ApiResult<BanResponse> =
+        safeApiCall { apiService.banUser(userId) }
+
+    suspend fun unbanUser(userId: String): ApiResult<BanResponse> =
+        safeApiCall { apiService.unbanUser(userId) }
 }

@@ -6,13 +6,15 @@ import kotlinx.serialization.Serializable
 @Serializable
 data class LoginRequest(
     val username: String,
-    val password: String
+    val password: String,
+    @SerialName("android_id") val androidId: String? = null
 )
 
 @Serializable
 data class RegisterRequest(
     val username: String,
-    val password: String
+    val password: String,
+    @SerialName("android_id") val androidId: String? = null
 )
 
 @Serializable

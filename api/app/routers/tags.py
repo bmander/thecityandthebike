@@ -11,7 +11,7 @@ from sqlalchemy.orm import Session, joinedload
 
 from ..cursor import decode_cursor, encode_cursor
 from ..database import get_db
-from ..dependencies import get_current_user
+from ..dependencies import get_current_active_user, get_current_user
 from ..models import User, FenderSubmission, Tag
 from ..schemas.tag import TagDetailResponse, TagResponse
 from ..schemas.submission import CursorPaginatedResponse, ScoringBreakdown, SubmissionResponse
@@ -154,7 +154,7 @@ def get_tag_submissions(
 )
 async def create_tag(
     submission_id: UUID,
-    current_user: Annotated[User, Depends(get_current_user)],
+    current_user: Annotated[User, Depends(get_current_active_user)],
     db: Annotated[Session, Depends(get_db)],
     image: UploadFile = File(...),
     ring: str | None = Form(None),

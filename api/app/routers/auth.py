@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session
 from ..config import settings
 from ..database import get_db
 from ..dependencies import get_password_hash, verify_password, create_access_token, create_refresh_token, rotate_refresh_token
-from ..models import User, RefreshToken
+from ..models import User, RefreshToken, DeviceBan
 from ..rate_limit import AccountLockout, get_account_lockout, limiter
 from ..schemas import UserRegister, UserLogin, Token, RefreshRequest, MessageResponse
 
@@ -16,6 +16,14 @@ router = APIRouter(prefix="/auth", tags=["auth"])
 @router.post("/register", response_model=MessageResponse, status_code=status.HTTP_201_CREATED)
 @limiter.limit(lambda: settings.REGISTER_RATE_LIMIT)
 def register(request: Request, data: UserRegister, db: Annotated[Session, Depends(get_db)]):
+    if data.android_id:
+        device_ban = db.query(DeviceBan).filter(DeviceBan.android_id == data.android_id).first()
+        if device_ban:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail={"msg": "This device has been banned"},
+            )
+
     existing = db.query(User).filter(User.username == data.username).first()
     if existing:
         raise HTTPException(
@@ -24,7 +32,7 @@ def register(request: Request, data: UserRegister, db: Annotated[Session, Depend
         )
 
     password_hash = get_password_hash(data.password)
-    user = User(username=data.username, password_hash=password_hash)
+    user = User(username=data.username, password_hash=password_hash, android_id=data.android_id)
     db.add(user)
     db.commit()
     return {"msg": "User created"}
@@ -53,6 +61,20 @@ def login(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail={"msg": "Bad username or password"},
         )
+
+    if user.is_banned:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail={"msg": "This account has been banned"},
+        )
+
+    if data.android_id:
+        device_ban = db.query(DeviceBan).filter(DeviceBan.android_id == data.android_id).first()
+        if device_ban:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail={"msg": "This device has been banned"},
+            )
 
     lockout.clear(data.username, db)
     access_token = create_access_token(subject=str(user.user_id), is_admin=user.is_admin)
