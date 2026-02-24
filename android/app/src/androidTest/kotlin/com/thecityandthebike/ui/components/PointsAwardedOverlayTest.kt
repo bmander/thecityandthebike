@@ -5,8 +5,10 @@ import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.performClick
 import com.thecityandthebike.data.model.dto.ScoringBreakdown
 import com.thecityandthebike.setContentWithTheme
+import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 
@@ -59,5 +61,46 @@ class PointsAwardedOverlayTest {
         composeTestRule.onNodeWithText("Tag Created").assertIsDisplayed()
         // "+7" appears twice: once in the breakdown row and once as the total
         composeTestRule.onAllNodesWithText("+7").assertCountEquals(2)
+    }
+
+    @Test
+    fun overlay_showsDismissButton() {
+        val breakdown = listOf(
+            ScoringBreakdown(eventType = "tag", label = "Tag Created", points = 5)
+        )
+
+        composeTestRule.setContentWithTheme {
+            PointsAwardedOverlay(breakdown = breakdown, onDismiss = {})
+        }
+
+        composeTestRule.onNodeWithText("\u00D7").assertExists()
+    }
+
+    @Test
+    fun overlay_dismissButton_callsOnDismiss() {
+        var dismissed = false
+        val breakdown = listOf(
+            ScoringBreakdown(eventType = "tag", label = "Tag Created", points = 5)
+        )
+
+        composeTestRule.mainClock.autoAdvance = false
+
+        composeTestRule.setContentWithTheme {
+            PointsAwardedOverlay(
+                breakdown = breakdown,
+                onDismiss = { dismissed = true }
+            )
+        }
+
+        // Advance past entry animation (200 + 300 + 150 = 650ms)
+        composeTestRule.mainClock.advanceTimeBy(1000)
+
+        // Click the dismiss button
+        composeTestRule.onNodeWithText("\u00D7").performClick()
+
+        // Advance past exit animation (300ms)
+        composeTestRule.mainClock.advanceTimeBy(500)
+
+        assertTrue(dismissed)
     }
 }
