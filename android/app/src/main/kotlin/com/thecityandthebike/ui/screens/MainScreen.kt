@@ -63,6 +63,7 @@ fun MainScreen(
     onLoginClick: () -> Unit,
     onScanQrCode: () -> Unit,
     onShowAbout: () -> Unit = {},
+    onShowScoreRules: () -> Unit = {},
     onShowPrivacyCopyright: () -> Unit = {},
     onImageClick: ((String) -> Unit)? = null,
     onUserClick: (String) -> Unit = {},
@@ -115,6 +116,13 @@ fun MainScreen(
                             onClick = {
                                 menuExpanded = false
                                 onShowAbout()
+                            }
+                        )
+                        DropdownMenuItem(
+                            text = { Text("Score Rules") },
+                            onClick = {
+                                menuExpanded = false
+                                onShowScoreRules()
                             }
                         )
                         DropdownMenuItem(
@@ -200,7 +208,11 @@ fun MainScreen(
         mainState.pointsAwarded?.let { breakdown ->
             PointsAwardedOverlay(
                 breakdown = breakdown,
-                onDismiss = { viewModel.clearPointsAwarded() }
+                onDismiss = { viewModel.clearPointsAwarded() },
+                onShowScoreRules = {
+                    viewModel.clearPointsAwarded()
+                    onShowScoreRules()
+                }
             )
         }
     }

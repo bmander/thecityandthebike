@@ -8,6 +8,7 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import com.thecityandthebike.data.model.dto.ScoringBreakdown
 import com.thecityandthebike.setContentWithTheme
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
@@ -102,5 +103,61 @@ class PointsAwardedOverlayTest {
         composeTestRule.mainClock.advanceTimeBy(500)
 
         assertTrue(dismissed)
+    }
+
+    @Test
+    fun overlay_showsScoreRulesButton_whenCallbackProvided() {
+        val breakdown = listOf(
+            ScoringBreakdown(eventType = "tag", label = "Tag Created", points = 5)
+        )
+
+        composeTestRule.setContentWithTheme {
+            PointsAwardedOverlay(
+                breakdown = breakdown,
+                onDismiss = {},
+                onShowScoreRules = {}
+            )
+        }
+
+        composeTestRule.onNodeWithText("?").assertExists()
+    }
+
+    @Test
+    fun overlay_hidesScoreRulesButton_whenCallbackNull() {
+        val breakdown = listOf(
+            ScoringBreakdown(eventType = "tag", label = "Tag Created", points = 5)
+        )
+
+        composeTestRule.setContentWithTheme {
+            PointsAwardedOverlay(
+                breakdown = breakdown,
+                onDismiss = {},
+                onShowScoreRules = null
+            )
+        }
+
+        composeTestRule.onNodeWithText("?").assertDoesNotExist()
+    }
+
+    @Test
+    fun overlay_scoreRulesButton_callsBothCallbacks() {
+        var dismissed = false
+        var scoreRulesShown = false
+        val breakdown = listOf(
+            ScoringBreakdown(eventType = "tag", label = "Tag Created", points = 5)
+        )
+
+        composeTestRule.setContentWithTheme {
+            PointsAwardedOverlay(
+                breakdown = breakdown,
+                onDismiss = { dismissed = true },
+                onShowScoreRules = { scoreRulesShown = true }
+            )
+        }
+
+        composeTestRule.onNodeWithText("?").performClick()
+
+        assertTrue(dismissed)
+        assertTrue(scoreRulesShown)
     }
 }

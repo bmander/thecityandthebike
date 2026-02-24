@@ -58,6 +58,7 @@ class MainViewModel @Inject constructor(
                         if (breakdown.isNotEmpty()) {
                             _state.value = _state.value.copy(pointsAwarded = breakdown)
                         }
+                        uploadManager.clearSuccess()
                         fetchSubmissions(isRefresh = true, clearPendingUpload = true)
                     }
                     is UploadState.Error -> {

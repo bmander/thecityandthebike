@@ -79,6 +79,12 @@ class UploadManager @Inject constructor(
         uploadAndCreateSubmission(uri, bikeQrId, lastSide)
     }
 
+    fun clearSuccess() {
+        if (_state.value is UploadState.Success) {
+            _state.value = UploadState.Idle
+        }
+    }
+
     fun clearError() {
         _state.value = UploadState.Idle
         lastLocalUri = null
