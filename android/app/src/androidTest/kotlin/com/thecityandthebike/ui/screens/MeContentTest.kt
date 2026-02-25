@@ -120,6 +120,54 @@ class MeContentTest {
         composeTestRule.onNodeWithText("Mar 20").assertIsDisplayed()
     }
 
+    // --- Admin badge ---
+
+    @Test
+    fun meContent_adminUser_showsAdminBadge() {
+        composeTestRule.setContentWithTheme {
+            MeContent(
+                state = UserState(
+                    userDetail = UserDetailResponse(
+                        userId = "admin-1",
+                        username = "adminuser",
+                        isAdmin = true,
+                        submissionCount = 3,
+                        ownedBikeCount = 0,
+                        leaderboardRanks = emptyList()
+                    )
+                ),
+                onImageClick = {},
+                onLoadMore = {},
+                onClearError = {}
+            )
+        }
+
+        composeTestRule.onNodeWithText("Admin").assertIsDisplayed()
+    }
+
+    @Test
+    fun meContent_nonAdminUser_noAdminBadge() {
+        composeTestRule.setContentWithTheme {
+            MeContent(
+                state = UserState(
+                    userDetail = UserDetailResponse(
+                        userId = "user-1",
+                        username = "testuser",
+                        isAdmin = false,
+                        submissionCount = 3,
+                        ownedBikeCount = 0,
+                        leaderboardRanks = emptyList()
+                    )
+                ),
+                onImageClick = {},
+                onLoadMore = {},
+                onClearError = {}
+            )
+        }
+
+        composeTestRule.onNodeWithText("Admin").assertDoesNotExist()
+    }
+
     @Test
     fun meContent_showsDeleteAccountButton() {
         composeTestRule.setContentWithTheme {

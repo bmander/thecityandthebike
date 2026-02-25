@@ -124,6 +124,14 @@ fun MeContent(
                     state.userDetail?.let { detail ->
                         item {
                             Column(modifier = Modifier.padding(16.dp)) {
+                                if (detail.isAdmin) {
+                                    Text(
+                                        text = "Admin",
+                                        style = MaterialTheme.typography.labelMedium,
+                                        color = MaterialTheme.colorScheme.primary
+                                    )
+                                    Spacer(modifier = Modifier.height(4.dp))
+                                }
                                 Text(
                                     text = "${detail.submissionCount} photo${if (detail.submissionCount != 1) "s" else ""}",
                                     style = MaterialTheme.typography.titleMedium

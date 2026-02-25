@@ -155,6 +155,52 @@ class UserScreenContentTest {
         composeTestRule.onNodeWithText("Mar 20").assertIsDisplayed()
     }
 
+    // --- Admin badge ---
+
+    @Test
+    fun userScreen_adminUser_showsAdminBadge() {
+        composeTestRule.setContentWithTheme {
+            UserScreenContent(
+                state = UserState(
+                    userDetail = UserDetailResponse(
+                        userId = "admin-1",
+                        username = "adminuser",
+                        isAdmin = true,
+                        submissionCount = 3,
+                        ownedBikeCount = 0,
+                        leaderboardRanks = emptyList()
+                    )
+                ),
+                onBack = {},
+                onImageClick = {}
+            )
+        }
+
+        composeTestRule.onNodeWithText("Admin").assertIsDisplayed()
+    }
+
+    @Test
+    fun userScreen_nonAdminUser_noAdminBadge() {
+        composeTestRule.setContentWithTheme {
+            UserScreenContent(
+                state = UserState(
+                    userDetail = UserDetailResponse(
+                        userId = "user-1",
+                        username = "testuser",
+                        isAdmin = false,
+                        submissionCount = 3,
+                        ownedBikeCount = 0,
+                        leaderboardRanks = emptyList()
+                    )
+                ),
+                onBack = {},
+                onImageClick = {}
+            )
+        }
+
+        composeTestRule.onNodeWithText("Admin").assertDoesNotExist()
+    }
+
     // --- Ban button visibility ---
 
     @Test
