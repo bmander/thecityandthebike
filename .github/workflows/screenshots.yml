@@ -1,8 +1,6 @@
 name: Generate Screenshots
 
 on:
-  push:
-    branches: [staging]
   workflow_dispatch:
 
 env:
