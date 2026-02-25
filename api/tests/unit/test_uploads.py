@@ -88,7 +88,6 @@ class TestGCSUploadURL:
         """Uploaded JPEG should have EXIF metadata stripped."""
         monkeypatch.setattr(settings, "STORAGE_BUCKET", "")
 
-        from PIL import Image
         from PIL.ExifTags import Base as ExifBase
 
         # Create a JPEG with EXIF metadata

@@ -8,9 +8,9 @@ from sqlalchemy.orm import Session, joinedload
 from ..cursor import decode_cursor, encode_cursor
 from ..database import get_db
 from ..dependencies import get_current_admin_user, get_current_user
-from ..models import User, Bike, FenderSubmission, DeviceBan
+from ..models import User, FenderSubmission, DeviceBan
 from ..models.orm import ScoringEvent
-from ..schemas import BanRequest, BanResponse, CursorPaginatedResponse, MessageResponse, PaginatedResponse, UserDetailResponse, UserResponse, SubmissionResponse
+from ..schemas import BanRequest, BanResponse, CursorPaginatedResponse, MessageResponse, UserDetailResponse, UserResponse, SubmissionResponse
 from ..schemas.leaderboard import LeaderboardPeriod
 from ..schemas.user import LeaderboardRank
 from ..services.account import delete_user_account

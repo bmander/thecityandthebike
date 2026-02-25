@@ -69,9 +69,6 @@ class TestGetFlagStatus:
 
     def test_flagged_by_another(self, client, auth_headers, test_submission, db_session):
         """When another user flags a submission, /me should show flagged=False but flag_count=1."""
-        from app.dependencies import get_password_hash, create_access_token
-        from app.models import User
-
         other_user = User(
             username="otheruser",
             email="other@example.com",

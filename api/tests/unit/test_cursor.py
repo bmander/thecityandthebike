@@ -44,13 +44,15 @@ class TestDecodeCursorInvalid:
             decode_cursor(cursor)
 
     def test_missing_keys(self):
-        import base64, json
+        import base64
+        import json
         cursor = base64.urlsafe_b64encode(json.dumps({"foo": "bar"}).encode()).decode()
         with pytest.raises(ValueError, match="Invalid cursor"):
             decode_cursor(cursor)
 
     def test_bad_timestamp(self):
-        import base64, json
+        import base64
+        import json
         cursor = base64.urlsafe_b64encode(
             json.dumps({"t": "not-a-date", "id": str(uuid4())}).encode()
         ).decode()
@@ -58,7 +60,8 @@ class TestDecodeCursorInvalid:
             decode_cursor(cursor)
 
     def test_bad_uuid(self):
-        import base64, json
+        import base64
+        import json
         cursor = base64.urlsafe_b64encode(
             json.dumps({"t": "2025-01-01T00:00:00+00:00", "id": "not-a-uuid"}).encode()
         ).decode()
@@ -67,7 +70,8 @@ class TestDecodeCursorInvalid:
 
     def test_naive_datetime_gets_utc(self):
         """A cursor with a naive (no-tz) timestamp should decode with UTC attached."""
-        import base64, json
+        import base64
+        import json
         sid = uuid4()
         cursor = base64.urlsafe_b64encode(
             json.dumps({"t": "2025-06-15T12:30:45", "id": str(sid)}).encode()
