@@ -9,4 +9,5 @@
 -dontwarn edu.umd.cs.findbugs.**
 -dontwarn javax.lang.model.**
 -dontwarn org.apiguardian.api.**
+-dontwarn org.junit.jupiter.**
 -dontwarn org.slf4j.**
