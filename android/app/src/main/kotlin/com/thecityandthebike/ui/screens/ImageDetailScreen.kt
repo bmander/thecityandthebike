@@ -405,7 +405,7 @@ fun ImageDetailScreen(
                 }
             }
 
-            if (isOwner || (isLoggedIn && !isTagMode)) {
+            if (isOwner || isAdmin || (isLoggedIn && !isTagMode)) {
                 val context = LocalContext.current
                 Row(
                     modifier = Modifier
@@ -438,7 +438,7 @@ fun ImageDetailScreen(
                         )
                     }
                     Spacer(modifier = Modifier.weight(1f))
-                    if (isOwner) {
+                    if (isOwner || isAdmin) {
                         OwnerActions(
                             isDeleting = isDeleting,
                             onDownload = onDownload,

@@ -57,6 +57,21 @@ class ImageDetailScreenTest {
     }
 
     @Test
+    fun imageDetailScreen_adminSeesDeleteAndDownloadButtons() {
+        composeTestRule.setContentWithTheme {
+            ImageDetailScreen(
+                submission = testSubmission,
+                onHome = {},
+                isOwner = false,
+                isAdmin = true
+            )
+        }
+
+        composeTestRule.onNodeWithContentDescription("Delete photo").assertIsDisplayed()
+        composeTestRule.onNodeWithContentDescription("Download photo").assertIsDisplayed()
+    }
+
+    @Test
     fun imageDetailScreen_nonOwnerDoesNotSeeDeleteDownloadButtons() {
         composeTestRule.setContentWithTheme {
             ImageDetailScreen(
