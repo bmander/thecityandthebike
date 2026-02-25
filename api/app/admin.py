@@ -6,7 +6,7 @@ from sqlalchemy.orm import sessionmaker
 from starlette.requests import Request
 
 from .dependencies import verify_password
-from .models import User, Bike, FenderSubmission, RefreshToken, LoginAttempt, Tag, ScoringEvent, DeviceBan
+from .models import User, Bike, FenderSubmission, RefreshToken, LoginAttempt, Tag, ScoringEvent, DeviceBan, Flag
 
 
 class AdminAuth(AuthenticationBackend):
@@ -102,6 +102,12 @@ class TagAdmin(ModelView, model=Tag):
     column_searchable_list = [Tag.submission_id]
 
 
+class FlagAdmin(ModelView, model=Flag):
+    column_list = [Flag.flag_id, Flag.submission_id, Flag.user_id, Flag.created_at]
+    column_searchable_list = [Flag.submission_id, Flag.user_id]
+    column_sortable_list = [Flag.created_at]
+
+
 class ScoringEventAdmin(ModelView, model=ScoringEvent):
     column_list = [
         ScoringEvent.event_id,
@@ -128,5 +134,6 @@ def setup_admin(app, engine, secret_key):
     admin.add_view(RefreshTokenAdmin)
     admin.add_view(LoginAttemptAdmin)
     admin.add_view(TagAdmin)
+    admin.add_view(FlagAdmin)
     admin.add_view(ScoringEventAdmin)
     return admin
