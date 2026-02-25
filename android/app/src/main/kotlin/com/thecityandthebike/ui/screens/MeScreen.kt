@@ -16,19 +16,20 @@ import androidx.compose.ui.Modifier
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.thecityandthebike.ui.viewmodel.DeleteAccountState
 import com.thecityandthebike.ui.viewmodel.MeViewModel
+import com.thecityandthebike.ui.viewmodel.UserState
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MeScreen(
-    viewModel: MeViewModel,
+    state: UserState,
     onBack: () -> Unit,
     onImageClick: (String) -> Unit,
+    onLoadMore: () -> Unit = {},
+    onClearError: () -> Unit = {},
     deleteAccountState: DeleteAccountState = DeleteAccountState(),
     onConfirmDeleteAccount: () -> Unit = {},
     onClearDeleteError: () -> Unit = {}
 ) {
-    val state by viewModel.state.collectAsStateWithLifecycle()
-
     Scaffold(
         topBar = {
             TopAppBar(
@@ -48,12 +49,36 @@ fun MeScreen(
             MeContent(
                 state = state,
                 onImageClick = onImageClick,
-                onLoadMore = { viewModel.loadMoreSubmissions() },
-                onClearError = { viewModel.clearError() },
+                onLoadMore = onLoadMore,
+                onClearError = onClearError,
                 deleteAccountState = deleteAccountState,
                 onConfirmDeleteAccount = onConfirmDeleteAccount,
                 onClearDeleteError = onClearDeleteError
             )
         }
     }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun MeScreen(
+    viewModel: MeViewModel,
+    onBack: () -> Unit,
+    onImageClick: (String) -> Unit,
+    deleteAccountState: DeleteAccountState = DeleteAccountState(),
+    onConfirmDeleteAccount: () -> Unit = {},
+    onClearDeleteError: () -> Unit = {}
+) {
+    val state by viewModel.state.collectAsStateWithLifecycle()
+
+    MeScreen(
+        state = state,
+        onBack = onBack,
+        onImageClick = onImageClick,
+        onLoadMore = { viewModel.loadMoreSubmissions() },
+        onClearError = { viewModel.clearError() },
+        deleteAccountState = deleteAccountState,
+        onConfirmDeleteAccount = onConfirmDeleteAccount,
+        onClearDeleteError = onClearDeleteError
+    )
 }

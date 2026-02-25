@@ -40,8 +40,12 @@ import com.thecityandthebike.ui.components.LoadingIndicator
 import com.thecityandthebike.ui.components.LoginFAB
 import com.thecityandthebike.ui.components.MenuButton
 import com.thecityandthebike.ui.components.PointsAwardedOverlay
+import com.thecityandthebike.ui.viewmodel.BikesListState
 import com.thecityandthebike.ui.viewmodel.BikesListViewModel
+import com.thecityandthebike.ui.viewmodel.LeaderboardPeriod
+import com.thecityandthebike.ui.viewmodel.LeaderboardState
 import com.thecityandthebike.ui.viewmodel.LeaderboardViewModel
+import com.thecityandthebike.ui.viewmodel.MainState
 import com.thecityandthebike.ui.viewmodel.MainViewModel
 import com.thecityandthebike.util.imageUrlToUri
 import kotlinx.coroutines.launch
@@ -55,9 +59,9 @@ private enum class MainTab(val title: String) {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MainScreen(
-    viewModel: MainViewModel,
-    leaderboardViewModel: LeaderboardViewModel,
-    bikesListViewModel: BikesListViewModel,
+    mainState: MainState,
+    leaderboardState: LeaderboardState,
+    bikesListState: BikesListState,
     isLoggedIn: Boolean,
     onLogout: () -> Unit,
     onLoginClick: () -> Unit,
@@ -68,7 +72,16 @@ fun MainScreen(
     onImageClick: ((String) -> Unit)? = null,
     onUserClick: (String) -> Unit = {},
     onBikeClick: (String) -> Unit = {},
-    onShowMe: () -> Unit = {}
+    onShowMe: () -> Unit = {},
+    onRefreshSubmissions: () -> Unit = {},
+    onLoadMoreSubmissions: () -> Unit = {},
+    onRetryUpload: () -> Unit = {},
+    onClearMainError: () -> Unit = {},
+    onClearPointsAwarded: () -> Unit = {},
+    onSelectPeriod: (LeaderboardPeriod) -> Unit = {},
+    onClearLeaderboardError: () -> Unit = {},
+    onLoadMoreBikes: () -> Unit = {},
+    onClearBikesError: () -> Unit = {}
 ) {
     val tabs = MainTab.entries
     val pagerState = rememberPagerState(pageCount = { tabs.size })
@@ -159,25 +172,27 @@ fun MainScreen(
             ) { page ->
                 when (tabs[page]) {
                     MainTab.FEED -> FeedContent(
-                        viewModel = viewModel,
-                        onImageClick = onImageClick
+                        state = mainState,
+                        onImageClick = onImageClick,
+                        onRefresh = onRefreshSubmissions,
+                        onRetryUpload = onRetryUpload,
+                        onLoadMore = onLoadMoreSubmissions,
+                        onClearError = onClearMainError
                     )
                     MainTab.LEADERBOARD -> {
-                        val leaderboardState by leaderboardViewModel.state.collectAsStateWithLifecycle()
                         LeaderboardContent(
                             state = leaderboardState,
-                            onPeriodSelected = { leaderboardViewModel.selectPeriod(it) },
+                            onPeriodSelected = onSelectPeriod,
                             onUserClick = onUserClick,
-                            onClearError = { leaderboardViewModel.clearError() }
+                            onClearError = onClearLeaderboardError
                         )
                     }
                     MainTab.BIKES -> {
-                        val bikesListState by bikesListViewModel.state.collectAsStateWithLifecycle()
                         BikesContent(
                             state = bikesListState,
                             onBikeClick = onBikeClick,
-                            onLoadMore = { bikesListViewModel.loadMoreBikes() },
-                            onClearError = { bikesListViewModel.clearError() }
+                            onLoadMore = onLoadMoreBikes,
+                            onClearError = onClearBikesError
                         )
                     }
                 }
@@ -204,11 +219,10 @@ fun MainScreen(
         }
 
         // Points awarded overlay
-        val mainState by viewModel.state.collectAsStateWithLifecycle()
         mainState.pointsAwarded?.let { breakdown ->
             PointsAwardedOverlay(
                 breakdown = breakdown,
-                onDismiss = { viewModel.clearPointsAwarded() },
+                onDismiss = onClearPointsAwarded,
                 onShowScoreRules = onShowScoreRules
             )
         }
@@ -217,12 +231,63 @@ fun MainScreen(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun FeedContent(
+fun MainScreen(
     viewModel: MainViewModel,
-    onImageClick: ((String) -> Unit)?
+    leaderboardViewModel: LeaderboardViewModel,
+    bikesListViewModel: BikesListViewModel,
+    isLoggedIn: Boolean,
+    onLogout: () -> Unit,
+    onLoginClick: () -> Unit,
+    onScanQrCode: () -> Unit,
+    onShowAbout: () -> Unit = {},
+    onShowScoreRules: () -> Unit = {},
+    onShowPrivacyCopyright: () -> Unit = {},
+    onImageClick: ((String) -> Unit)? = null,
+    onUserClick: (String) -> Unit = {},
+    onBikeClick: (String) -> Unit = {},
+    onShowMe: () -> Unit = {}
 ) {
-    val state by viewModel.state.collectAsStateWithLifecycle()
+    val mainState by viewModel.state.collectAsStateWithLifecycle()
+    val leaderboardState by leaderboardViewModel.state.collectAsStateWithLifecycle()
+    val bikesListState by bikesListViewModel.state.collectAsStateWithLifecycle()
 
+    MainScreen(
+        mainState = mainState,
+        leaderboardState = leaderboardState,
+        bikesListState = bikesListState,
+        isLoggedIn = isLoggedIn,
+        onLogout = onLogout,
+        onLoginClick = onLoginClick,
+        onScanQrCode = onScanQrCode,
+        onShowAbout = onShowAbout,
+        onShowScoreRules = onShowScoreRules,
+        onShowPrivacyCopyright = onShowPrivacyCopyright,
+        onImageClick = onImageClick,
+        onUserClick = onUserClick,
+        onBikeClick = onBikeClick,
+        onShowMe = onShowMe,
+        onRefreshSubmissions = { viewModel.refreshSubmissions() },
+        onLoadMoreSubmissions = { viewModel.loadMoreSubmissions() },
+        onRetryUpload = { viewModel.retryUpload() },
+        onClearMainError = { viewModel.clearError() },
+        onClearPointsAwarded = { viewModel.clearPointsAwarded() },
+        onSelectPeriod = { leaderboardViewModel.selectPeriod(it) },
+        onClearLeaderboardError = { leaderboardViewModel.clearError() },
+        onLoadMoreBikes = { bikesListViewModel.loadMoreBikes() },
+        onClearBikesError = { bikesListViewModel.clearError() }
+    )
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun FeedContent(
+    state: MainState,
+    onImageClick: ((String) -> Unit)?,
+    onRefresh: () -> Unit,
+    onRetryUpload: () -> Unit,
+    onLoadMore: () -> Unit,
+    onClearError: () -> Unit
+) {
     val submissionsWithImages = state.submissions.filter { it.imageUrlThumbnail != null }
     val submissionImageUris = submissionsWithImages.map { submission ->
         imageUrlToUri(submission.imageUrlThumbnail!!)
@@ -240,7 +305,7 @@ private fun FeedContent(
     Box(modifier = Modifier.fillMaxSize()) {
         PullToRefreshBox(
             isRefreshing = state.isRefreshing,
-            onRefresh = { viewModel.refreshSubmissions() },
+            onRefresh = onRefresh,
             modifier = Modifier.fillMaxSize()
         ) {
             ImageGrid(
@@ -258,8 +323,8 @@ private fun FeedContent(
                         }
                     }
                 },
-                onFailedImageClick = { viewModel.retryUpload() },
-                onLoadMore = { viewModel.loadMoreSubmissions() }
+                onFailedImageClick = { onRetryUpload() },
+                onLoadMore = onLoadMore
             )
         }
 
@@ -289,13 +354,13 @@ private fun FeedContent(
                     .padding(16.dp),
                 action = if (state.uploadFailed) {
                     {
-                        TextButton(onClick = { viewModel.retryUpload() }) {
+                        TextButton(onClick = onRetryUpload) {
                             Text("Retry")
                         }
                     }
                 } else null,
                 dismissAction = {
-                    TextButton(onClick = { viewModel.clearError() }) {
+                    TextButton(onClick = onClearError) {
                         Text("Dismiss")
                     }
                 }
