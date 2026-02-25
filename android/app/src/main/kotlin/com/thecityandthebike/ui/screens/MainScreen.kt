@@ -209,10 +209,7 @@ fun MainScreen(
             PointsAwardedOverlay(
                 breakdown = breakdown,
                 onDismiss = { viewModel.clearPointsAwarded() },
-                onShowScoreRules = {
-                    viewModel.clearPointsAwarded()
-                    onShowScoreRules()
-                }
+                onShowScoreRules = onShowScoreRules
             )
         }
     }

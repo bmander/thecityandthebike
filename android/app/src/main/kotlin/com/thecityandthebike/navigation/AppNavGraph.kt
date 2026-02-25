@@ -59,6 +59,7 @@ fun AppNavGraph(onboardingPrefs: OnboardingPrefs) {
     val navController = rememberNavController()
     val authViewModel: AuthViewModel = hiltViewModel()
     val authState by authViewModel.state.collectAsStateWithLifecycle()
+    val navigateToScoreRules = { navController.navigate(ScoreRules) }
 
     NavHost(
         navController = navController,
@@ -145,9 +146,7 @@ fun AppNavGraph(onboardingPrefs: OnboardingPrefs) {
                 onShowAbout = {
                     navController.navigate(About)
                 },
-                onShowScoreRules = {
-                    navController.navigate(ScoreRules)
-                },
+                onShowScoreRules = navigateToScoreRules,
                 onShowPrivacyCopyright = {
                     navController.navigate(PrivacyCopyright)
                 },
@@ -196,7 +195,7 @@ fun AppNavGraph(onboardingPrefs: OnboardingPrefs) {
                 onBikeClick = { bikeQrId -> navController.navigate(Bike(bikeQrId)) },
                 onUserClick = { userId -> navController.navigate(User(userId)) },
                 onTagClick = { tagId -> navController.navigate(TagDetail(tagId)) },
-                onShowScoreRules = { navController.navigate(ScoreRules) }
+                onShowScoreRules = navigateToScoreRules
             )
         }
 
@@ -224,7 +223,7 @@ fun AppNavGraph(onboardingPrefs: OnboardingPrefs) {
                 onDeleted = navController.handleDeletion(),
                 onUserClick = { userId -> navController.navigate(User(userId)) },
                 onTagClick = { tagId -> navController.navigate(TagDetail(tagId)) },
-                onShowScoreRules = { navController.navigate(ScoreRules) }
+                onShowScoreRules = navigateToScoreRules
             )
         }
 
@@ -253,7 +252,7 @@ fun AppNavGraph(onboardingPrefs: OnboardingPrefs) {
                 onBikeClick = { bikeQrId -> navController.navigate(Bike(bikeQrId)) },
                 onUserClick = { userId -> navController.navigate(User(userId)) },
                 onTagClick = { tagId -> navController.navigate(TagDetail(tagId)) },
-                onShowScoreRules = { navController.navigate(ScoreRules) }
+                onShowScoreRules = navigateToScoreRules
             )
         }
 
@@ -280,7 +279,7 @@ fun AppNavGraph(onboardingPrefs: OnboardingPrefs) {
                 onDeleted = navController.handleDeletion(),
                 onBikeClick = { bikeQrId -> navController.navigate(Bike(bikeQrId)) },
                 onTagClick = { tagId -> navController.navigate(TagDetail(tagId)) },
-                onShowScoreRules = { navController.navigate(ScoreRules) }
+                onShowScoreRules = navigateToScoreRules
             )
         }
 
@@ -321,7 +320,7 @@ fun AppNavGraph(onboardingPrefs: OnboardingPrefs) {
                 onDeleted = navController.handleDeletion(),
                 onBikeClick = { bikeQrId -> navController.navigate(Bike(bikeQrId)) },
                 onUserClick = { userId -> navController.navigate(User(userId)) },
-                onShowScoreRules = { navController.navigate(ScoreRules) }
+                onShowScoreRules = navigateToScoreRules
             )
         }
 
@@ -489,12 +488,7 @@ private fun ImageDetailRoute(
                     PointsAwardedOverlay(
                         breakdown = breakdown,
                         onDismiss = { viewModel.clearPointsAwarded() },
-                        onShowScoreRules = onShowScoreRules?.let { navigate ->
-                            {
-                                viewModel.clearPointsAwarded()
-                                navigate()
-                            }
-                        }
+                        onShowScoreRules = onShowScoreRules
                     )
                 }
             }

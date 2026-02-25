@@ -158,82 +158,9 @@ private fun PointsAwardedOverlayPreview() {
     val breakdown = ScoreRules.photoRules
         .filter { it.id != "first_bike_for_user" }
         .map { ScoringBreakdown(eventType = it.id, label = it.label, points = it.points) }
-    val total = breakdown.sumOf { it.points }
-
-    Box(
-        modifier = Modifier.fillMaxSize(),
-        contentAlignment = Alignment.Center
-    ) {
-        Box(
-            modifier = Modifier.padding(horizontal = 32.dp)
-        ) {
-            Column(
-                horizontalAlignment = Alignment.CenterHorizontally,
-                modifier = Modifier
-                    .background(
-                        color = Color.Black.copy(alpha = 0.75f),
-                        shape = RoundedCornerShape(12.dp)
-                    )
-                    .padding(horizontal = 20.dp, vertical = 16.dp)
-            ) {
-                breakdown.forEach { item ->
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        Text(
-                            text = item.label,
-                            fontSize = 18.sp,
-                            color = Color.White
-                        )
-                        Text(
-                            text = "+${item.points}",
-                            fontSize = 18.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = Color.White
-                        )
-                    }
-                }
-                Text(
-                    text = "+$total",
-                    fontSize = 64.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = Color.White,
-                    modifier = Modifier.padding(top = 8.dp)
-                )
-            }
-            Box(
-                modifier = Modifier
-                    .align(Alignment.TopEnd)
-                    .offset(x = 16.dp, y = (-16).dp)
-                    .size(32.dp)
-                    .background(Color.White.copy(alpha = 0.85f), CircleShape)
-                    .border(1.dp, Color.DarkGray, CircleShape),
-                contentAlignment = Alignment.Center
-            ) {
-                Text(
-                    text = "\u00D7",
-                    color = Color.Black,
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.Bold
-                )
-            }
-            Box(
-                modifier = Modifier
-                    .align(Alignment.TopEnd)
-                    .offset(x = (-20).dp, y = (-16).dp)
-                    .size(32.dp)
-                    .background(Color.White.copy(alpha = 0.85f), CircleShape)
-                    .border(1.dp, Color.DarkGray, CircleShape),
-                contentAlignment = Alignment.Center
-            ) {
-                Text(
-                    text = "?",
-                    color = Color.Black,
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.Bold
-                )
-            }
-        }
-    }
+    PointsAwardedOverlay(
+        breakdown = breakdown,
+        onDismiss = {},
+        onShowScoreRules = {}
+    )
 }
