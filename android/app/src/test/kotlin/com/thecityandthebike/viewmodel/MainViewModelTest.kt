@@ -39,6 +39,7 @@ class MainViewModelTest {
         submissionRepository = mockk()
         uploadManager = mockk()
         every { uploadManager.state } returns uploadStateFlow
+        every { uploadManager.clearSuccess() } returns Unit
     }
 
     @After
