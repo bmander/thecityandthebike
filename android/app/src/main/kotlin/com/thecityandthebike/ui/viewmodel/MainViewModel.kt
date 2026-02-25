@@ -54,11 +54,12 @@ class MainViewModel @Inject constructor(
                         )
                     }
                     is UploadState.Success -> {
-                        val breakdown = uploadState.pointsBreakdown
-                        if (breakdown.isNotEmpty()) {
-                            _state.value = _state.value.copy(pointsAwarded = breakdown)
-                        }
-                        fetchSubmissions(isRefresh = true, clearPendingUpload = true)
+                        _state.value = _state.value.copy(
+                            pendingUploadUri = null,
+                            uploadFailed = false,
+                            pointsAwarded = uploadState.pointsBreakdown.ifEmpty { null }
+                        )
+                        fetchSubmissions(isRefresh = true)
                     }
                     is UploadState.Error -> {
                         _state.value = _state.value.copy(
@@ -82,7 +83,7 @@ class MainViewModel @Inject constructor(
         fetchSubmissions(isRefresh = true)
     }
 
-    private fun fetchSubmissions(isRefresh: Boolean, clearPendingUpload: Boolean = false) {
+    private fun fetchSubmissions(isRefresh: Boolean) {
         viewModelScope.launch {
             _state.value = _state.value.copy(
                 isLoading = !isRefresh,
@@ -96,16 +97,14 @@ class MainViewModel @Inject constructor(
                         isRefreshing = false,
                         submissions = result.data.items,
                         hasMorePages = result.data.hasMore,
-                        nextCursor = result.data.nextCursor,
-                        pendingUploadUri = if (clearPendingUpload) null else _state.value.pendingUploadUri
+                        nextCursor = result.data.nextCursor
                     )
                 }
                 is ApiResult.Error -> {
                     _state.value = _state.value.copy(
                         isLoading = false,
                         isRefreshing = false,
-                        error = result.error.displayMessage,
-                        pendingUploadUri = if (clearPendingUpload) null else _state.value.pendingUploadUri
+                        error = result.error.displayMessage
                     )
                 }
             }

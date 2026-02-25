@@ -336,7 +336,7 @@ class MainViewModelTest {
     }
 
     @Test
-    fun `upload success should clear pendingUploadUri after refresh`() = runTest {
+    fun `upload success should clear pendingUploadUri immediately`() = runTest {
         val paginated = CursorPaginatedSubmissions(items = emptyList(), nextCursor = null, hasMore = false)
         coEvery { submissionRepository.getSubmissions(any(), any()) } returns ApiResult.Success(paginated)
 
@@ -360,6 +360,31 @@ class MainViewModelTest {
 
         assertNull(viewModel.state.value.pendingUploadUri)
         assertEquals(1, viewModel.state.value.submissions.size)
+    }
+
+    @Test
+    fun `upload success should clear pendingUploadUri even when refresh fails`() = runTest {
+        val paginated = CursorPaginatedSubmissions(items = emptyList(), nextCursor = null, hasMore = false)
+        coEvery { submissionRepository.getSubmissions(any(), any()) } returns ApiResult.Success(paginated)
+
+        viewModel = createViewModel()
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        val uri = mockk<Uri>()
+        uploadStateFlow.value = UploadState.Uploading(uri)
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        assertEquals(uri, viewModel.state.value.pendingUploadUri)
+
+        // Refresh after upload success fails
+        coEvery { submissionRepository.getSubmissions(any(), any()) } returns ApiResult.Error(AppError.Network(java.io.IOException("Network error")))
+
+        uploadStateFlow.value = UploadState.Success()
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        // Spinner should still be cleared even though refresh failed
+        assertNull(viewModel.state.value.pendingUploadUri)
+        assertFalse(viewModel.state.value.uploadFailed)
     }
 
     @Test
