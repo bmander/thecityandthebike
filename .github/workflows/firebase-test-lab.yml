@@ -72,7 +72,7 @@ jobs:
             --type instrumentation
             --app "$APP_APK"
             --test "$TEST_APK"
-            --device "model=Pixel2,version=26"
+            --device "model=Pixel2.arm,version=26"
             --device "model=MediumPhone.arm,version=30"
             --device "model=MediumPhone.arm,version=34"
             --timeout 15m
