@@ -1,0 +1,87 @@
+name: Firebase Test Lab
+
+on:
+  workflow_dispatch:
+    inputs:
+      minified:
+        description: "Use R8-minified build"
+        required: false
+        type: boolean
+        default: false
+      test_class:
+        description: "Single test class (e.g. com.thecityandthebike.ui.screens.MainScreenTest)"
+        required: false
+        type: string
+
+jobs:
+  firebase-test-lab:
+    name: Firebase Test Lab
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    defaults:
+      run:
+        working-directory: android
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Set up JDK
+        uses: actions/setup-java@v5
+        with:
+          java-version: "17"
+          distribution: "temurin"
+          cache: "gradle"
+
+      - name: Grant execute permission for gradlew
+        run: chmod +x gradlew
+
+      - name: Build APKs
+        run: |
+          if [ "${{ inputs.minified }}" = "true" ]; then
+            ./gradlew -PtestBuildType=debugMinified assembleStagingDebugMinified assembleStagingDebugMinifiedAndroidTest
+          else
+            ./gradlew assembleStagingDebug assembleStagingDebugAndroidTest
+          fi
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v3
+        with:
+          workload_identity_provider: ${{ secrets.WIF_PROVIDER }}
+          service_account: ${{ secrets.WIF_SERVICE_ACCOUNT }}
+
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v3
+
+      - name: Run Firebase Test Lab
+        run: |
+          if [ "${{ inputs.minified }}" = "true" ]; then
+            APP_APK="app/build/outputs/apk/staging/debugMinified/app-staging-debugMinified.apk"
+            TEST_APK="app/build/outputs/apk/androidTest/staging/debugMinified/app-staging-debugMinified-androidTest.apk"
+            BUILD_TYPE="debugMinified"
+          else
+            APP_APK="app/build/outputs/apk/staging/debug/app-staging-debug.apk"
+            TEST_APK="app/build/outputs/apk/androidTest/staging/debug/app-staging-debug-androidTest.apk"
+            BUILD_TYPE="debug"
+          fi
+
+          ARGS=(
+            gcloud firebase test android run
+            --project "${{ secrets.GCP_PROJECT_ID }}"
+            --type instrumentation
+            --app "$APP_APK"
+            --test "$TEST_APK"
+            --device "model=Pixel2,version=26"
+            --device "model=MediumPhone.arm,version=30"
+            --device "model=MediumPhone.arm,version=34"
+            --timeout 15m
+            --results-history-name "tcatb-android-$BUILD_TYPE"
+            --no-auto-google-login
+          )
+
+          if [ -n "${{ inputs.test_class }}" ]; then
+            ARGS+=(--test-targets "class ${{ inputs.test_class }}")
+          fi
+
+          "${ARGS[@]}"
