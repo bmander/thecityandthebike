@@ -1,6 +1,6 @@
 # TCATB Android App
 
-The Android app is built with Jetpack Compose (compileSdk 35, targetSdk 34, minSdk 26).
+The Android app is built with Jetpack Compose (compileSdk 35, targetSdk 35, minSdk 26).
 
 ## Prerequisites
 - Android SDK (typically installed via Android Studio)
@@ -31,4 +31,3 @@ The Android app is built with Jetpack Compose (compileSdk 35, targetSdk 34, minS
    ```bash
    adb shell am start -n com.thecityandthebike/.MainActivity
    ```
-

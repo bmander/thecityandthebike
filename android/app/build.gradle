@@ -16,7 +16,7 @@ android {
     defaultConfig {
         applicationId "com.thecityandthebike"
         minSdk 26
-        targetSdk 34
+        targetSdk 35
         versionCode buildVersionCode
         versionName "1.0.${buildVersionCode}"
         buildConfigField "String", "GIT_SHA", "\"${gitSha.get()}\""
