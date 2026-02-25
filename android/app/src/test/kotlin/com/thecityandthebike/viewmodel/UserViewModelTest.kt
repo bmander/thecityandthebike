@@ -49,7 +49,7 @@ class UserViewModelTest {
         Dispatchers.setMain(testDispatcher)
         userRepository = mockk()
         tokenManager = mockk(relaxed = true)
-        every { tokenManager.getIsAdmin() } returns false
+        every { tokenManager.isAdmin() } returns false
         savedStateHandle = SavedStateHandle(mapOf("userId" to testUserId))
     }
 
@@ -263,7 +263,7 @@ class UserViewModelTest {
 
     @Test
     fun `currentUserIsAdmin should be true when TokenManager returns true`() = runTest {
-        every { tokenManager.getIsAdmin() } returns true
+        every { tokenManager.isAdmin() } returns true
 
         coEvery { userRepository.getUserDetail(testUserId) } returns ApiResult.Success(testUserDetail)
         coEvery { userRepository.getUserSubmissions(testUserId, any(), any()) } returns
@@ -277,7 +277,7 @@ class UserViewModelTest {
 
     @Test
     fun `currentUserIsAdmin should be false when TokenManager returns false`() = runTest {
-        every { tokenManager.getIsAdmin() } returns false
+        every { tokenManager.isAdmin() } returns false
 
         coEvery { userRepository.getUserDetail(testUserId) } returns ApiResult.Success(testUserDetail)
         coEvery { userRepository.getUserSubmissions(testUserId, any(), any()) } returns
