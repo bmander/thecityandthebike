@@ -112,10 +112,17 @@ jobs:
           name: production-aab
           path: android/app/build/outputs/bundle/productionRelease/app-production-release.aab
 
+      - name: Upload native debug symbols artifact
+        uses: actions/upload-artifact@v6
+        with:
+          name: production-native-debug-symbols
+          path: android/app/build/outputs/native-debug-symbols/productionRelease/native-debug-symbols.zip
+
       - name: Upload to Play Store
         uses: r0adkll/upload-google-play@v1
         with:
           serviceAccountJsonPlainText: ${{ secrets.PLAY_STORE_SERVICE_ACCOUNT_JSON }}
           packageName: com.thecityandthebike
           releaseFiles: android/app/build/outputs/bundle/productionRelease/app-production-release.aab
+          debugSymbols: android/app/build/outputs/native-debug-symbols/productionRelease/native-debug-symbols.zip
           track: internal

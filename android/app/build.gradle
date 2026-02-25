@@ -52,6 +52,10 @@ android {
 
     buildTypes {
         release {
+            ndk {
+                // Generate native debug symbols for Play Console crash/ANR symbolication.
+                debugSymbolLevel 'SYMBOL_TABLE'
+            }
             signingConfig signingConfigs.release
             minifyEnabled true
             shrinkResources true
