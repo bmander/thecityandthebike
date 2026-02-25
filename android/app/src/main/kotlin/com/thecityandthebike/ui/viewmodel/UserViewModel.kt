@@ -36,7 +36,7 @@ class UserViewModel @Inject constructor(
 
     val userId: String = checkNotNull(savedStateHandle["userId"])
 
-    private val _state = MutableStateFlow(UserState(currentUserIsAdmin = tokenManager.getIsAdmin()))
+    private val _state = MutableStateFlow(UserState(currentUserIsAdmin = tokenManager.isAdmin()))
     val state: StateFlow<UserState> = _state.asStateFlow()
 
     init {
