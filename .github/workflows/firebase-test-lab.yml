@@ -74,7 +74,9 @@ jobs:
             --test "$TEST_APK"
             --device "model=Pixel2.arm,version=26"
             --device "model=MediumPhone.arm,version=30"
+            --device "model=MediumPhone.arm,version=33"
             --device "model=MediumPhone.arm,version=34"
+            --device "model=MediumPhone.arm,version=35"
             --results-bucket "gs://tcatb-firebase-test-lab"
             --timeout 15m
             --results-history-name "tcatb-android-$BUILD_TYPE"
