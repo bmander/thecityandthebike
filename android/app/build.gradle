@@ -130,8 +130,8 @@ dependencies {
     implementation 'com.jakewharton.retrofit:retrofit2-kotlinx-serialization-converter:1.0.0'
 
     // Hilt DI
-    implementation 'com.google.dagger:hilt-android:2.59.1'
-    ksp 'com.google.dagger:hilt-android-compiler:2.59.1'
+    implementation 'com.google.dagger:hilt-android:2.59.2'
+    ksp 'com.google.dagger:hilt-android-compiler:2.59.2'
     implementation 'androidx.hilt:hilt-navigation-compose:1.3.0'
 
     // Security
@@ -167,8 +167,8 @@ dependencies {
     androidTestImplementation 'androidx.test:rules:1.7.0'
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.7.0'
     androidTestImplementation 'androidx.compose.ui:ui-test-junit4'
-    androidTestImplementation 'com.google.dagger:hilt-android-testing:2.59.1'
-    kspAndroidTest 'com.google.dagger:hilt-android-compiler:2.59.1'
+    androidTestImplementation 'com.google.dagger:hilt-android-testing:2.59.2'
+    kspAndroidTest 'com.google.dagger:hilt-android-compiler:2.59.2'
     androidTestImplementation 'io.mockk:mockk-android:1.14.9'
     androidTestImplementation 'com.squareup.okhttp3:mockwebserver:5.3.2'
     androidTestImplementation 'androidx.navigation:navigation-testing:2.9.7'
