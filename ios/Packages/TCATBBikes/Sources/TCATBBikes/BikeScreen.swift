@@ -1,18 +1,22 @@
 import SwiftUI
+import TCATBModels
 
 public struct BikeScreen: View {
     let viewModel: BikeViewModel
+    let imageBaseURL: String
     let onImageTapped: (String) -> Void
     let onUserTapped: (String) -> Void
     let onBack: () -> Void
 
     public init(
         viewModel: BikeViewModel,
+        imageBaseURL: String,
         onImageTapped: @escaping (String) -> Void,
         onUserTapped: @escaping (String) -> Void,
         onBack: @escaping () -> Void
     ) {
         self.viewModel = viewModel
+        self.imageBaseURL = imageBaseURL
         self.onImageTapped = onImageTapped
         self.onUserTapped = onUserTapped
         self.onBack = onBack
@@ -120,43 +124,11 @@ public struct BikeScreen: View {
     }
 
     private var submissionsGallery: some View {
-        let dateGroups = groupSubmissionsByDate(viewModel.submissions)
-        return ForEach(dateGroups) { group in
-            VStack(alignment: .leading, spacing: 8) {
-                HStack {
-                    Text(group.dateLabel)
-                        .font(.headline)
-                    if let yearLabel = group.yearLabel {
-                        Text(yearLabel)
-                            .font(.subheadline)
-                            .foregroundStyle(.secondary)
-                    }
-                }
-                .padding(.horizontal)
-                .padding(.top, 12)
-
-                LazyVGrid(columns: [
-                    GridItem(.flexible(), spacing: 2),
-                    GridItem(.flexible(), spacing: 2),
-                    GridItem(.flexible(), spacing: 2)
-                ], spacing: 2) {
-                    ForEach(group.submissions) { submission in
-                        SubmissionThumbnail(submission: submission) {
-                            onImageTapped(submission.submissionId)
-                        }
-                        .onAppear {
-                            if submission.id == viewModel.submissions.last?.id {
-                                Task { await viewModel.loadMoreSubmissions() }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    private func formattedDate(_ dateString: String?) -> String {
-        guard let dateString, let date = parseDate(dateString) else { return "" }
-        return " on \(displayDateFormatter.string(from: date))"
+        SubmissionsGallery(
+            submissions: viewModel.submissions,
+            imageBaseURL: imageBaseURL,
+            onImageTapped: onImageTapped,
+            onLastAppeared: { Task { await viewModel.loadMoreSubmissions() } }
+        )
     }
 }

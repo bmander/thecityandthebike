@@ -1,36 +1,5 @@
 import SwiftUI
-
-// MARK: - Cached formatters
-
-private let iso8601WithFractional: ISO8601DateFormatter = {
-    let f = ISO8601DateFormatter()
-    f.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
-    return f
-}()
-
-private let iso8601Plain: ISO8601DateFormatter = {
-    let f = ISO8601DateFormatter()
-    f.formatOptions = [.withInternetDateTime]
-    return f
-}()
-
-private let dateOnlyFormatter: DateFormatter = {
-    let f = DateFormatter()
-    f.dateFormat = "yyyy-MM-dd"
-    return f
-}()
-
-let monthDayFormatter: DateFormatter = {
-    let f = DateFormatter()
-    f.dateFormat = "MMM d"
-    return f
-}()
-
-let displayDateFormatter: DateFormatter = {
-    let f = DateFormatter()
-    f.dateFormat = "MMM d, yyyy"
-    return f
-}()
+import TCATBModels
 
 // MARK: - Date grouping
 
@@ -58,9 +27,9 @@ func groupSubmissionsByDate(_ submissions: [SubmissionResponse]) -> [DateGroup] 
 
     for submission in submissions {
         let dateString = submission.capturedDate ?? submission.uploadedAt
-        guard let dateString, let date = parseDate(dateString) else { continue }
+        guard let dateString, let date = DateFormatting.parseDate(dateString) else { continue }
 
-        let label = monthDayFormatter.string(from: date)
+        let label = DateFormatting.formatMonthDay(date)
         let year = calendar.component(.year, from: date)
         let yearLabel: String? = year != currentYear ? String(year) : nil
         let groupKey = label + (yearLabel ?? "")
@@ -84,16 +53,61 @@ func groupSubmissionsByDate(_ submissions: [SubmissionResponse]) -> [DateGroup] 
     }
 }
 
-func parseDate(_ string: String) -> Date? {
-    if let date = iso8601WithFractional.date(from: string) { return date }
-    if let date = iso8601Plain.date(from: string) { return date }
-    return dateOnlyFormatter.date(from: String(string.prefix(10)))
+func formattedDate(_ dateString: String?) -> String {
+    guard let dateString, let date = DateFormatting.parseDate(dateString) else { return "" }
+    return " on \(DateFormatting.formatDisplayDate(date))"
+}
+
+// MARK: - Submissions gallery
+
+struct SubmissionsGallery: View {
+    let submissions: [SubmissionResponse]
+    let imageBaseURL: String
+    let onImageTapped: (String) -> Void
+    let onLastAppeared: () -> Void
+
+    var body: some View {
+        let dateGroups = groupSubmissionsByDate(submissions)
+        ForEach(dateGroups) { group in
+            VStack(alignment: .leading, spacing: 8) {
+                HStack {
+                    Text(group.dateLabel)
+                        .font(.headline)
+                    if let yearLabel = group.yearLabel {
+                        Text(yearLabel)
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+                .padding(.horizontal)
+                .padding(.top, 12)
+
+                LazyVGrid(columns: [
+                    GridItem(.flexible(), spacing: 2),
+                    GridItem(.flexible(), spacing: 2),
+                    GridItem(.flexible(), spacing: 2)
+                ], spacing: 2) {
+                    ForEach(group.submissions) { submission in
+                        SubmissionThumbnail(submission: submission, imageBaseURL: imageBaseURL) {
+                            onImageTapped(submission.submissionId)
+                        }
+                        .onAppear {
+                            if submission.id == submissions.last?.id {
+                                onLastAppeared()
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
 }
 
 // MARK: - Submission thumbnail
 
 struct SubmissionThumbnail: View {
     let submission: SubmissionResponse
+    let imageBaseURL: String
     let onTap: () -> Void
 
     var body: some View {
@@ -124,10 +138,10 @@ struct SubmissionThumbnail: View {
 
     private var thumbnailURL: URL? {
         if let thumb = submission.imageUrlThumbnail {
-            return URL(string: thumb)
+            return imageUrl(from: thumb, baseURL: imageBaseURL)
         }
         if let url = submission.imageUrl {
-            return URL(string: url)
+            return imageUrl(from: url, baseURL: imageBaseURL)
         }
         return nil
     }

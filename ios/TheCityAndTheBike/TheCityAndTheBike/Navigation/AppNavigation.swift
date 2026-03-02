@@ -1,5 +1,6 @@
 import SwiftUI
 import TCATBFeed
+import TCATBBikes
 
 /// Primary navigation container using `NavigationStack` with a `NavigationPath`.
 ///
@@ -18,11 +19,11 @@ struct AppNavigation: View {
                     path.append(route)
                 }
             )
-            .environment(\.imageBaseURL, dependencies.imageBaseURL)
             .navigationDestination(for: Route.self) { route in
                 destination(for: route)
             }
         }
+        .environment(\.imageBaseURL, dependencies.imageBaseURL)
     }
 
     @ViewBuilder
@@ -43,41 +44,29 @@ struct AppNavigation: View {
             Text("Register")
                 .navigationTitle("Register")
         case .imageDetail(let submissionId):
-            // TODO: Replace with ImageDetailScreen from TCATBFeed
-            Text("Image Detail: \(submissionId)")
-                .navigationTitle("Detail")
+            imageDetailScreen(submissionId: submissionId)
         case .bikeDetail(let bikeQrId):
-            // TODO: Replace with BikeDetailScreen from TCATBBikes
-            Text("Bike: \(bikeQrId)")
-                .navigationTitle("Bike")
+            bikeDetailScreen(bikeQrId: bikeQrId)
         case .bikeImageDetail(let submissionId):
-            // TODO: Replace with ImageDetailScreen (bike context)
-            Text("Bike Image Detail: \(submissionId)")
-                .navigationTitle("Detail")
+            imageDetailScreen(submissionId: submissionId)
         case .tagDetail(let tagId):
             // TODO: Replace with TagScreen from TCATBFeed
             Text("Tag: \(tagId)")
                 .navigationTitle("Tag")
         case .tagImageDetail(let submissionId):
-            // TODO: Replace with ImageDetailScreen (tag context)
-            Text("Tag Image Detail: \(submissionId)")
-                .navigationTitle("Detail")
+            imageDetailScreen(submissionId: submissionId)
         case .user(let userId):
             // TODO: Replace with UserScreen from TCATBProfile
             Text("User: \(userId)")
                 .navigationTitle("User")
         case .userImageDetail(let submissionId):
-            // TODO: Replace with ImageDetailScreen (user context)
-            Text("User Image Detail: \(submissionId)")
-                .navigationTitle("Detail")
+            imageDetailScreen(submissionId: submissionId)
         case .me:
             // TODO: Replace with MeScreen from TCATBProfile
             Text("My Profile")
                 .navigationTitle("Me")
         case .meImageDetail(let submissionId):
-            // TODO: Replace with ImageDetailScreen (me context)
-            Text("My Image Detail: \(submissionId)")
-                .navigationTitle("Detail")
+            imageDetailScreen(submissionId: submissionId)
         case .qrScanner:
             // TODO: Replace with QrScannerScreen from TCATBCamera
             Text("QR Scanner")
@@ -94,5 +83,40 @@ struct AppNavigation: View {
         case .splash, .onboarding, .feed, .bikes, .leaderboard:
             EmptyView()
         }
+    }
+
+    private func bikeDetailScreen(bikeQrId: String) -> some View {
+        let viewModel = BikeViewModel(
+            bikeQrId: bikeQrId,
+            apiClient: dependencies.apiClient
+        )
+        return BikeScreen(
+            viewModel: viewModel,
+            imageBaseURL: dependencies.imageBaseURL,
+            onImageTapped: { submissionId in
+                path.append(Route.bikeImageDetail(submissionId: submissionId))
+            },
+            onUserTapped: { userId in
+                path.append(Route.user(userId: userId))
+            },
+            onBack: { path.removeLast() }
+        )
+    }
+
+    private func imageDetailScreen(submissionId: String) -> some View {
+        let viewModel = ImageDetailViewModel(
+            submissionId: submissionId,
+            apiClient: dependencies.apiClient,
+            currentUserId: nil,  // TODO: wire auth
+            isAdmin: false       // TODO: wire auth
+        )
+        return ImageDetailScreen(
+            viewModel: viewModel,
+            onHome: { path = NavigationPath() },
+            onBikeClick: { bikeQrId in path.append(Route.bikeDetail(bikeQrId: bikeQrId)) },
+            onUserClick: { userId in path.append(Route.user(userId: userId)) },
+            onTagClick: { tagId in path.append(Route.tagDetail(tagId: tagId)) },
+            onShowScoreRules: { path.append(Route.scoreRules) }
+        )
     }
 }

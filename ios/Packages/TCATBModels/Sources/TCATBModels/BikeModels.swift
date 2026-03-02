@@ -1,6 +1,6 @@
 import Foundation
 
-public struct UserSummary: Codable, Sendable, Equatable {
+public struct UserSummary: Codable, Sendable, Equatable, Identifiable {
     public let name: String
     public let id: String
 
@@ -25,7 +25,8 @@ public struct BikeOwner: Codable, Sendable {
     }
 }
 
-public struct BikeListItem: Codable, Sendable {
+public struct BikeListItem: Codable, Sendable, Identifiable {
+    public var id: String { bikeQrId }
     public let bikeQrId: String
     public let provider: String?
     public let submissionCount: Int

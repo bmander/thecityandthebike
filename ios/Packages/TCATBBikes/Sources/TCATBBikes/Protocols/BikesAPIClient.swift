@@ -1,8 +1,5 @@
-// INTEGRATION: Move to TCATBNetworking
-// This protocol defines the API surface needed by the bikes/tags feature.
-// During integration, replace with the real API client from TCATBNetworking.
-
 import Foundation
+import TCATBModels
 
 public protocol BikesAPIClient: Sendable {
     /// Fetch paginated list of bikes with optional search query.

@@ -1,5 +1,6 @@
 import Foundation
 import Observation
+import TCATBModels
 
 @Observable
 public final class BikeViewModel {

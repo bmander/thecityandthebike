@@ -1,4 +1,5 @@
 import SwiftUI
+import TCATBModels
 
 public struct BikesContent: View {
     @Bindable var viewModel: BikesListViewModel
