@@ -1,4 +1,5 @@
 import SwiftUI
+import TCATBModels
 
 public struct ScoreRulesScreen: View {
     var onBack: () -> Void

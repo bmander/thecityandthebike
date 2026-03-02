@@ -1,6 +1,7 @@
 import SwiftUI
 import TCATBFeed
 import TCATBBikes
+import TCATBProfile
 
 /// Primary navigation container using `NavigationStack` with a `NavigationPath`.
 ///
@@ -56,9 +57,7 @@ struct AppNavigation: View {
         case .tagImageDetail(let submissionId):
             imageDetailScreen(submissionId: submissionId)
         case .user(let userId):
-            // TODO: Replace with UserScreen from TCATBProfile
-            Text("User: \(userId)")
-                .navigationTitle("User")
+            userScreen(userId: userId)
         case .userImageDetail(let submissionId):
             imageDetailScreen(submissionId: submissionId)
         case .me:
@@ -100,6 +99,22 @@ struct AppNavigation: View {
                 path.append(Route.user(userId: userId))
             },
             onBack: { path.removeLast() }
+        )
+    }
+
+    private func userScreen(userId: String) -> some View {
+        let viewModel = UserViewModel(
+            userId: userId,
+            apiClient: dependencies.apiClient,
+            currentUserIsAdmin: false  // TODO: wire auth
+        )
+        return UserScreen(
+            viewModel: viewModel,
+            imageBaseURL: dependencies.imageBaseURL,
+            onBack: { path.removeLast() },
+            onImageClick: { submissionId in
+                path.append(Route.userImageDetail(submissionId: submissionId))
+            }
         )
     }
 

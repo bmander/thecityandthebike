@@ -1,6 +1,5 @@
-// INTEGRATION: Move to TCATBNetworking
-
 import Foundation
+import TCATBModels
 
 public protocol ProfileAPIClient: Sendable {
     func getUserDetail(userId: String) async throws -> UserDetailResponse

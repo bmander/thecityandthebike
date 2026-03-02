@@ -1,4 +1,5 @@
 import SwiftUI
+import TCATBModels
 
 public struct LeaderboardContent: View {
     @Bindable var viewModel: LeaderboardViewModel

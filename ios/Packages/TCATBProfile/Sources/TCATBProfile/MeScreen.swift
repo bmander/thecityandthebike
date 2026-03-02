@@ -1,4 +1,5 @@
 import SwiftUI
+import TCATBModels
 
 public struct MeScreen: View {
     @Bindable var viewModel: MeViewModel
@@ -93,13 +94,13 @@ public struct MeScreen: View {
                 .font(.title3)
 
             if let firstSeen = detail.firstSeenAt {
-                Text("First seen: \(formatDateTime(firstSeen))")
+                Text("First seen: \(DateFormatting.formatDisplayDate(firstSeen) ?? firstSeen)")
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
             }
 
             if let lastSeen = detail.lastSeenAt {
-                Text("Last seen: \(formatDateTime(lastSeen))")
+                Text("Last seen: \(DateFormatting.formatDisplayDate(lastSeen) ?? lastSeen)")
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
             }

@@ -2,16 +2,15 @@
 import PackageDescription
 
 let package = Package(
-    name: "TCATBBikes",
+    name: "TCATBSharedUI",
     platforms: [.iOS(.v17)],
     products: [
-        .library(name: "TCATBBikes", targets: ["TCATBBikes"]),
+        .library(name: "TCATBSharedUI", targets: ["TCATBSharedUI"]),
     ],
     dependencies: [
         .package(name: "TCATBModels", path: "../TCATBModels"),
-        .package(name: "TCATBSharedUI", path: "../TCATBSharedUI"),
     ],
     targets: [
-        .target(name: "TCATBBikes", dependencies: ["TCATBModels", "TCATBSharedUI"]),
+        .target(name: "TCATBSharedUI", dependencies: ["TCATBModels"]),
     ]
 )

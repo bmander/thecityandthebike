@@ -1,7 +1,10 @@
 import SwiftUI
+import TCATBModels
+import TCATBSharedUI
 
 public struct UserScreen: View {
     @Bindable var viewModel: UserViewModel
+    var imageBaseURL: String
     var onBack: () -> Void
     var onImageClick: (String) -> Void
 
@@ -9,10 +12,12 @@ public struct UserScreen: View {
 
     public init(
         viewModel: UserViewModel,
+        imageBaseURL: String,
         onBack: @escaping () -> Void,
         onImageClick: @escaping (String) -> Void
     ) {
         self.viewModel = viewModel
+        self.imageBaseURL = imageBaseURL
         self.onBack = onBack
         self.onImageClick = onImageClick
     }
@@ -53,7 +58,7 @@ public struct UserScreen: View {
                     userHeader(detail: detail)
                 }
 
-                submissionsGrid
+                submissionsGallery
             }
         }
     }
@@ -83,13 +88,13 @@ public struct UserScreen: View {
                 .foregroundStyle(.secondary)
 
             if let firstSeen = detail.firstSeenAt {
-                Text("First seen: \(formatDateTime(firstSeen))")
+                Text("First seen: \(DateFormatting.formatDisplayDate(firstSeen) ?? firstSeen)")
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
             }
 
             if let lastSeen = detail.lastSeenAt {
-                Text("Last seen: \(formatDateTime(lastSeen))")
+                Text("Last seen: \(DateFormatting.formatDisplayDate(lastSeen) ?? lastSeen)")
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
             }
@@ -141,43 +146,13 @@ public struct UserScreen: View {
         }
     }
 
-    @ViewBuilder
-    private var submissionsGrid: some View {
-        let columns = [
-            GridItem(.flexible(), spacing: 2),
-            GridItem(.flexible(), spacing: 2),
-            GridItem(.flexible(), spacing: 2),
-        ]
-
-        LazyVGrid(columns: columns, spacing: 2) {
-            ForEach(viewModel.submissions) { submission in
-                if let imageUrl = submission.imageUrlThumbnail ?? submission.imageUrl,
-                   let url = URL(string: imageUrl) {
-                    Button {
-                        onImageClick(submission.submissionId)
-                    } label: {
-                        AsyncImage(url: url) { image in
-                            image
-                                .resizable()
-                                .aspectRatio(1, contentMode: .fill)
-                                .clipped()
-                        } placeholder: {
-                            Color.gray.opacity(0.2)
-                                .aspectRatio(1, contentMode: .fill)
-                        }
-                    }
-                }
-            }
-        }
-        .onAppear {
-            loadMoreIfNeeded()
-        }
-    }
-
-    private func loadMoreIfNeeded() {
-        Task {
-            await viewModel.loadMoreSubmissions()
-        }
+    private var submissionsGallery: some View {
+        SubmissionsGallery(
+            submissions: viewModel.submissions,
+            imageBaseURL: imageBaseURL,
+            onImageTapped: onImageClick,
+            onLastAppeared: { Task { await viewModel.loadMoreSubmissions() } }
+        )
     }
 }
 

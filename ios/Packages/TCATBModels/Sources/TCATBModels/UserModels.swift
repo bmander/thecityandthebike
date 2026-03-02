@@ -1,6 +1,8 @@
 import Foundation
 
-public struct UserResponse: Codable, Sendable {
+public struct UserResponse: Codable, Sendable, Identifiable {
+    public var id: String { userId }
+
     public let userId: String
     public let username: String
     public let isAdmin: Bool
@@ -34,7 +36,9 @@ public struct LeaderboardRank: Codable, Sendable, Equatable {
     }
 }
 
-public struct UserDetailResponse: Codable, Sendable {
+public struct UserDetailResponse: Codable, Sendable, Identifiable {
+    public var id: String { userId }
+
     public let userId: String
     public let username: String
     public let isAdmin: Bool

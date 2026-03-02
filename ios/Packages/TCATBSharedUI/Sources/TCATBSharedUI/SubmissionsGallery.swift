@@ -3,13 +3,13 @@ import TCATBModels
 
 // MARK: - Date grouping
 
-struct DateGroup: Identifiable {
-    let id: String
-    let dateLabel: String
-    let yearLabel: String?
-    let submissions: [SubmissionResponse]
+public struct DateGroup: Identifiable {
+    public let id: String
+    public let dateLabel: String
+    public let yearLabel: String?
+    public let submissions: [SubmissionResponse]
 
-    init(dateLabel: String, yearLabel: String?, submissions: [SubmissionResponse]) {
+    public init(dateLabel: String, yearLabel: String?, submissions: [SubmissionResponse]) {
         self.id = dateLabel + (yearLabel ?? "")
         self.dateLabel = dateLabel
         self.yearLabel = yearLabel
@@ -17,7 +17,7 @@ struct DateGroup: Identifiable {
     }
 }
 
-func groupSubmissionsByDate(_ submissions: [SubmissionResponse]) -> [DateGroup] {
+public func groupSubmissionsByDate(_ submissions: [SubmissionResponse]) -> [DateGroup] {
     let calendar = Calendar.current
     let now = Date()
     let currentYear = calendar.component(.year, from: now)
@@ -53,20 +53,32 @@ func groupSubmissionsByDate(_ submissions: [SubmissionResponse]) -> [DateGroup] 
     }
 }
 
-func formattedDate(_ dateString: String?) -> String {
+public func formattedDate(_ dateString: String?) -> String {
     guard let dateString, let date = DateFormatting.parseDate(dateString) else { return "" }
     return " on \(DateFormatting.formatDisplayDate(date))"
 }
 
 // MARK: - Submissions gallery
 
-struct SubmissionsGallery: View {
+public struct SubmissionsGallery: View {
     let submissions: [SubmissionResponse]
     let imageBaseURL: String
     let onImageTapped: (String) -> Void
     let onLastAppeared: () -> Void
 
-    var body: some View {
+    public init(
+        submissions: [SubmissionResponse],
+        imageBaseURL: String,
+        onImageTapped: @escaping (String) -> Void,
+        onLastAppeared: @escaping () -> Void
+    ) {
+        self.submissions = submissions
+        self.imageBaseURL = imageBaseURL
+        self.onImageTapped = onImageTapped
+        self.onLastAppeared = onLastAppeared
+    }
+
+    public var body: some View {
         let dateGroups = groupSubmissionsByDate(submissions)
         ForEach(dateGroups) { group in
             VStack(alignment: .leading, spacing: 8) {
@@ -105,33 +117,40 @@ struct SubmissionsGallery: View {
 
 // MARK: - Submission thumbnail
 
-struct SubmissionThumbnail: View {
+public struct SubmissionThumbnail: View {
     let submission: SubmissionResponse
     let imageBaseURL: String
     let onTap: () -> Void
 
-    var body: some View {
+    public init(submission: SubmissionResponse, imageBaseURL: String, onTap: @escaping () -> Void) {
+        self.submission = submission
+        self.imageBaseURL = imageBaseURL
+        self.onTap = onTap
+    }
+
+    public var body: some View {
         Button(action: onTap) {
-            AsyncImage(url: thumbnailURL) { phase in
-                switch phase {
-                case .success(let image):
-                    image
-                        .resizable()
-                        .aspectRatio(1, contentMode: .fill)
-                case .failure:
-                    Image(systemName: "photo")
-                        .font(.title3)
-                        .foregroundStyle(.secondary)
-                        .frame(maxWidth: .infinity)
-                        .aspectRatio(1, contentMode: .fill)
-                        .background(.quaternary)
-                default:
-                    ProgressView()
-                        .frame(maxWidth: .infinity)
-                        .aspectRatio(1, contentMode: .fill)
+            Color.clear
+                .aspectRatio(1, contentMode: .fit)
+                .overlay {
+                    AsyncImage(url: thumbnailURL) { phase in
+                        switch phase {
+                        case .success(let image):
+                            image
+                                .resizable()
+                                .scaledToFill()
+                        case .failure:
+                            Image(systemName: "photo")
+                                .font(.title3)
+                                .foregroundStyle(.secondary)
+                                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                                .background(.quaternary)
+                        default:
+                            ProgressView()
+                        }
+                    }
                 }
-            }
-            .clipped()
+                .clipped()
         }
         .buttonStyle(.plain)
     }

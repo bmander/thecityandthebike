@@ -7,7 +7,11 @@ let package = Package(
     products: [
         .library(name: "TCATBProfile", targets: ["TCATBProfile"]),
     ],
+    dependencies: [
+        .package(name: "TCATBModels", path: "../TCATBModels"),
+        .package(name: "TCATBSharedUI", path: "../TCATBSharedUI"),
+    ],
     targets: [
-        .target(name: "TCATBProfile"),
+        .target(name: "TCATBProfile", dependencies: ["TCATBModels", "TCATBSharedUI"]),
     ]
 )

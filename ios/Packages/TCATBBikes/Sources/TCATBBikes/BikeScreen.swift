@@ -1,5 +1,6 @@
 import SwiftUI
 import TCATBModels
+import TCATBSharedUI
 
 public struct BikeScreen: View {
     let viewModel: BikeViewModel

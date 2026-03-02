@@ -1,12 +1,24 @@
 import Foundation
 
 public enum LeaderboardPeriod: String, Codable, Sendable, CaseIterable {
+    case daily
     case weekly
     case monthly
     case allTime = "all_time"
+
+    public var displayName: String {
+        switch self {
+        case .daily: return "Daily"
+        case .weekly: return "Weekly"
+        case .monthly: return "Monthly"
+        case .allTime: return "All Time"
+        }
+    }
 }
 
-public struct LeaderboardEntry: Codable, Sendable, Equatable {
+public struct LeaderboardEntry: Codable, Sendable, Equatable, Identifiable {
+    public var id: String { userId }
+
     public let rank: Int
     public let userId: String
     public let username: String

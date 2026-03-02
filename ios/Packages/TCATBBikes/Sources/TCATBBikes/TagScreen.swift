@@ -1,5 +1,6 @@
 import SwiftUI
 import TCATBModels
+import TCATBSharedUI
 
 public struct TagScreen: View {
     let viewModel: TagViewModel
