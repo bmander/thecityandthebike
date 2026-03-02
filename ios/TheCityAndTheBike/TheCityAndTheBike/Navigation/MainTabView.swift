@@ -1,4 +1,5 @@
 import SwiftUI
+import TCATBBikes
 import TCATBFeed
 
 /// The three main tabs, matching the Android `MainTab` enum in `MainScreen.kt`.
@@ -26,6 +27,7 @@ enum MainTab: String, CaseIterable {
 struct MainTabView: View {
     @State private var selectedTab: MainTab = .feed
     var feedViewModel: MainViewModel
+    var bikesListViewModel: BikesListViewModel
     // TODO: Wire up actual auth state from TCATBAuth
     var isLoggedIn: Bool = false
     var onNavigate: ((Route) -> Void)?
@@ -52,9 +54,10 @@ struct MainTabView: View {
                     }
                     .tag(MainTab.leaderboard)
 
-                // TODO: Replace with BikesListScreen from TCATBBikes
-                Text("Bikes")
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                BikesContent(
+                    viewModel: bikesListViewModel,
+                    onBikeTapped: { bikeQrId in onNavigate?(.bikeDetail(bikeQrId: bikeQrId)) }
+                )
                     .tabItem {
                         Label(MainTab.bikes.rawValue, systemImage: MainTab.bikes.systemImage)
                     }

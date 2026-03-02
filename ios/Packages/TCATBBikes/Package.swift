@@ -3,7 +3,7 @@ import PackageDescription
 
 let package = Package(
     name: "TCATBBikes",
-    platforms: [.iOS(.v17)],
+    platforms: [.iOS(.v17), .macOS(.v14)],
     products: [
         .library(name: "TCATBBikes", targets: ["TCATBBikes"]),
     ],
@@ -13,5 +13,6 @@ let package = Package(
     ],
     targets: [
         .target(name: "TCATBBikes", dependencies: ["TCATBModels", "TCATBSharedUI"]),
+        .testTarget(name: "TCATBBikesTests", dependencies: ["TCATBBikes", "TCATBModels"]),
     ]
 )

@@ -36,7 +36,7 @@ public struct BikeIdBadge: View {
         }
         .overlay(
             RoundedRectangle(cornerRadius: 8)
-                .stroke(Color(.separator), lineWidth: 1)
+                .stroke(.separator, lineWidth: 1)
         )
     }
 }

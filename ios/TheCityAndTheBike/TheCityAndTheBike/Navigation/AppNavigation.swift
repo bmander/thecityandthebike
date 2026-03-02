@@ -16,6 +16,7 @@ struct AppNavigation: View {
         NavigationStack(path: $path) {
             MainTabView(
                 feedViewModel: dependencies.feedViewModel,
+                bikesListViewModel: dependencies.bikesListViewModel,
                 onNavigate: { route in
                     path.append(route)
                 }

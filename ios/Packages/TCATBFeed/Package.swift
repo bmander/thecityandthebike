@@ -9,8 +9,9 @@ let package = Package(
     ],
     dependencies: [
         .package(name: "TCATBModels", path: "../TCATBModels"),
+        .package(name: "TCATBSharedUI", path: "../TCATBSharedUI"),
     ],
     targets: [
-        .target(name: "TCATBFeed", dependencies: ["TCATBModels"]),
+        .target(name: "TCATBFeed", dependencies: ["TCATBModels", "TCATBSharedUI"]),
     ]
 )

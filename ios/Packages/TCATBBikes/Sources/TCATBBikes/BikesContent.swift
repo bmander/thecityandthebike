@@ -1,5 +1,6 @@
 import SwiftUI
 import TCATBModels
+import TCATBSharedUI
 
 public struct BikesContent: View {
     @Bindable var viewModel: BikesListViewModel
@@ -114,37 +115,3 @@ private struct BikeRow: View {
     }
 }
 
-/// Displays a styled bike ID with optional provider icon.
-public struct BikeIdBadge: View {
-    let provider: String?
-    let bikeQrId: String
-
-    public init(provider: String?, bikeQrId: String) {
-        self.provider = provider
-        self.bikeQrId = bikeQrId
-    }
-
-    public var body: some View {
-        HStack(spacing: 4) {
-            if let provider {
-                Image(systemName: providerIcon(for: provider))
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-            }
-            Text(bikeQrId)
-                .font(.subheadline.monospaced())
-                .fontWeight(.medium)
-        }
-        .padding(.horizontal, 8)
-        .padding(.vertical, 4)
-        .background(.quaternary, in: RoundedRectangle(cornerRadius: 6))
-    }
-
-    private func providerIcon(for provider: String) -> String {
-        switch provider.lowercased() {
-        case "citibike": return "bicycle"
-        case "lime": return "leaf"
-        default: return "bicycle"
-        }
-    }
-}
