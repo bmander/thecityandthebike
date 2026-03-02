@@ -33,13 +33,14 @@ public struct TagList: View {
 }
 
 struct TagItem: View {
+    @Environment(\.imageBaseURL) private var imageBaseURL
     let tag: TagResponse
     let isDeletable: Bool
     let onDelete: () -> Void
 
     var body: some View {
         ZStack(alignment: .topTrailing) {
-            AsyncImage(url: URL(string: tag.imageUrl)) { image in
+            AsyncImage(url: imageUrl(from: tag.imageUrl, baseURL: imageBaseURL)) { image in
                 image
                     .resizable()
                     .aspectRatio(contentMode: .fill)

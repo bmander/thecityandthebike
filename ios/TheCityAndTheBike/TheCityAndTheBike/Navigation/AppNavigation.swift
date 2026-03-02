@@ -1,4 +1,5 @@
 import SwiftUI
+import TCATBFeed
 
 /// Primary navigation container using `NavigationStack` with a `NavigationPath`.
 ///
@@ -17,6 +18,7 @@ struct AppNavigation: View {
                     path.append(route)
                 }
             )
+            .environment(\.imageBaseURL, dependencies.imageBaseURL)
             .navigationDestination(for: Route.self) { route in
                 destination(for: route)
             }

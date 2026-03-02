@@ -2,6 +2,7 @@ import SwiftUI
 import TCATBModels
 
 public struct ImageGrid: View {
+    @Environment(\.imageBaseURL) private var imageBaseURL
     let submissions: [SubmissionResponse]
     var onImageClick: ((String) -> Void)?
     var onLoadMore: (() -> Void)?
@@ -24,7 +25,7 @@ public struct ImageGrid: View {
         LazyVGrid(columns: columns, spacing: 2) {
             ForEach(submissions) { submission in
                 if let thumbnailUrl = submission.imageUrlThumbnail,
-                   let url = URL(string: thumbnailUrl) {
+                   let url = imageUrl(from: thumbnailUrl, baseURL: imageBaseURL) {
                     GridCell(
                         url: url,
                         isFlagged: (submission.flagCount ?? 0) > 0,

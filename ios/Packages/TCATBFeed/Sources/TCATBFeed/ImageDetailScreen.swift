@@ -5,6 +5,7 @@ import UIKit
 #endif
 
 public struct ImageDetailScreen: View {
+    @Environment(\.imageBaseURL) private var imageBaseURL
     @Bindable var viewModel: ImageDetailViewModel
     var onHome: () -> Void
     var onBikeClick: ((String) -> Void)?
@@ -114,8 +115,8 @@ public struct ImageDetailScreen: View {
         if viewModel.isTagMode, let ring = viewModel.processedRing {
             // Confirm phase: show image with polygon outline overlay
             MaskConfirmView(
-                imageURL: submission.imageUrl.flatMap { URL(string: $0) },
-                thumbnailURL: submission.imageUrlThumbnail.flatMap { URL(string: $0) },
+                imageURL: submission.imageUrl.flatMap { imageUrl(from: $0, baseURL: imageBaseURL) },
+                thumbnailURL: submission.imageUrlThumbnail.flatMap { imageUrl(from: $0, baseURL: imageBaseURL) },
                 ring: ring,
                 maskWidth: viewModel.processedMaskWidth,
                 maskHeight: viewModel.processedMaskHeight
@@ -126,7 +127,7 @@ public struct ImageDetailScreen: View {
                 onBack: { viewModel.goBackToDrawing() },
                 onConfirm: {
                     Task {
-                        let imageURL = submission.imageUrl.flatMap { URL(string: $0) }
+                        let imageURL = submission.imageUrl.flatMap { imageUrl(from: $0, baseURL: imageBaseURL) }
                         let imageData = await exportCompositedFromRing(
                             imageURL: imageURL,
                             ring: ring,
@@ -142,8 +143,8 @@ public struct ImageDetailScreen: View {
         } else if viewModel.isTagMode {
             // Drawing phase: mask painter + Discard/Next buttons
             MaskPainter(
-                imageURL: submission.imageUrl.flatMap { URL(string: $0) },
-                thumbnailURL: submission.imageUrlThumbnail.flatMap { URL(string: $0) },
+                imageURL: submission.imageUrl.flatMap { imageUrl(from: $0, baseURL: imageBaseURL) },
+                thumbnailURL: submission.imageUrlThumbnail.flatMap { imageUrl(from: $0, baseURL: imageBaseURL) },
                 onExitTagMode: { viewModel.exitTagMode() },
                 isProcessingMask: viewModel.isProcessingMask,
                 onMaskExported: { maskData, _, _ in
@@ -154,8 +155,8 @@ public struct ImageDetailScreen: View {
             // Normal view: zoomable image with tag overlays
             ZStack(alignment: .topLeading) {
                 ZoomableImage(
-                    imageURL: submission.imageUrl.flatMap { URL(string: $0) },
-                    thumbnailURL: submission.imageUrlThumbnail.flatMap { URL(string: $0) },
+                    imageURL: submission.imageUrl.flatMap { imageUrl(from: $0, baseURL: imageBaseURL) },
+                    thumbnailURL: submission.imageUrlThumbnail.flatMap { imageUrl(from: $0, baseURL: imageBaseURL) },
                     contentDescription: "Submission photo"
                 ) {
                     TagOutlineOverlay(
