@@ -21,6 +21,7 @@ build/
 .vscode/
 *.swp
 *.swo
+*.xcuserstate
 
 # OS
 .DS_Store
