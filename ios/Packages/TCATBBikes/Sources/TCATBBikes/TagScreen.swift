@@ -150,8 +150,6 @@ public struct TagScreen: View {
 
     private func formattedDate(_ dateString: String?) -> String {
         guard let dateString, let date = parseDate(dateString) else { return "" }
-        let formatter = DateFormatter()
-        formatter.dateFormat = "MMM d, yyyy"
-        return " on \(formatter.string(from: date))"
+        return " on \(displayDateFormatter.string(from: date))"
     }
 }

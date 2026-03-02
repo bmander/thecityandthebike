@@ -1,5 +1,37 @@
 import SwiftUI
 
+// MARK: - Cached formatters
+
+private let iso8601WithFractional: ISO8601DateFormatter = {
+    let f = ISO8601DateFormatter()
+    f.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+    return f
+}()
+
+private let iso8601Plain: ISO8601DateFormatter = {
+    let f = ISO8601DateFormatter()
+    f.formatOptions = [.withInternetDateTime]
+    return f
+}()
+
+private let dateOnlyFormatter: DateFormatter = {
+    let f = DateFormatter()
+    f.dateFormat = "yyyy-MM-dd"
+    return f
+}()
+
+let monthDayFormatter: DateFormatter = {
+    let f = DateFormatter()
+    f.dateFormat = "MMM d"
+    return f
+}()
+
+let displayDateFormatter: DateFormatter = {
+    let f = DateFormatter()
+    f.dateFormat = "MMM d, yyyy"
+    return f
+}()
+
 // MARK: - Date grouping
 
 struct DateGroup: Identifiable {
@@ -20,9 +52,6 @@ func groupSubmissionsByDate(_ submissions: [SubmissionResponse]) -> [DateGroup] 
     let calendar = Calendar.current
     let now = Date()
     let currentYear = calendar.component(.year, from: now)
-
-    let monthDayFormatter = DateFormatter()
-    monthDayFormatter.dateFormat = "MMM d"
 
     var groups: [(key: String, yearLabel: String?, submissions: [SubmissionResponse])] = []
     var currentGroup: (key: String, yearLabel: String?, submissions: [SubmissionResponse])?
@@ -56,16 +85,9 @@ func groupSubmissionsByDate(_ submissions: [SubmissionResponse]) -> [DateGroup] 
 }
 
 func parseDate(_ string: String) -> Date? {
-    let isoFormatter = ISO8601DateFormatter()
-    isoFormatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
-    if let date = isoFormatter.date(from: string) { return date }
-
-    isoFormatter.formatOptions = [.withInternetDateTime]
-    if let date = isoFormatter.date(from: string) { return date }
-
-    let dateOnly = DateFormatter()
-    dateOnly.dateFormat = "yyyy-MM-dd"
-    return dateOnly.date(from: String(string.prefix(10)))
+    if let date = iso8601WithFractional.date(from: string) { return date }
+    if let date = iso8601Plain.date(from: string) { return date }
+    return dateOnlyFormatter.date(from: String(string.prefix(10)))
 }
 
 // MARK: - Submission thumbnail

@@ -181,20 +181,3 @@ public struct UserScreen: View {
     }
 }
 
-private func formatDateTime(_ isoString: String) -> String {
-    let formatter = ISO8601DateFormatter()
-    formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
-    if let date = formatter.date(from: isoString) {
-        let displayFormatter = DateFormatter()
-        displayFormatter.dateFormat = "MMM d, yyyy"
-        return displayFormatter.string(from: date)
-    }
-    // Try without fractional seconds
-    formatter.formatOptions = [.withInternetDateTime]
-    if let date = formatter.date(from: isoString) {
-        let displayFormatter = DateFormatter()
-        displayFormatter.dateFormat = "MMM d, yyyy"
-        return displayFormatter.string(from: date)
-    }
-    return isoString
-}

@@ -1,6 +1,13 @@
 import Foundation
 import UIKit
 
+private let capturedDateFormatter: DateFormatter = {
+    let f = DateFormatter()
+    f.dateFormat = "yyyy-MM-dd"
+    f.timeZone = TimeZone(identifier: "America/Los_Angeles")
+    return f
+}()
+
 /// State of the upload flow.
 public enum UploadState: Sendable, Equatable {
     case idle
@@ -80,10 +87,7 @@ public final class UploadManager: @unchecked Sendable {
 
         state = .uploading(progress: 0.3)
 
-        let dateFormatter = DateFormatter()
-        dateFormatter.dateFormat = "yyyy-MM-dd"
-        dateFormatter.timeZone = TimeZone(identifier: "America/Los_Angeles")
-        let capturedDate = dateFormatter.string(from: Date())
+        let capturedDate = capturedDateFormatter.string(from: Date())
 
         do {
             state = .uploading(progress: 0.5)

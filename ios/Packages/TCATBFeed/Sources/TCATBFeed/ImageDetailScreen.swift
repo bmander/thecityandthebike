@@ -235,12 +235,7 @@ public struct ImageDetailScreen: View {
 
     private func formatDate(_ dateString: String?) -> String? {
         guard let dateString else { return nil }
-        let formatter = DateFormatter()
-        formatter.dateFormat = "yyyy-MM-dd"
-        guard let date = formatter.date(from: dateString) else { return dateString }
-        let displayFormatter = DateFormatter()
-        displayFormatter.dateFormat = "MMM d, yyyy"
-        return displayFormatter.string(from: date)
+        return DateFormatting.formatDisplayDate(dateString) ?? dateString
     }
 }
 
