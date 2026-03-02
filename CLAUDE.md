@@ -100,6 +100,26 @@ To find available simulator IDs:
 DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer xcrun simctl list devices available | grep -i "iphone"
 ```
 
+### iOS Linting & Formatting
+
+SwiftLint runs automatically on every Xcode build via a build phase. SwiftFormat is CLI-only (no build phase) to avoid modifying files during builds.
+
+SwiftLint requires the Xcode toolchain (same `DEVELOPER_DIR` as Swift package tests):
+
+```bash
+# Lint all iOS code
+cd ios && DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer swiftlint lint 2>&1 | tail -20
+
+# Auto-fix SwiftLint violations
+cd ios && DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer swiftlint lint --fix
+
+# Check formatting (dry run)
+cd ios && swiftformat --lint . 2>&1 | tail -20
+
+# Apply formatting
+cd ios && swiftformat .
+```
+
 #### Platform Requirements
 
 Packages depending on TCATBModels need `.macOS(.v13)` in their Package.swift platforms for `swift test` to work on macOS. Packages using `@Observable` need `.macOS(.v14)`.
