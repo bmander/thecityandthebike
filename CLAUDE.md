@@ -78,6 +78,32 @@ Testing on Android 16 devices requires recent library versions due to `InputMana
 
 If tests fail with `NoSuchMethodException: android.hardware.input.InputManager.getInstance`, update these dependencies.
 
+### iOS Swift Package Tests
+
+The system `swift` from Command Line Tools has a dyld linker issue. Always use the Xcode toolchain via `DEVELOPER_DIR`:
+
+Packages without iOS-only SwiftUI (e.g., TCATBSharedUI, TCATBAuth, TCATBModels) can use `swift test`:
+
+```bash
+cd ios/Packages/TCATBSharedUI && DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer xcrun swift test -q 2>&1 | tail -10
+```
+
+Packages with iOS-only SwiftUI APIs (e.g., TCATBProfile) must use `xcodebuild` with an iOS simulator:
+
+```bash
+DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer xcodebuild test -scheme TCATBProfile -destination 'platform=iOS Simulator,id=1180B51D-CC0B-42C8-AA42-BFBBA864EB38' 2>&1 | grep -E '(Test Suite|Test Case|passed|failed|error:|✔|✘)' | tail -30
+```
+
+To find available simulator IDs:
+
+```bash
+DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer xcrun simctl list devices available | grep -i "iphone"
+```
+
+#### Platform Requirements
+
+Packages depending on TCATBModels need `.macOS(.v13)` in their Package.swift platforms for `swift test` to work on macOS. Packages using `@Observable` need `.macOS(.v14)`.
+
 ## Incidental Findings
 
 If during exploration or implementation you notice a particularly urgent or elegant refactor opportunity, or a security flaw, pause and ask whether to file a GitHub issue for it before continuing with the main task.
