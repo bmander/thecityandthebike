@@ -19,6 +19,7 @@ struct PrivacyCopyrightScreen: View {
                         .font(AppTypography.titleSmall)
                         .fontWeight(.semibold)
 
+                    // swiftlint:disable:next line_length
                     Text("This app collects as little information about you as possible. We don't ask for your name or email. We don't track your location. When you upload a photo, we remove hidden details like the time it was taken. We only keep the date you uploaded it. We store an app-scoped device identifier to enforce bans and protect the service from abuse. It is not linked to any hardware serial number and cannot track you across other apps. That said, someone could still figure out who you are based on where the bikes are and what's visible in your photos. Keep that in mind.")
                         .font(AppTypography.bodyMedium)
                         .foregroundStyle(.secondary)
@@ -30,6 +31,7 @@ struct PrivacyCopyrightScreen: View {
                         .font(AppTypography.titleSmall)
                         .fontWeight(.semibold)
 
+                    // swiftlint:disable:next line_length
                     Text("The copyright of all photos you upload belong to you. By uploading the file you agree to license the image under Creative Commons BY-NC 4.0. This license requires that reusers give credit to the creator. It allows reusers to distribute, remix, adapt, and build upon the material in any medium or format, for noncommercial purposes only.")
                         .font(AppTypography.bodyMedium)
                         .foregroundStyle(.secondary)

@@ -1,8 +1,15 @@
 import Foundation
 
 public struct MultipartFormData: Sendable {
+    private struct Part: Sendable {
+        let name: String
+        let data: Data
+        let fileName: String?
+        let mimeType: String?
+    }
+
     private let boundary: String
-    private var parts: [(name: String, data: Data, fileName: String?, mimeType: String?)]
+    private var parts: [Part]
 
     public init(boundary: String = UUID().uuidString) {
         self.boundary = boundary
@@ -15,12 +22,12 @@ public struct MultipartFormData: Sendable {
 
     public mutating func addField(name: String, value: String) {
         if let data = value.data(using: .utf8) {
-            parts.append((name: name, data: data, fileName: nil, mimeType: nil))
+            parts.append(Part(name: name, data: data, fileName: nil, mimeType: nil))
         }
     }
 
     public mutating func addFile(name: String, data: Data, fileName: String, mimeType: String) {
-        parts.append((name: name, data: data, fileName: fileName, mimeType: mimeType))
+        parts.append(Part(name: name, data: data, fileName: fileName, mimeType: mimeType))
     }
 
     public func buildBody() -> Data {

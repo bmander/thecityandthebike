@@ -113,6 +113,7 @@ public struct RegisterScreen: View {
                     Text("Copyright")
                         .font(.subheadline)
                         .fontWeight(.semibold)
+                    // swiftlint:disable:next line_length
                     Text("The copyright of all photos you upload belong to you. By uploading the file you agree to license the image under Creative Commons BY-NC 4.0. This license requires that reusers give credit to the creator. It allows reusers to distribute, remix, adapt, and build upon the material in any medium or format, for noncommercial purposes only.")
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
