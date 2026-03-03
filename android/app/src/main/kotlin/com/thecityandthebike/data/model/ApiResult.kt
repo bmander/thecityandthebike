@@ -1,6 +1,11 @@
 package com.thecityandthebike.data.model
 
-import org.json.JSONObject
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonArray
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonPrimitive
 import retrofit2.Response
 import java.io.IOException
 
@@ -22,9 +27,7 @@ suspend fun <T> safeApiCall(block: suspend () -> Response<T>): ApiResult<T> {
         } else {
             val code = response.code()
             val rawBody = response.errorBody()?.string() ?: "Unknown error"
-            val message = try {
-                JSONObject(rawBody).optString("detail", rawBody)
-            } catch (_: Exception) { rawBody }
+            val message = parseErrorMessage(rawBody) ?: rawBody
             val error = when (code) {
                 401, 403 -> AppError.Auth(code, message)
                 422 -> AppError.Validation("", message)
@@ -38,5 +41,19 @@ suspend fun <T> safeApiCall(block: suspend () -> Response<T>): ApiResult<T> {
         ApiResult.Error(AppError.Network(e))
     } catch (e: Exception) {
         ApiResult.Error(AppError.Unknown(e))
+    }
+}
+
+fun parseErrorMessage(body: String): String? {
+    return try {
+        val json = Json.parseToJsonElement(body).jsonObject
+        when (val detail = json["detail"]) {
+            is JsonObject -> detail["msg"]?.jsonPrimitive?.content
+            is JsonArray -> detail.firstOrNull()?.jsonObject?.get("msg")?.jsonPrimitive?.content
+            is JsonPrimitive -> detail.content
+            else -> null
+        }
+    } catch (_: Exception) {
+        null
     }
 }
