@@ -149,6 +149,98 @@ class RegisterScreenTest {
     }
 
     @Test
+    fun registerScreen_shortUsernameKeepsButtonDisabled() {
+        composeTestRule.setContentWithTheme {
+            RegisterScreen(
+                state = AuthState(),
+                onRegister = { _, _ -> },
+                onNavigateBack = {},
+                onClearError = {},
+                onClearRegistrationSuccess = {}
+            )
+        }
+
+        composeTestRule.onNodeWithText("Username").performTextInput("ab")
+        composeTestRule.onNodeWithText("Password").performTextInput("password123")
+        composeTestRule.onNodeWithText("Confirm Password").performTextInput("password123")
+
+        composeTestRule.onNodeWithText("I've read this and I understand")
+            .performScrollTo()
+            .performClick()
+        composeTestRule.onNodeWithText("I agree to license my photos under CC BY-NC 4.0")
+            .performScrollTo()
+            .performClick()
+
+        composeTestRule.onNode(hasText("Create Account") and hasClickAction())
+            .performScrollTo()
+            .assertIsNotEnabled()
+    }
+
+    @Test
+    fun registerScreen_shortUsernameShowsValidationError() {
+        composeTestRule.setContentWithTheme {
+            RegisterScreen(
+                state = AuthState(),
+                onRegister = { _, _ -> },
+                onNavigateBack = {},
+                onClearError = {},
+                onClearRegistrationSuccess = {}
+            )
+        }
+
+        composeTestRule.onNodeWithText("Username").performTextInput("ab")
+
+        composeTestRule.onNodeWithText("Username must be at least 3 characters")
+            .assertIsDisplayed()
+    }
+
+    @Test
+    fun registerScreen_invalidCharactersShowsValidationError() {
+        composeTestRule.setContentWithTheme {
+            RegisterScreen(
+                state = AuthState(),
+                onRegister = { _, _ -> },
+                onNavigateBack = {},
+                onClearError = {},
+                onClearRegistrationSuccess = {}
+            )
+        }
+
+        composeTestRule.onNodeWithText("Username").performTextInput("test user")
+
+        composeTestRule.onNodeWithText("Only letters, numbers, and underscores allowed")
+            .assertIsDisplayed()
+    }
+
+    @Test
+    fun registerScreen_usernameWithSpecialCharsKeepsButtonDisabled() {
+        composeTestRule.setContentWithTheme {
+            RegisterScreen(
+                state = AuthState(),
+                onRegister = { _, _ -> },
+                onNavigateBack = {},
+                onClearError = {},
+                onClearRegistrationSuccess = {}
+            )
+        }
+
+        composeTestRule.onNodeWithText("Username").performTextInput("user@name")
+        composeTestRule.onNodeWithText("Password").performTextInput("password123")
+        composeTestRule.onNodeWithText("Confirm Password").performTextInput("password123")
+
+        composeTestRule.onNodeWithText("I've read this and I understand")
+            .performScrollTo()
+            .performClick()
+        composeTestRule.onNodeWithText("I agree to license my photos under CC BY-NC 4.0")
+            .performScrollTo()
+            .performClick()
+
+        composeTestRule.onNode(hasText("Create Account") and hasClickAction())
+            .performScrollTo()
+            .assertIsNotEnabled()
+    }
+
+    @Test
     fun registerScreen_passwordMismatchShowsError() {
         composeTestRule.setContentWithTheme {
             RegisterScreen(

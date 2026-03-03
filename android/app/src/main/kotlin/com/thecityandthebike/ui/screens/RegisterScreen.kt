@@ -98,6 +98,7 @@ fun RegisterScreen(
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
 
+                    val usernameValidationError = usernameError(username)
                     OutlinedTextField(
                         value = username,
                         onValueChange = {
@@ -113,7 +114,9 @@ fun RegisterScreen(
                         keyboardActions = KeyboardActions(
                             onNext = { focusManager.moveFocus(FocusDirection.Down) }
                         ),
-                        enabled = !state.isLoading
+                        enabled = !state.isLoading,
+                        isError = usernameValidationError != null,
+                        supportingText = usernameValidationError?.let { { Text(it) } }
                     )
 
                     OutlinedTextField(
@@ -311,6 +314,16 @@ fun RegisterScreen(
     }
 }
 
+private val usernamePattern = Regex("^[a-zA-Z0-9_]+$")
+
+internal fun usernameError(username: String): String? {
+    if (username.isEmpty()) return null
+    if (username.length < 3) return "Username must be at least 3 characters"
+    if (username.length > 50) return "Username must be 50 characters or fewer"
+    if (!usernamePattern.matches(username)) return "Only letters, numbers, and underscores allowed"
+    return null
+}
+
 private fun isFormValid(
     username: String,
     password: String,
@@ -319,6 +332,7 @@ private fun isFormValid(
     agreedToLicense: Boolean
 ): Boolean {
     return username.isNotBlank() &&
+            usernameError(username) == null &&
             password.isNotBlank() &&
             password.length >= 8 &&
             password == confirmPassword &&
