@@ -17,6 +17,7 @@ struct AppNavigation: View {
             MainTabView(
                 feedViewModel: dependencies.feedViewModel,
                 bikesListViewModel: dependencies.bikesListViewModel,
+                leaderboardViewModel: dependencies.leaderboardViewModel,
                 onNavigate: { route in
                     path.append(route)
                 }
