@@ -74,4 +74,14 @@ class UsernameValidationTest {
     fun `username with mixed case is valid`() {
         assertNull(usernameError("TestUser"))
     }
+
+    @Test
+    fun `username with trailing space returns error`() {
+        assertEquals("Only letters, numbers, and underscores allowed", usernameError("testuser "))
+    }
+
+    @Test
+    fun `username with leading space returns error`() {
+        assertEquals("Only letters, numbers, and underscores allowed", usernameError(" testuser"))
+    }
 }
