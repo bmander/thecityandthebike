@@ -117,7 +117,7 @@ class AuthRepositoryTest {
     }
 
     @Test
-    fun `register with unparseable error body should fall back gracefully`() = runTest {
+    fun `register 422 validation error should parse first message from detail list`() = runTest {
         coEvery {
             apiService.register(RegisterRequest("user", "pass"))
         } returns Response.error(
@@ -131,6 +131,42 @@ class AuthRepositoryTest {
         val error = (result as ApiResult.Error).error
         assertTrue(error is AppError.Server)
         assertEquals(422, (error as AppError.Server).code)
+        assertEquals("invalid email", error.displayMessage)
+    }
+
+    @Test
+    fun `register error with string detail should parse message`() = runTest {
+        coEvery {
+            apiService.register(RegisterRequest("user", "pass"))
+        } returns Response.error(
+            400,
+            """{"detail": "Username is not available"}""".toResponseBody()
+        )
+
+        val result = repository.register("user", "pass")
+
+        assertTrue(result is ApiResult.Error)
+        val error = (result as ApiResult.Error).error
+        assertTrue(error is AppError.Server)
+        assertEquals(400, (error as AppError.Server).code)
+        assertEquals("Username is not available", error.displayMessage)
+    }
+
+    @Test
+    fun `register with unparseable error body should fall back gracefully`() = runTest {
+        coEvery {
+            apiService.register(RegisterRequest("user", "pass"))
+        } returns Response.error(
+            500,
+            "not json".toResponseBody()
+        )
+
+        val result = repository.register("user", "pass")
+
+        assertTrue(result is ApiResult.Error)
+        val error = (result as ApiResult.Error).error
+        assertTrue(error is AppError.Server)
+        assertEquals(500, (error as AppError.Server).code)
         assertEquals("Registration failed", error.displayMessage)
     }
 

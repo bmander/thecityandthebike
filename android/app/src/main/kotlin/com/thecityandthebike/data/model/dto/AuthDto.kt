@@ -30,16 +30,7 @@ data class MessageResponse(
 )
 
 @Serializable
-data class ErrorDetail(
-    val msg: String
-)
-
-@Serializable
-data class ErrorResponse(
-    val detail: ErrorDetail? = null
-)
-
-@Serializable
 data class RefreshRequest(
     @SerialName("refresh_token") val refreshToken: String
 )
+
