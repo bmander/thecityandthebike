@@ -20,17 +20,21 @@ class RegisterScreenTest {
     @get:Rule
     val composeTestRule = createComposeRule()
 
-    @Test
-    fun registerScreen_allFormFieldsDisplayed() {
+    private fun renderRegisterScreen(state: AuthState = AuthState()) {
         composeTestRule.setContentWithTheme {
             RegisterScreen(
-                state = AuthState(),
+                state = state,
                 onRegister = { _, _ -> },
                 onNavigateBack = {},
                 onClearError = {},
                 onClearRegistrationSuccess = {}
             )
         }
+    }
+
+    @Test
+    fun registerScreen_allFormFieldsDisplayed() {
+        renderRegisterScreen()
 
         composeTestRule.onNodeWithText("Username").assertIsDisplayed()
         composeTestRule.onNodeWithText("Password").assertIsDisplayed()
@@ -42,15 +46,7 @@ class RegisterScreenTest {
 
     @Test
     fun registerScreen_createAccountButtonDisabledWhenFormEmpty() {
-        composeTestRule.setContentWithTheme {
-            RegisterScreen(
-                state = AuthState(),
-                onRegister = { _, _ -> },
-                onNavigateBack = {},
-                onClearError = {},
-                onClearRegistrationSuccess = {}
-            )
-        }
+        renderRegisterScreen()
 
         composeTestRule.onNode(hasText("Create Account") and hasClickAction())
             .performScrollTo()
@@ -59,15 +55,7 @@ class RegisterScreenTest {
 
     @Test
     fun registerScreen_createAccountButtonEnabledWhenFormValid() {
-        composeTestRule.setContentWithTheme {
-            RegisterScreen(
-                state = AuthState(),
-                onRegister = { _, _ -> },
-                onNavigateBack = {},
-                onClearError = {},
-                onClearRegistrationSuccess = {}
-            )
-        }
+        renderRegisterScreen()
 
         composeTestRule.onNodeWithText("Username").performTextInput("testuser")
         composeTestRule.onNodeWithText("Password").performTextInput("password123")
@@ -88,15 +76,7 @@ class RegisterScreenTest {
 
     @Test
     fun registerScreen_errorTextDisplayed() {
-        composeTestRule.setContentWithTheme {
-            RegisterScreen(
-                state = AuthState(error = "Username already taken"),
-                onRegister = { _, _ -> },
-                onNavigateBack = {},
-                onClearError = {},
-                onClearRegistrationSuccess = {}
-            )
-        }
+        renderRegisterScreen(state = AuthState(error = "Username already taken"))
 
         composeTestRule.onNodeWithText("Username already taken")
             .performScrollTo()
@@ -105,15 +85,7 @@ class RegisterScreenTest {
 
     @Test
     fun registerScreen_loadingStateDisablesFields() {
-        composeTestRule.setContentWithTheme {
-            RegisterScreen(
-                state = AuthState(isLoading = true),
-                onRegister = { _, _ -> },
-                onNavigateBack = {},
-                onClearError = {},
-                onClearRegistrationSuccess = {}
-            )
-        }
+        renderRegisterScreen(state = AuthState(isLoading = true))
 
         composeTestRule.onNodeWithText("Username").assertIsNotEnabled()
         composeTestRule.onNodeWithText("Password").assertIsNotEnabled()
@@ -122,15 +94,7 @@ class RegisterScreenTest {
 
     @Test
     fun registerScreen_shortPasswordKeepsButtonDisabled() {
-        composeTestRule.setContentWithTheme {
-            RegisterScreen(
-                state = AuthState(),
-                onRegister = { _, _ -> },
-                onNavigateBack = {},
-                onClearError = {},
-                onClearRegistrationSuccess = {}
-            )
-        }
+        renderRegisterScreen()
 
         composeTestRule.onNodeWithText("Username").performTextInput("testuser")
         composeTestRule.onNodeWithText("Password").performTextInput("short7x")
@@ -150,15 +114,7 @@ class RegisterScreenTest {
 
     @Test
     fun registerScreen_shortUsernameKeepsButtonDisabled() {
-        composeTestRule.setContentWithTheme {
-            RegisterScreen(
-                state = AuthState(),
-                onRegister = { _, _ -> },
-                onNavigateBack = {},
-                onClearError = {},
-                onClearRegistrationSuccess = {}
-            )
-        }
+        renderRegisterScreen()
 
         composeTestRule.onNodeWithText("Username").performTextInput("ab")
         composeTestRule.onNodeWithText("Password").performTextInput("password123")
@@ -178,15 +134,7 @@ class RegisterScreenTest {
 
     @Test
     fun registerScreen_shortUsernameShowsValidationError() {
-        composeTestRule.setContentWithTheme {
-            RegisterScreen(
-                state = AuthState(),
-                onRegister = { _, _ -> },
-                onNavigateBack = {},
-                onClearError = {},
-                onClearRegistrationSuccess = {}
-            )
-        }
+        renderRegisterScreen()
 
         composeTestRule.onNodeWithText("Username").performTextInput("ab")
 
@@ -196,15 +144,7 @@ class RegisterScreenTest {
 
     @Test
     fun registerScreen_invalidCharactersShowsValidationError() {
-        composeTestRule.setContentWithTheme {
-            RegisterScreen(
-                state = AuthState(),
-                onRegister = { _, _ -> },
-                onNavigateBack = {},
-                onClearError = {},
-                onClearRegistrationSuccess = {}
-            )
-        }
+        renderRegisterScreen()
 
         composeTestRule.onNodeWithText("Username").performTextInput("test user")
 
@@ -214,15 +154,7 @@ class RegisterScreenTest {
 
     @Test
     fun registerScreen_usernameWithSpecialCharsKeepsButtonDisabled() {
-        composeTestRule.setContentWithTheme {
-            RegisterScreen(
-                state = AuthState(),
-                onRegister = { _, _ -> },
-                onNavigateBack = {},
-                onClearError = {},
-                onClearRegistrationSuccess = {}
-            )
-        }
+        renderRegisterScreen()
 
         composeTestRule.onNodeWithText("Username").performTextInput("user@name")
         composeTestRule.onNodeWithText("Password").performTextInput("password123")
@@ -242,15 +174,7 @@ class RegisterScreenTest {
 
     @Test
     fun registerScreen_passwordMismatchShowsError() {
-        composeTestRule.setContentWithTheme {
-            RegisterScreen(
-                state = AuthState(),
-                onRegister = { _, _ -> },
-                onNavigateBack = {},
-                onClearError = {},
-                onClearRegistrationSuccess = {}
-            )
-        }
+        renderRegisterScreen()
 
         composeTestRule.onNodeWithText("Password").performTextInput("password123")
         composeTestRule.onNodeWithText("Confirm Password").performTextInput("different")
