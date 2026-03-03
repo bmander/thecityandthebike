@@ -1,5 +1,6 @@
 import Foundation
 import Observation
+import TCATBAuth
 import TCATBBikes
 import TCATBNetworking
 import TCATBFeed
@@ -13,10 +14,16 @@ final class AppDependencies {
     let bikesListViewModel: BikesListViewModel
     let leaderboardViewModel: LeaderboardViewModel
     let imageBaseURL: String
+    let tokenManager: TokenManager
+    let authViewModel: AuthViewModel
 
     init() {
-        let client = APIClient(environment: .staging, tokenProvider: StubTokenProvider())
+        let tokenManager = TokenManager()
+        self.tokenManager = tokenManager
+        let client = APIClient(environment: .staging, tokenProvider: TokenManagerTokenProvider(tokenManager: tokenManager))
         self.apiClient = client
+        let authRepo = AuthRepository(apiClient: client, tokenManager: tokenManager)
+        self.authViewModel = AuthViewModel(authRepository: authRepo)
         self.feedViewModel = MainViewModel(apiClient: client)
         self.bikesListViewModel = BikesListViewModel(apiClient: client)
         self.leaderboardViewModel = LeaderboardViewModel(apiClient: client)

@@ -1,5 +1,6 @@
 import Testing
 import Foundation
+import TCATBModels
 @testable import TCATBAuth
 
 final class MockAuthAPIClient: AuthAPIClient, @unchecked Sendable {

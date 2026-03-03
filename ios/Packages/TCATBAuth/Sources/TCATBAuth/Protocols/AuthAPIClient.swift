@@ -1,8 +1,5 @@
-// INTEGRATION: Move to TCATBNetworking
-// Protocol for auth-related API calls, allowing dependency injection and testing.
-// Once integrated, implement this in TCATBNetworking's APIClient.
-
 import Foundation
+import TCATBModels
 
 public protocol AuthAPIClient: Sendable {
     func login(_ request: LoginRequest) async throws -> TokenResponse

@@ -1,4 +1,5 @@
 import SwiftUI
+import TCATBAuth
 import TCATBBikes
 import TCATBFeed
 import TCATBProfile
@@ -30,8 +31,8 @@ struct MainTabView: View {
     var feedViewModel: MainViewModel
     var bikesListViewModel: BikesListViewModel
     var leaderboardViewModel: LeaderboardViewModel
-    // TODO: Wire up actual auth state from TCATBAuth
-    var isLoggedIn: Bool = false
+    var authViewModel: AuthViewModel
+    private var isLoggedIn: Bool { authViewModel.state.isLoggedIn }
     var onNavigate: ((Route) -> Void)?
     var onLogout: (() -> Void)?
 

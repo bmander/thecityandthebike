@@ -66,28 +66,6 @@
 		};
 /* End PBXGroup section */
 
-/* Begin PBXShellScriptBuildPhase section */
-		DD1000012F557930001BAB36 /* SwiftLint */ = {
-			isa = PBXShellScriptBuildPhase;
-			alwaysOutOfDate = 1;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			inputFileListPaths = (
-			);
-			inputPaths = (
-			);
-			name = SwiftLint;
-			outputFileListPaths = (
-			);
-			outputPaths = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-			shellPath = /bin/sh;
-			shellScript = "if command -v swiftlint >/dev/null 2>&1; then\n    swiftlint lint --config \"${SRCROOT}/../.swiftlint.yml\" || true\nelse\n    echo \"warning: SwiftLint not installed. Run 'brew install swiftlint'.\"\nfi\n";
-		};
-/* End PBXShellScriptBuildPhase section */
-
 /* Begin PBXNativeTarget section */
 		7AC58FAE2F557923001BAB36 /* TheCityAndTheBike */ = {
 			isa = PBXNativeTarget;
@@ -173,6 +151,28 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXResourcesBuildPhase section */
+
+/* Begin PBXShellScriptBuildPhase section */
+		DD1000012F557930001BAB36 /* SwiftLint */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+			);
+			name = SwiftLint;
+			outputFileListPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "if command -v swiftlint >/dev/null 2>&1; then\n    swiftlint lint --config \"${SRCROOT}/../.swiftlint.yml\" || true\nelse\n    echo \"warning: SwiftLint not installed. Run 'brew install swiftlint'.\"\nfi\n";
+		};
+/* End PBXShellScriptBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
 		7AC58FAB2F557923001BAB36 /* Sources */ = {

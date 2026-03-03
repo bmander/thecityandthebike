@@ -1,4 +1,5 @@
 import Foundation
+import TCATBModels
 
 public enum AuthError: Error, Equatable {
     case invalidCredentials

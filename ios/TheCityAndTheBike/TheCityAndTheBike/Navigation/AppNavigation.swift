@@ -1,4 +1,5 @@
 import SwiftUI
+import TCATBAuth
 import TCATBFeed
 import TCATBBikes
 import TCATBProfile
@@ -18,8 +19,13 @@ struct AppNavigation: View {
                 feedViewModel: dependencies.feedViewModel,
                 bikesListViewModel: dependencies.bikesListViewModel,
                 leaderboardViewModel: dependencies.leaderboardViewModel,
+                authViewModel: dependencies.authViewModel,
                 onNavigate: { route in
                     path.append(route)
+                },
+                onLogout: {
+                    dependencies.authViewModel.logout()
+                    path = NavigationPath()
                 }
             )
             .navigationDestination(for: Route.self) { route in
@@ -39,13 +45,29 @@ struct AppNavigation: View {
         case .scoreRules:
             ScoreRulesScreen()
         case .login:
-            // TODO: Replace with LoginScreen from TCATBAuth
-            Text("Login")
-                .navigationTitle("Login")
+            LoginScreen(
+                state: dependencies.authViewModel.state,
+                onLogin: { username, password in
+                    dependencies.authViewModel.login(username: username, password: password)
+                },
+                onNavigateToRegister: { path.append(Route.register) },
+                onClearError: { dependencies.authViewModel.clearError() }
+            )
+            .onChange(of: dependencies.authViewModel.state.isLoggedIn) {
+                if dependencies.authViewModel.state.isLoggedIn {
+                    path = NavigationPath()
+                }
+            }
         case .register:
-            // TODO: Replace with RegisterScreen from TCATBAuth
-            Text("Register")
-                .navigationTitle("Register")
+            RegisterScreen(
+                state: dependencies.authViewModel.state,
+                onRegister: { username, password in
+                    dependencies.authViewModel.register(username: username, password: password)
+                },
+                onNavigateBack: { path.removeLast() },
+                onClearError: { dependencies.authViewModel.clearError() },
+                onClearRegistrationSuccess: { dependencies.authViewModel.clearRegistrationSuccess() }
+            )
         case .imageDetail(let submissionId):
             imageDetailScreen(submissionId: submissionId)
         case .bikeDetail(let bikeQrId):
@@ -63,9 +85,25 @@ struct AppNavigation: View {
         case .userImageDetail(let submissionId):
             imageDetailScreen(submissionId: submissionId)
         case .me:
-            // TODO: Replace with MeScreen from TCATBProfile
-            Text("My Profile")
-                .navigationTitle("Me")
+            MeScreen(
+                viewModel: MeViewModel(
+                    userId: dependencies.tokenManager.getUserId(),
+                    apiClient: dependencies.apiClient
+                ),
+                deleteAccountViewModel: DeleteAccountViewModel(apiClient: dependencies.apiClient),
+                onBack: { path.removeLast() },
+                onImageClick: { submissionId in
+                    path.append(Route.meImageDetail(submissionId: submissionId))
+                },
+                onLogout: {
+                    dependencies.authViewModel.logout()
+                    path = NavigationPath()
+                },
+                onDeleted: {
+                    dependencies.authViewModel.logout()
+                    path = NavigationPath()
+                }
+            )
         case .meImageDetail(let submissionId):
             imageDetailScreen(submissionId: submissionId)
         case .qrScanner:
@@ -108,7 +146,7 @@ struct AppNavigation: View {
         let viewModel = UserViewModel(
             userId: userId,
             apiClient: dependencies.apiClient,
-            currentUserIsAdmin: false  // TODO: wire auth
+            currentUserIsAdmin: dependencies.tokenManager.isAdmin()
         )
         return UserScreen(
             viewModel: viewModel,
@@ -124,8 +162,8 @@ struct AppNavigation: View {
         let viewModel = ImageDetailViewModel(
             submissionId: submissionId,
             apiClient: dependencies.apiClient,
-            currentUserId: nil,  // TODO: wire auth
-            isAdmin: false       // TODO: wire auth
+            currentUserId: dependencies.tokenManager.getUserId(),
+            isAdmin: dependencies.tokenManager.isAdmin()
         )
         return ImageDetailScreen(
             viewModel: viewModel,

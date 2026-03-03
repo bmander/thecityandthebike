@@ -28,6 +28,9 @@ xcuserdata/
 .DS_Store
 Thumbs.db
 
+# Claude Code
+.claude/
+
 # Testing
 *.db
 .pytest_cache/
