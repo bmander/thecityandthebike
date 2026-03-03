@@ -6,12 +6,11 @@ import com.thecityandthebike.data.model.ApiResult
 import com.thecityandthebike.data.model.AppError
 import com.thecityandthebike.data.model.dto.LoginRequest
 import com.thecityandthebike.data.model.dto.RefreshRequest
-import com.thecityandthebike.data.model.dto.ErrorResponse
 import com.thecityandthebike.data.model.dto.RegisterRequest
+import com.thecityandthebike.data.model.dto.parseErrorMessage
 import com.thecityandthebike.data.model.dto.UserResponse
 import com.thecityandthebike.data.model.safeApiCall
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.serialization.json.Json
 import java.io.IOException
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -44,12 +43,8 @@ class AuthRepository @Inject constructor(
                 val retryAfter = response.headers()["Retry-After"]?.toIntOrNull()
                 ApiResult.Error(AppError.RateLimit(retryAfter))
             } else if (response.code() == 403) {
-                val errorMessage = try {
-                    val body = response.errorBody()?.string()
-                    body?.let { Json.decodeFromString<ErrorResponse>(it).detail?.msg }
-                } catch (_: Exception) {
-                    null
-                } ?: "This account or device has been banned"
+                val errorMessage = response.errorBody()?.string()?.let { parseErrorMessage(it) }
+                    ?: "This account or device has been banned"
                 ApiResult.Error(AppError.Auth(response.code(), errorMessage))
             } else {
                 ApiResult.Error(AppError.Auth(response.code(), "Invalid credentials"))
@@ -70,12 +65,8 @@ class AuthRepository @Inject constructor(
                 val retryAfter = response.headers()["Retry-After"]?.toIntOrNull()
                 ApiResult.Error(AppError.RateLimit(retryAfter))
             } else {
-                val errorMessage = try {
-                    val body = response.errorBody()?.string()
-                    body?.let { Json.decodeFromString<ErrorResponse>(it).detail?.msg }
-                } catch (_: Exception) {
-                    null
-                } ?: "Registration failed"
+                val errorMessage = response.errorBody()?.string()?.let { parseErrorMessage(it) }
+                    ?: "Registration failed"
                 ApiResult.Error(AppError.Server(response.code(), errorMessage))
             }
         } catch (e: IOException) {
