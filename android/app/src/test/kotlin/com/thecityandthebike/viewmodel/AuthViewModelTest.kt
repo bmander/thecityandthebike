@@ -8,6 +8,7 @@ import androidx.lifecycle.SavedStateHandle
 import com.thecityandthebike.data.repository.AuthRepository
 import com.thecityandthebike.ui.viewmodel.AuthViewModel
 import io.mockk.coEvery
+import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.Dispatchers
@@ -135,6 +136,37 @@ class AuthViewModelTest {
         testDispatcher.scheduler.advanceUntilIdle()
 
         assertFalse(viewModel.state.value.isLoggedIn)
+    }
+
+    @Test
+    fun `login should trim username and password`() = runTest {
+        val tokenResponse = com.thecityandthebike.data.model.dto.TokenResponse(
+            accessToken = "token", refreshToken = "refresh"
+        )
+        coEvery { apiService.login(any()) } returns retrofit2.Response.success(tokenResponse)
+        viewModel = AuthViewModel(authRepository, SavedStateHandle(), application)
+
+        viewModel.login("  user  ", "  pass  ")
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        coVerify {
+            apiService.login(match { it.username == "user" && it.password == "pass" })
+        }
+    }
+
+    @Test
+    fun `register should trim username and password`() = runTest {
+        coEvery { apiService.register(any()) } returns retrofit2.Response.success(
+            com.thecityandthebike.data.model.dto.MessageResponse(msg = "User created")
+        )
+        viewModel = AuthViewModel(authRepository, SavedStateHandle(), application)
+
+        viewModel.register("  user  ", "  pass  ")
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        coVerify {
+            apiService.register(match { it.username == "user" && it.password == "pass" })
+        }
     }
 
     @Test
