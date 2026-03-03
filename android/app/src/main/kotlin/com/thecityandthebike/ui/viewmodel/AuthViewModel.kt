@@ -57,8 +57,10 @@ class AuthViewModel @Inject constructor(
 
     fun login(username: String, password: String) {
         viewModelScope.launch {
+            val trimmedUsername = username.trim()
+            val trimmedPassword = password.trim()
             _state.value = _state.value.copy(isLoading = true, error = null)
-            when (val result = authRepository.login(username, password, androidId)) {
+            when (val result = authRepository.login(trimmedUsername, trimmedPassword, androidId)) {
                 is ApiResult.Success -> {
                     _state.value = _state.value.copy(isLoading = false, isLoggedIn = true)
                 }
@@ -71,9 +73,11 @@ class AuthViewModel @Inject constructor(
 
     fun register(username: String, password: String) {
         viewModelScope.launch {
+            val trimmedUsername = username.trim()
+            val trimmedPassword = password.trim()
             _state.value = _state.value.copy(isLoading = true, error = null, registrationSuccess = false)
             savedStateHandle[REGISTRATION_SUCCESS_KEY] = false
-            when (val result = authRepository.register(username, password, androidId)) {
+            when (val result = authRepository.register(trimmedUsername, trimmedPassword, androidId)) {
                 is ApiResult.Success -> {
                     _state.value = _state.value.copy(isLoading = false, registrationSuccess = true)
                     savedStateHandle[REGISTRATION_SUCCESS_KEY] = true
