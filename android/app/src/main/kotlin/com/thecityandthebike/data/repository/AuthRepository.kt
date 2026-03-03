@@ -7,7 +7,7 @@ import com.thecityandthebike.data.model.AppError
 import com.thecityandthebike.data.model.dto.LoginRequest
 import com.thecityandthebike.data.model.dto.RefreshRequest
 import com.thecityandthebike.data.model.dto.RegisterRequest
-import com.thecityandthebike.data.model.dto.parseErrorMessage
+import com.thecityandthebike.data.model.parseErrorMessage
 import com.thecityandthebike.data.model.dto.UserResponse
 import com.thecityandthebike.data.model.safeApiCall
 import kotlinx.coroutines.flow.StateFlow
