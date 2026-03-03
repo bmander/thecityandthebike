@@ -37,3 +37,13 @@ uploads/
 
 # Backups
 backups/
+
+# iOS build artifacts
+*.build/
+.swiftpm/
+
+# Xcode user data
+xcuserdata/
+
+# Claude Code worktrees
+.claude/worktrees/
