@@ -24,6 +24,11 @@
     <string name="onboarding_cc_link">Más información sobre CC BY-NC 4.0</string>
     <string name="onboarding_cc_link_a11y">Más información sobre CC BY-NC 4.0, se abre en el navegador</string>
 
+    <!-- Username validation -->
+    <string name="username_error_too_short">El nombre de usuario debe tener al menos 3 caracteres</string>
+    <string name="username_error_too_long">El nombre de usuario debe tener 50 caracteres o menos</string>
+    <string name="username_error_invalid_chars">Solo se permiten letras, números y guiones bajos</string>
+
     <!-- Registration checkboxes -->
     <string name="register_checkbox_read_understood">He leído esto y lo entiendo</string>
     <string name="register_checkbox_agree_license">Acepto licenciar mis fotos bajo CC BY-NC 4.0</string>

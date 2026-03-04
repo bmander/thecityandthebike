@@ -24,6 +24,11 @@
     <string name="onboarding_cc_link">Tìm hiểu thêm về CC BY-NC 4.0</string>
     <string name="onboarding_cc_link_a11y">Tìm hiểu thêm về CC BY-NC 4.0, mở trong trình duyệt</string>
 
+    <!-- Username validation -->
+    <string name="username_error_too_short">Tên người dùng phải có ít nhất 3 ký tự</string>
+    <string name="username_error_too_long">Tên người dùng phải có 50 ký tự trở xuống</string>
+    <string name="username_error_invalid_chars">Chỉ cho phép chữ cái, số và dấu gạch dưới</string>
+
     <!-- Registration checkboxes -->
     <string name="register_checkbox_read_understood">Tôi đã đọc và hiểu nội dung này</string>
     <string name="register_checkbox_agree_license">Tôi đồng ý cấp phép ảnh theo CC BY-NC 4.0</string>
