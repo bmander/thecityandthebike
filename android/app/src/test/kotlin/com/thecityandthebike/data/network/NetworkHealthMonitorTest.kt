@@ -113,10 +113,23 @@ class NetworkHealthMonitorTest {
     // --- NetworkCallback behavior ---
 
     @Test
-    fun `onNetworkLost sets DeviceOffline`() {
+    fun `onNetworkLost sets DeviceOffline when no active network`() = runTest {
+        every { connectivityManager.activeNetwork } returns null
+
         monitor.onNetworkLost()
 
         assertEquals(NetworkStatus.DeviceOffline, monitor.status.value)
+    }
+
+    @Test
+    fun `onNetworkLost stays Healthy when another network is active`() = runTest {
+        coEvery { apiService.health() } returns Response.success(
+            HealthResponse(status = "ok", version = "1.0")
+        )
+
+        monitor.onNetworkLost()
+
+        assertEquals(NetworkStatus.Healthy, monitor.status.value)
     }
 
     @Test
@@ -131,10 +144,12 @@ class NetworkHealthMonitorTest {
     }
 
     @Test
-    fun `onNetworkAvailable after offline recovers to Healthy`() = runTest {
+    fun `onNetworkLost then onNetworkAvailable recovers to Healthy`() = runTest {
+        every { connectivityManager.activeNetwork } returns null
         monitor.onNetworkLost()
         assertEquals(NetworkStatus.DeviceOffline, monitor.status.value)
 
+        every { connectivityManager.activeNetwork } returns mockk<Network>()
         coEvery { apiService.health() } returns Response.success(
             HealthResponse(status = "ok", version = "1.0")
         )
