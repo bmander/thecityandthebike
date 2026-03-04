@@ -110,6 +110,15 @@ jobs:
           path: android/app/build/reports/tests/
         if: always()
 
+      - name: Build staging debug APK
+        run: ./gradlew assembleStagingDebug
+
+      - name: Upload staging APK
+        uses: actions/upload-artifact@v6
+        with:
+          name: staging-debug-apk
+          path: android/app/build/outputs/apk/staging/debug/app-staging-debug.apk
+
   lint:
     name: Code Quality
     runs-on: ubuntu-latest
