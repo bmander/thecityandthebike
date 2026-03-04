@@ -2,8 +2,6 @@ package com.thecityandthebike.data.network
 
 import android.net.ConnectivityManager
 import android.net.Network
-import android.net.NetworkCapabilities
-import android.net.NetworkRequest
 import com.thecityandthebike.data.api.ApiService
 import com.thecityandthebike.di.ApplicationScope
 import kotlinx.coroutines.CoroutineScope
@@ -52,10 +50,7 @@ class NetworkHealthMonitor @Inject constructor(
 
     fun startMonitoring() {
         if (!monitoring.compareAndSet(false, true)) return
-        val request = NetworkRequest.Builder()
-            .addCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
-            .build()
-        connectivityManager.registerNetworkCallback(request, networkCallback)
+        connectivityManager.registerDefaultNetworkCallback(networkCallback)
         appScope.launch { checkHealth() }
     }
 
