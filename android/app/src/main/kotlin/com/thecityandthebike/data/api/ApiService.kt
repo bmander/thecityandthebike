@@ -8,6 +8,10 @@ import retrofit2.http.*
 
 interface ApiService {
 
+    // Health endpoint
+    @GET("health")
+    suspend fun health(): Response<HealthResponse>
+
     // Auth endpoints
     @POST("auth/register")
     suspend fun register(@Body request: RegisterRequest): Response<MessageResponse>
