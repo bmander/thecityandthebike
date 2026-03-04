@@ -59,7 +59,7 @@ class NetworkHealthMonitor @Inject constructor(
     }
 
     internal fun onNetworkLost() {
-        appScope.launch { checkHealth() }
+        _status.value = NetworkStatus.DeviceOffline
     }
 
     override suspend fun checkHealth() {
