@@ -68,7 +68,7 @@ private val TAGS_TO_STRIP = listOf(
 
 fun createImageFileAndUri(context: Context): Pair<File, Uri> {
     val imageDir = File(context.cacheDir, "images").apply { mkdirs() }
-    val imageFile = File(imageDir, "photo_${System.currentTimeMillis()}.jpg")
+    val imageFile = File(imageDir, "photo_${System.nanoTime()}.jpg")
     val uri = FileProvider.getUriForFile(
         context,
         "${context.packageName}.fileprovider",

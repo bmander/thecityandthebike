@@ -73,7 +73,6 @@ class FileUtilsInstrumentedTest {
     @Test
     fun createImageFileAndUri_generatesUniqueResults() {
         val (file1, uri1) = createImageFileAndUri(context)
-        Thread.sleep(10)
         val (file2, uri2) = createImageFileAndUri(context)
 
         assertNotEquals("Each call should generate a unique file", file1, file2)
