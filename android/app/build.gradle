@@ -90,7 +90,7 @@ android {
     testOptions {
         unitTests.includeAndroidResources = true
         unitTests.all {
-            maxParallelForks = Runtime.runtime.availableProcessors().intdiv(2) ?: 1
+            maxParallelForks = Math.max(1, Runtime.runtime.availableProcessors().intdiv(2))
         }
     }
     packaging {
