@@ -1,3 +1,4 @@
+import functools
 import io
 import os
 
@@ -28,6 +29,12 @@ from app.models import User, Bike, FenderSubmission, Tag
 from app.main import RequestIDMiddleware, SecurityHeadersMiddleware, validation_exception_handler
 from app.rate_limit import AccountLockout, get_account_lockout, limiter, rate_limit_exceeded_handler
 from app.routers import auth_router, users_router, submissions_router, bikes_router, uploads_router, leaderboard_router, tags_router, flags_router
+
+
+@functools.lru_cache
+def get_test_password_hash(password: str) -> str:
+    """Cache bcrypt hashes so each unique password is only hashed once."""
+    return get_password_hash(password)
 
 
 def create_test_image(width=800, height=600, format="JPEG", mode="RGB", color="red"):
@@ -78,12 +85,22 @@ test_app.add_exception_handler(RateLimitExceeded, rate_limit_exceeded_handler)
 test_app.add_exception_handler(RequestValidationError, validation_exception_handler)
 
 
-@pytest.fixture(scope="function", autouse=True)
+@pytest.fixture(scope="session", autouse=True)
 def setup_database():
-    """Create tables before each test and drop them after."""
+    """Create tables once for the entire test session."""
     Base.metadata.create_all(bind=test_engine)
     yield
     Base.metadata.drop_all(bind=test_engine)
+
+
+@pytest.fixture(scope="function", autouse=True)
+def clean_tables():
+    """Delete all rows after each test instead of recreating schema."""
+    yield
+    with test_engine.connect() as conn:
+        for table in reversed(Base.metadata.sorted_tables):
+            conn.execute(table.delete())
+        conn.commit()
 
 
 def get_test_db():
@@ -132,7 +149,7 @@ def test_user(db_session, test_user_data):
     """
     user = User(
         username=test_user_data["username"],
-        password_hash=get_password_hash(test_user_data["password"]),
+        password_hash=get_test_password_hash(test_user_data["password"]),
     )
     db_session.add(user)
     db_session.commit()
@@ -218,7 +235,7 @@ def test_admin_user(db_session):
     """Create and return an admin user in the database."""
     user = User(
         username="adminuser",
-        password_hash=get_password_hash("adminpassword123"),
+        password_hash=get_test_password_hash("adminpassword123"),
         is_admin=True,
     )
     db_session.add(user)
@@ -239,7 +256,7 @@ def test_banned_user(db_session):
     """Create and return a banned user with an android_id."""
     user = User(
         username="banneduser",
-        password_hash=get_password_hash("bannedpassword123"),
+        password_hash=get_test_password_hash("bannedpassword123"),
         is_banned=True,
         android_id="banned-device-123",
     )
