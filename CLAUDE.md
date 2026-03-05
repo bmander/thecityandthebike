@@ -1,13 +1,5 @@
 # Claude Code Guidelines
 
-## Virtual Environment
-
-If a virtual environment doesn't exist, create one:
-
-```bash
-cd api && python -m venv venv && source venv/bin/activate && pip install -r requirements.txt -r requirements-dev.txt
-```
-
 ## Testing
 
 All new behavior must be covered by a test case. Do not consider a task complete until tests are written and passing.
