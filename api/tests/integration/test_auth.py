@@ -200,6 +200,19 @@ class TestRegisterValidationLogging:
         assert "x9y8z7" not in log_messages
         assert "[REDACTED]" in log_messages
 
+    def test_validation_response_redacts_password(self, client):
+        """422 response body must not include the raw password value."""
+        response = client.post(
+            "/auth/register",
+            json={
+                "username": "validuser",
+                "password": "x9y8z7",
+            },
+        )
+        assert response.status_code == 422
+        body = response.text
+        assert "x9y8z7" not in body
+
     def test_validation_log_does_not_redact_non_sensitive_fields(self, client, caplog):
         """Non-sensitive field values (like username) should appear in the log."""
         with caplog.at_level(logging.WARNING, logger="app.main"):
