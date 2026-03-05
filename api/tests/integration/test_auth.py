@@ -226,6 +226,20 @@ class TestRegisterValidationLogging:
         log_messages = " ".join(r.message for r in caplog.records)
         assert "a!" in log_messages
 
+    def test_validation_response_redacts_password(self, client):
+        """Validation error response must not leak the raw password value."""
+        response = client.post(
+            "/auth/register",
+            json={
+                "username": "validuser",
+                "password": "x9y8z7",
+            },
+        )
+        assert response.status_code == 422
+        body = response.text
+        assert "x9y8z7" not in body
+        assert "[REDACTED]" in body
+
     def test_validation_error_still_returns_422(self, client, caplog):
         """Validation errors should still return 422 with detail body."""
         with caplog.at_level(logging.WARNING, logger="app.main"):
