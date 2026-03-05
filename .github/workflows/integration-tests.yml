@@ -72,7 +72,7 @@ jobs:
         if: always()
 
       - name: Upload HTML coverage report
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: coverage-report
           path: api/coverage-html/
@@ -104,7 +104,7 @@ jobs:
         run: ./gradlew testStagingDebugUnitTest
 
       - name: Upload test results
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: android-unit-test-results
           path: android/app/build/reports/tests/
@@ -153,7 +153,7 @@ jobs:
         run: ./gradlew lint
 
       - name: Upload lint results
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: lint-results
           path: |
