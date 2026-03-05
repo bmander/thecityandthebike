@@ -14,13 +14,19 @@ All new behavior must be covered by a test case. Do not consider a task complete
 
 ### Python Tests
 
-Always run tests with the `-x` flag to stop on the first error, and `-q` for minimal output to keep context clean:
+Before running Python tests, detect whether you are inside a dev container (check for the file `/.dockerenv` or the environment variable `REMOTE_CONTAINERS` / `CODESPACES`). If inside a dev container, dependencies are already installed system-wide — run tests directly without a virtual environment:
+
+```bash
+cd api && pytest -x -q 2>&1 | tail -10
+```
+
+If **not** inside a dev container, activate (or create) a virtual environment first:
 
 ```bash
 cd api && source venv/bin/activate && pytest -x -q 2>&1 | tail -10
 ```
 
-This prevents overwhelming output when there are multiple failures from the same root cause.
+Always use the `-x` flag to stop on the first error, and `-q` for minimal output to keep context clean. This prevents overwhelming output when there are multiple failures from the same root cause.
 
 ### Android Builds
 
