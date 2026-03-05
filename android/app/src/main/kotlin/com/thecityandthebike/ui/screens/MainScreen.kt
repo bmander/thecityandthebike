@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
+import com.thecityandthebike.data.network.LocalNetworkBannerShowing
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -346,8 +347,8 @@ private fun FeedContent(
             )
         }
 
-        // Error snackbar
-        state.error?.let { error ->
+        // Error snackbar (suppressed when network banner is showing)
+        if (!LocalNetworkBannerShowing.current) state.error?.let { error ->
             Snackbar(
                 modifier = Modifier
                     .align(Alignment.BottomCenter)

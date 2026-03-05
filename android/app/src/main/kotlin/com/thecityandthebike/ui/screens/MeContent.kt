@@ -13,6 +13,7 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import com.thecityandthebike.data.network.LocalNetworkBannerShowing
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Snackbar
@@ -79,7 +80,7 @@ fun MeContent(
                     modifier = Modifier.align(Alignment.Center)
                 )
             }
-            state.error != null || deleteAccountState.error != null -> {
+            (state.error != null || deleteAccountState.error != null) && !LocalNetworkBannerShowing.current -> {
                 val errorMessage = deleteAccountState.error ?: state.error ?: ""
                 val clearAction = if (deleteAccountState.error != null) onClearDeleteError else onClearError
                 Snackbar(

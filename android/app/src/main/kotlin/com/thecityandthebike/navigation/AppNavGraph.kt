@@ -24,6 +24,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.toRoute
 import com.thecityandthebike.data.local.OnboardingPrefs
+import com.thecityandthebike.data.network.LocalNetworkBannerShowing
 import com.thecityandthebike.data.network.NetworkStatus
 import com.thecityandthebike.data.network.NetworkStatusProvider
 import androidx.compose.foundation.layout.BoxScope
@@ -34,6 +35,7 @@ import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.material3.Snackbar
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.unit.dp
 import com.thecityandthebike.ui.screens.BikeScreen
@@ -73,7 +75,10 @@ fun AppNavGraph(onboardingPrefs: OnboardingPrefs, networkStatusProvider: Network
     val authViewModel: AuthViewModel = hiltViewModel()
     val authState by authViewModel.state.collectAsStateWithLifecycle()
     val navigateToScoreRules = { navController.navigate(ScoreRules) }
+    val networkStatus by networkStatusProvider.status.collectAsStateWithLifecycle()
+    val bannerShowing = networkStatus is NetworkStatus.DeviceOffline || networkStatus is NetworkStatus.ApiUnreachable
 
+    CompositionLocalProvider(LocalNetworkBannerShowing provides bannerShowing) {
     Box(modifier = Modifier.fillMaxSize()) {
     NavHost(
         navController = navController,
@@ -400,6 +405,7 @@ fun AppNavGraph(onboardingPrefs: OnboardingPrefs, networkStatusProvider: Network
 
     NetworkStatusBanner(networkStatusProvider)
     } // Box
+    } // CompositionLocalProvider
 }
 
 @Composable

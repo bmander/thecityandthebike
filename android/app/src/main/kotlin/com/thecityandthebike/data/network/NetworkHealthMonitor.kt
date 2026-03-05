@@ -4,6 +4,7 @@ import android.net.ConnectivityManager
 import android.net.Network
 import com.thecityandthebike.data.api.ApiService
 import com.thecityandthebike.di.ApplicationScope
+import androidx.compose.runtime.compositionLocalOf
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -20,6 +21,8 @@ sealed interface NetworkStatus {
     data object DeviceOffline : NetworkStatus
     data object ApiUnreachable : NetworkStatus
 }
+
+val LocalNetworkBannerShowing = compositionLocalOf { false }
 
 interface NetworkStatusProvider {
     val status: StateFlow<NetworkStatus>
