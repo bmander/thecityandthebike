@@ -14,6 +14,7 @@ import androidx.compose.foundation.lazy.grid.itemsIndexed
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
@@ -48,6 +49,7 @@ fun ImageGrid(
     uploadingUris: Set<Uri> = emptySet(),
     failedUris: Set<Uri> = emptySet(),
     flaggedUris: Set<Uri> = emptySet(),
+    queuedUris: Set<Uri> = emptySet(),
     onImageClick: ((Int) -> Unit)? = null,
     onFailedImageClick: ((Uri) -> Unit)? = null,
     onLoadMore: (() -> Unit)? = null
@@ -80,6 +82,7 @@ fun ImageGrid(
             val isUploading = uri in uploadingUris
             val isFailed = uri in failedUris
             val isFlagged = uri in flaggedUris
+            val isQueued = uri in queuedUris
             Box(
                 modifier = Modifier
                     .aspectRatio(1f)
@@ -110,6 +113,16 @@ fun ImageGrid(
                         Icon(
                             imageVector = Icons.Default.Warning,
                             contentDescription = "Upload failed",
+                            tint = Color.White,
+                            modifier = Modifier.size(36.dp)
+                        )
+                    }
+                }
+                if (isQueued) {
+                    ImageOverlay(alpha = 0.4f) {
+                        Icon(
+                            imageVector = Icons.Default.Schedule,
+                            contentDescription = "Queued for upload",
                             tint = Color.White,
                             modifier = Modifier.size(36.dp)
                         )

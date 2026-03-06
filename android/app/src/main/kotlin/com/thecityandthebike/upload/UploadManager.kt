@@ -2,15 +2,18 @@ package com.thecityandthebike.upload
 
 import android.net.Uri
 import com.thecityandthebike.data.model.ApiResult
+import com.thecityandthebike.data.model.AppError
 import com.thecityandthebike.data.model.dto.ScoringBreakdown
 import com.thecityandthebike.data.repository.SubmissionRepository
 import com.thecityandthebike.di.ApplicationScope
-import com.thecityandthebike.util.ImagePreparer
+import com.thecityandthebike.util.ConnectivityMonitor
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import java.time.LocalDate
 import java.time.ZoneId
 import javax.inject.Inject
@@ -29,54 +32,112 @@ sealed interface UploadState {
 @Singleton
 class UploadManager @Inject constructor(
     private val submissionRepository: SubmissionRepository,
-    private val imagePreparer: ImagePreparer,
+    private val uploadQueue: UploadQueue,
+    private val connectivityMonitor: ConnectivityMonitor,
     @ApplicationScope private val appScope: CoroutineScope
 ) {
     private val _state = MutableStateFlow<UploadState>(UploadState.Idle)
     val state: StateFlow<UploadState> = _state.asStateFlow()
 
-    private var lastLocalUri: Uri? = null
-    private var lastBikeQrId: String? = null
-    private var lastSide: String? = null
+    val pendingUploads: StateFlow<List<PendingUpload>> = uploadQueue.pendingUploads
+
+    private val processMutex = Mutex()
+
+    init {
+        appScope.launch {
+            var wasOnline = connectivityMonitor.isOnline.value
+            connectivityMonitor.isOnline.collect { online ->
+                if (!wasOnline && online) {
+                    processQueue()
+                }
+                wasOnline = online
+            }
+        }
+    }
 
     fun uploadAndCreateSubmission(localUri: Uri, bikeQrId: String, side: String? = null) {
-        lastLocalUri = localUri
-        lastBikeQrId = bikeQrId
-        lastSide = side
-
         appScope.launch {
             _state.value = UploadState.Uploading(localUri)
 
-            val imageFile = imagePreparer.prepareImageFile(localUri)
+            val capturedDate = LocalDate.now(ZoneId.of("America/Los_Angeles")).toString()
+            val pending = uploadQueue.enqueue(localUri, bikeQrId, side, capturedDate)
 
-            if (imageFile == null) {
+            if (pending == null) {
                 _state.value = UploadState.Error("Could not read image file", localUri)
                 return@launch
             }
 
-            try {
-                val capturedDate = LocalDate.now(ZoneId.of("America/Los_Angeles")).toString()
-                when (val result = submissionRepository.createSubmission(imageFile, bikeQrId, capturedDate, side = side)) {
+            processQueue()
+        }
+    }
+
+    fun retryUpload() {
+        appScope.launch {
+            // Reset any FAILED items back to QUEUED
+            val uploads = uploadQueue.getAll()
+            for (upload in uploads) {
+                if (upload.status == PendingUploadStatus.FAILED) {
+                    uploadQueue.updateStatus(upload.id, PendingUploadStatus.QUEUED)
+                }
+            }
+            processQueue()
+        }
+    }
+
+    suspend fun processQueue() {
+        if (!processMutex.tryLock()) return
+        try {
+            while (true) {
+                val next = uploadQueue.getAll()
+                    .firstOrNull { it.status == PendingUploadStatus.QUEUED }
+                    ?: break
+
+                if (!connectivityMonitor.isOnline.value) break
+
+                uploadQueue.updateStatus(next.id, PendingUploadStatus.UPLOADING)
+                val imageFile = uploadQueue.getImageFile(next.id)
+                val localUri = Uri.fromFile(imageFile)
+                _state.value = UploadState.Uploading(localUri)
+
+                when (val result = submissionRepository.createSubmission(
+                    imageFile, next.bikeQrId, next.capturedDate, side = next.side
+                )) {
                     is ApiResult.Success -> {
+                        uploadQueue.remove(next.id)
                         _state.value = UploadState.Success(
                             pointsAwarded = result.data.pointsAwarded ?: 0,
                             pointsBreakdown = result.data.pointsBreakdown ?: emptyList()
                         )
                     }
                     is ApiResult.Error -> {
-                        _state.value = UploadState.Error(result.error.displayMessage, localUri)
+                        when (result.error) {
+                            is AppError.Network -> {
+                                uploadQueue.updateStatus(next.id, PendingUploadStatus.FAILED)
+                                _state.value = UploadState.Error(result.error.displayMessage, localUri)
+                                return
+                            }
+                            is AppError.Server -> {
+                                uploadQueue.updateStatus(next.id, PendingUploadStatus.FAILED)
+                                _state.value = UploadState.Error(result.error.displayMessage, localUri)
+                                return
+                            }
+                            is AppError.RateLimit -> {
+                                uploadQueue.updateStatus(next.id, PendingUploadStatus.FAILED)
+                                _state.value = UploadState.Error(result.error.displayMessage, localUri)
+                                return
+                            }
+                            else -> {
+                                // Non-retryable (Auth, Validation, Unknown) — remove from queue
+                                uploadQueue.remove(next.id)
+                                _state.value = UploadState.Error(result.error.displayMessage, localUri)
+                            }
+                        }
                     }
                 }
-            } finally {
-                imageFile.delete()
             }
+        } finally {
+            processMutex.unlock()
         }
-    }
-
-    fun retryUpload() {
-        val uri = lastLocalUri ?: return
-        val bikeQrId = lastBikeQrId ?: return
-        uploadAndCreateSubmission(uri, bikeQrId, lastSide)
     }
 
     fun clearSuccess() {
@@ -87,8 +148,5 @@ class UploadManager @Inject constructor(
 
     fun clearError() {
         _state.value = UploadState.Idle
-        lastLocalUri = null
-        lastBikeQrId = null
-        lastSide = null
     }
 }
