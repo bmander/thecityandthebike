@@ -122,7 +122,7 @@ class ImageDetailViewModelTest {
         val state = viewModel.state.value
         assertFalse(state.isLoading)
         assertNull(state.submission)
-        assertEquals("Network error. Check your connection and try again.", state.error)
+        assertNull(state.error)
     }
 
     @Test

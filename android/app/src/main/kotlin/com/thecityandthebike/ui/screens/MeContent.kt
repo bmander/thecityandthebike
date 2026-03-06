@@ -79,7 +79,7 @@ fun MeContent(
                     modifier = Modifier.align(Alignment.Center)
                 )
             }
-            state.error != null || deleteAccountState.error != null -> {
+            (state.error != null || deleteAccountState.error != null) -> {
                 val errorMessage = deleteAccountState.error ?: state.error ?: ""
                 val clearAction = if (deleteAccountState.error != null) onClearDeleteError else onClearError
                 Snackbar(

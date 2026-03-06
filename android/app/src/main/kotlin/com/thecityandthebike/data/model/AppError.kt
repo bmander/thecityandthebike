@@ -16,4 +16,7 @@ sealed class AppError {
         is RateLimit -> "Too many attempts. Please try again later."
         is Unknown -> "An unexpected error occurred."
     }
+
+    /** Returns null for Network errors (handled by global network banner). */
+    val displayMessageOrNull: String? get() = if (this is Network) null else displayMessage
 }

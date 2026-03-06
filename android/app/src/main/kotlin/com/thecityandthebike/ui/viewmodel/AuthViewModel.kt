@@ -65,7 +65,7 @@ class AuthViewModel @Inject constructor(
                     _state.value = _state.value.copy(isLoading = false, isLoggedIn = true)
                 }
                 is ApiResult.Error -> {
-                    _state.value = _state.value.copy(isLoading = false, error = result.error.displayMessage)
+                    _state.value = _state.value.copy(isLoading = false, error = result.error.displayMessageOrNull)
                 }
             }
         }
@@ -83,7 +83,7 @@ class AuthViewModel @Inject constructor(
                     savedStateHandle[REGISTRATION_SUCCESS_KEY] = true
                 }
                 is ApiResult.Error -> {
-                    _state.value = _state.value.copy(isLoading = false, error = result.error.displayMessage)
+                    _state.value = _state.value.copy(isLoading = false, error = result.error.displayMessageOrNull)
                 }
             }
         }

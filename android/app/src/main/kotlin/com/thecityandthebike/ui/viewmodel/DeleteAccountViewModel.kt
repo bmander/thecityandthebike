@@ -35,7 +35,7 @@ class DeleteAccountViewModel @Inject constructor(
                 is ApiResult.Error -> {
                     _state.value = _state.value.copy(
                         isDeleting = false,
-                        error = result.error.displayMessage
+                        error = result.error.displayMessageOrNull
                     )
                 }
             }

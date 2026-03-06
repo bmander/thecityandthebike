@@ -24,6 +24,18 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.toRoute
 import com.thecityandthebike.data.local.OnboardingPrefs
+import com.thecityandthebike.data.network.NetworkStatus
+import com.thecityandthebike.data.network.NetworkStatusProvider
+import androidx.compose.foundation.layout.BoxScope
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.navigationBars
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.windowInsetsPadding
+import androidx.compose.material3.Snackbar
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.unit.dp
 import com.thecityandthebike.ui.screens.BikeScreen
 import com.thecityandthebike.ui.components.PointsAwardedOverlay
 import com.thecityandthebike.ui.screens.ImageDetailScreen
@@ -53,14 +65,15 @@ import com.thecityandthebike.ui.viewmodel.MeViewModel
 import com.thecityandthebike.ui.viewmodel.PhotoPreviewViewModel
 import com.thecityandthebike.ui.viewmodel.TagViewModel
 import com.thecityandthebike.ui.viewmodel.UserViewModel
+import kotlinx.coroutines.launch
 
 @Composable
-fun AppNavGraph(onboardingPrefs: OnboardingPrefs) {
+fun AppNavGraph(onboardingPrefs: OnboardingPrefs, networkStatusProvider: NetworkStatusProvider) {
     val navController = rememberNavController()
     val authViewModel: AuthViewModel = hiltViewModel()
     val authState by authViewModel.state.collectAsStateWithLifecycle()
     val navigateToScoreRules = { navController.navigate(ScoreRules) }
-
+    Box(modifier = Modifier.fillMaxSize()) {
     NavHost(
         navController = navController,
         startDestination = Splash
@@ -382,6 +395,35 @@ fun AppNavGraph(onboardingPrefs: OnboardingPrefs) {
                 }
             )
         }
+    }
+
+    NetworkStatusBanner(networkStatusProvider)
+    } // Box
+}
+
+@Composable
+private fun BoxScope.NetworkStatusBanner(networkStatusProvider: NetworkStatusProvider) {
+    val networkStatus by networkStatusProvider.status.collectAsStateWithLifecycle()
+    val scope = rememberCoroutineScope()
+
+    val message = when (networkStatus) {
+        NetworkStatus.DeviceOffline -> "You appear to be offline"
+        NetworkStatus.ApiUnreachable -> "Unable to reach the server"
+        else -> return
+    }
+
+    Snackbar(
+        modifier = Modifier
+            .align(Alignment.BottomCenter)
+            .padding(16.dp)
+            .windowInsetsPadding(WindowInsets.navigationBars),
+        action = {
+            TextButton(onClick = { scope.launch { networkStatusProvider.checkHealth() } }) {
+                Text("Retry")
+            }
+        }
+    ) {
+        Text(message)
     }
 }
 

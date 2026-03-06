@@ -109,7 +109,7 @@ class MeViewModelTest {
         assertFalse(state.isLoading)
         assertNotNull(state.userDetail)
         assertTrue(state.submissions.isEmpty())
-        assertEquals("Network error. Check your connection and try again.", state.error)
+        assertNull(state.error)
     }
 
     @Test
