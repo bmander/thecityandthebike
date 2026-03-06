@@ -48,35 +48,34 @@ class UploadQueue @Inject constructor(
         bikeQrId: String,
         side: String?,
         capturedDate: String
-    ): PendingUpload? = mutex.withLock {
-        val id = UUID.randomUUID().toString()
-        val uploadDir = File(queueDir, id)
-        uploadDir.mkdirs()
+    ): PendingUpload? {
+        val imageFile = imagePreparer.prepareImageFile(uri) ?: return null
 
-        val imageFile = imagePreparer.prepareImageFile(uri) ?: run {
-            uploadDir.deleteRecursively()
-            return@withLock null
+        return mutex.withLock {
+            val id = UUID.randomUUID().toString()
+            val uploadDir = File(queueDir, id)
+            uploadDir.mkdirs()
+
+            val destFile = File(uploadDir, IMAGE_FILENAME)
+            imageFile.copyTo(destFile, overwrite = true)
+            imageFile.delete()
+
+            val upload = PendingUpload(
+                id = id,
+                imageFileName = IMAGE_FILENAME,
+                bikeQrId = bikeQrId,
+                side = side,
+                capturedDate = capturedDate,
+                createdAt = System.currentTimeMillis()
+            )
+            writeMetadata(id, upload)
+            _pendingUploads.value = (_pendingUploads.value + upload).sortedBy { it.createdAt }
+            upload
         }
-
-        val destFile = File(uploadDir, "image.jpg")
-        imageFile.copyTo(destFile, overwrite = true)
-        imageFile.delete()
-
-        val upload = PendingUpload(
-            id = id,
-            imageFileName = "image.jpg",
-            bikeQrId = bikeQrId,
-            side = side,
-            capturedDate = capturedDate,
-            createdAt = System.currentTimeMillis()
-        )
-        writeMetadata(id, upload)
-        _pendingUploads.value = (_pendingUploads.value + upload).sortedBy { it.createdAt }
-        upload
     }
 
     fun getImageFile(id: String): File {
-        return File(File(queueDir, id), "image.jpg")
+        return File(File(queueDir, id), IMAGE_FILENAME)
     }
 
     suspend fun getAll(): List<PendingUpload> = mutex.withLock {
@@ -116,6 +115,10 @@ class UploadQueue @Inject constructor(
                 null
             }
         }
+    }
+
+    companion object {
+        private const val IMAGE_FILENAME = "image.jpg"
     }
 
     private fun writeMetadata(id: String, upload: PendingUpload) {

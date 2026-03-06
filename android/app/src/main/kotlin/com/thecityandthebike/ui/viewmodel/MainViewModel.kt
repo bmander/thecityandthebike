@@ -7,7 +7,6 @@ import com.thecityandthebike.data.model.ApiResult
 import com.thecityandthebike.data.model.dto.ScoringBreakdown
 import com.thecityandthebike.data.model.dto.SubmissionResponse
 import com.thecityandthebike.data.repository.SubmissionRepository
-import com.thecityandthebike.upload.PendingUpload
 import com.thecityandthebike.upload.UploadManager
 import com.thecityandthebike.upload.UploadState
 import com.thecityandthebike.util.ConnectivityMonitor
@@ -31,7 +30,7 @@ data class MainState(
     val pointsAwarded: List<ScoringBreakdown>? = null,
     val pendingUploadCount: Int = 0,
     val isOffline: Boolean = false,
-    val queuedUploads: List<PendingUpload> = emptyList()
+    val queuedUploadUris: List<Uri> = emptyList()
 )
 
 @HiltViewModel
@@ -88,7 +87,7 @@ class MainViewModel @Inject constructor(
             uploadManager.pendingUploads.collect { uploads ->
                 _state.value = _state.value.copy(
                     pendingUploadCount = uploads.size,
-                    queuedUploads = uploads
+                    queuedUploadUris = uploads.map { Uri.fromFile(uploadManager.getImageFile(it.id)) }
                 )
             }
         }

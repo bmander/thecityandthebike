@@ -13,7 +13,6 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
-import kotlinx.coroutines.sync.withLock
 import java.time.LocalDate
 import java.time.ZoneId
 import javax.inject.Inject
@@ -40,6 +39,8 @@ class UploadManager @Inject constructor(
     val state: StateFlow<UploadState> = _state.asStateFlow()
 
     val pendingUploads: StateFlow<List<PendingUpload>> = uploadQueue.pendingUploads
+
+    fun getImageFile(id: String) = uploadQueue.getImageFile(id)
 
     private val processMutex = Mutex()
 
@@ -84,7 +85,7 @@ class UploadManager @Inject constructor(
         }
     }
 
-    suspend fun processQueue() {
+    private suspend fun processQueue() {
         if (!processMutex.tryLock()) return
         try {
             while (true) {
@@ -110,28 +111,16 @@ class UploadManager @Inject constructor(
                         )
                     }
                     is ApiResult.Error -> {
-                        when (result.error) {
-                            is AppError.Network -> {
-                                uploadQueue.updateStatus(next.id, PendingUploadStatus.FAILED)
-                                _state.value = UploadState.Error(result.error.displayMessage, localUri)
-                                return
-                            }
-                            is AppError.Server -> {
-                                uploadQueue.updateStatus(next.id, PendingUploadStatus.FAILED)
-                                _state.value = UploadState.Error(result.error.displayMessage, localUri)
-                                return
-                            }
-                            is AppError.RateLimit -> {
-                                uploadQueue.updateStatus(next.id, PendingUploadStatus.FAILED)
-                                _state.value = UploadState.Error(result.error.displayMessage, localUri)
-                                return
-                            }
-                            else -> {
-                                // Non-retryable (Auth, Validation, Unknown) — remove from queue
-                                uploadQueue.remove(next.id)
-                                _state.value = UploadState.Error(result.error.displayMessage, localUri)
-                            }
+                        val isRetryable = result.error is AppError.Network ||
+                            result.error is AppError.Server ||
+                            result.error is AppError.RateLimit
+                        if (isRetryable) {
+                            uploadQueue.updateStatus(next.id, PendingUploadStatus.FAILED)
+                        } else {
+                            uploadQueue.remove(next.id)
                         }
+                        _state.value = UploadState.Error(result.error.displayMessage, localUri)
+                        if (isRetryable) return
                     }
                 }
             }

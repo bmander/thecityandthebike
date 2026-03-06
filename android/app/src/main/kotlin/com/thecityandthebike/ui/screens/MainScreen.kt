@@ -1,6 +1,5 @@
 package com.thecityandthebike.ui.screens
 
-import android.net.Uri
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -313,14 +312,10 @@ private fun FeedContent(
         imageUrlToUri(submission.imageUrlThumbnail!!)
     }
     val pendingUri = state.pendingUploadUri
-    // Build queued upload URIs from the queue (excluding the one currently uploading/failed)
-    val queuedUploadUris = state.queuedUploads.map { upload ->
-        Uri.fromFile(java.io.File(upload.imageFileName))
-    }
     val imageUris = if (pendingUri != null) listOf(pendingUri) + submissionImageUris else submissionImageUris
     val uploadingUris = if (pendingUri != null && !state.uploadFailed) setOf(pendingUri) else emptySet()
     val failedUris = if (pendingUri != null && state.uploadFailed) setOf(pendingUri) else emptySet()
-    val queuedUriSet = queuedUploadUris.toSet() - uploadingUris - failedUris
+    val queuedUriSet = state.queuedUploadUris.toSet() - uploadingUris - failedUris
     val flaggedUris = submissionsWithImages
         .mapIndexedNotNull { index, submission ->
             if ((submission.flagCount ?: 0) > 0) submissionImageUris[index] else null

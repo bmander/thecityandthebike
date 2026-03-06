@@ -8,12 +8,13 @@ import com.thecityandthebike.data.model.dto.SubmissionResponse
 import com.thecityandthebike.data.repository.SubmissionRepository
 import com.thecityandthebike.ui.viewmodel.MainViewModel
 import com.thecityandthebike.upload.PendingUpload
-import com.thecityandthebike.upload.PendingUploadStatus
 import com.thecityandthebike.upload.UploadManager
 import com.thecityandthebike.util.ConnectivityMonitor
 import io.mockk.coEvery
 import io.mockk.every
 import io.mockk.mockk
+import io.mockk.mockkStatic
+import io.mockk.unmockkStatic
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -26,6 +27,7 @@ import org.junit.After
 import org.junit.Assert.*
 import org.junit.Before
 import org.junit.Test
+import java.io.File
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class MainViewModelTest {
@@ -49,11 +51,14 @@ class MainViewModelTest {
         every { uploadManager.pendingUploads } returns pendingUploadsFlow
         every { uploadManager.clearSuccess() } returns Unit
         every { connectivityMonitor.isOnline } returns isOnlineFlow
+        mockkStatic(Uri::class)
+        every { Uri.fromFile(any()) } returns mockk()
     }
 
     @After
     fun tearDown() {
         Dispatchers.resetMain()
+        unmockkStatic(Uri::class)
     }
 
     private fun createViewModel(): MainViewModel {
@@ -479,15 +484,19 @@ class MainViewModelTest {
     }
 
     @Test
-    fun `pendingUploads flow updates pendingUploadCount and queuedUploads`() = runTest {
+    fun `pendingUploads flow updates pendingUploadCount and queuedUploadUris`() = runTest {
         val paginated = CursorPaginatedSubmissions(items = emptyList(), nextCursor = null, hasMore = false)
         coEvery { submissionRepository.getSubmissions(any(), any()) } returns ApiResult.Success(paginated)
+
+        val fakeUri = mockk<Uri>()
+        every { Uri.fromFile(any()) } returns fakeUri
+        every { uploadManager.getImageFile("q1") } returns File("/fake/q1/image.jpg")
 
         viewModel = createViewModel()
         testDispatcher.scheduler.advanceUntilIdle()
 
         assertEquals(0, viewModel.state.value.pendingUploadCount)
-        assertTrue(viewModel.state.value.queuedUploads.isEmpty())
+        assertTrue(viewModel.state.value.queuedUploadUris.isEmpty())
 
         val upload = PendingUpload(
             id = "q1",
@@ -500,14 +509,14 @@ class MainViewModelTest {
         testDispatcher.scheduler.advanceUntilIdle()
 
         assertEquals(1, viewModel.state.value.pendingUploadCount)
-        assertEquals(1, viewModel.state.value.queuedUploads.size)
-        assertEquals("q1", viewModel.state.value.queuedUploads[0].id)
+        assertEquals(1, viewModel.state.value.queuedUploadUris.size)
+        assertEquals(fakeUri, viewModel.state.value.queuedUploadUris[0])
 
         pendingUploadsFlow.value = emptyList()
         testDispatcher.scheduler.advanceUntilIdle()
 
         assertEquals(0, viewModel.state.value.pendingUploadCount)
-        assertTrue(viewModel.state.value.queuedUploads.isEmpty())
+        assertTrue(viewModel.state.value.queuedUploadUris.isEmpty())
     }
 
     @Test
