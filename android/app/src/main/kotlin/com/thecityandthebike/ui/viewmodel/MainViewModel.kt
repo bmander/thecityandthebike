@@ -9,6 +9,7 @@ import com.thecityandthebike.data.model.dto.SubmissionResponse
 import com.thecityandthebike.data.repository.SubmissionRepository
 import com.thecityandthebike.upload.UploadManager
 import com.thecityandthebike.upload.UploadState
+import com.thecityandthebike.util.ConnectivityMonitor
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -26,13 +27,17 @@ data class MainState(
     val nextCursor: String? = null,
     val pendingUploadUri: Uri? = null,
     val uploadFailed: Boolean = false,
-    val pointsAwarded: List<ScoringBreakdown>? = null
+    val pointsAwarded: List<ScoringBreakdown>? = null,
+    val pendingUploadCount: Int = 0,
+    val isOffline: Boolean = false,
+    val queuedUploadUris: List<Uri> = emptyList()
 )
 
 @HiltViewModel
 class MainViewModel @Inject constructor(
     private val submissionRepository: SubmissionRepository,
-    private val uploadManager: UploadManager
+    private val uploadManager: UploadManager,
+    private val connectivityMonitor: ConnectivityMonitor
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(MainState())
@@ -41,6 +46,8 @@ class MainViewModel @Inject constructor(
     init {
         loadSubmissions()
         observeUploadState()
+        observePendingUploads()
+        observeConnectivity()
     }
 
     private fun observeUploadState() {
@@ -71,6 +78,25 @@ class MainViewModel @Inject constructor(
                     }
                     else -> {}
                 }
+            }
+        }
+    }
+
+    private fun observePendingUploads() {
+        viewModelScope.launch {
+            uploadManager.pendingUploads.collect { uploads ->
+                _state.value = _state.value.copy(
+                    pendingUploadCount = uploads.size,
+                    queuedUploadUris = uploads.map { Uri.fromFile(uploadManager.getImageFile(it.id)) }
+                )
+            }
+        }
+    }
+
+    private fun observeConnectivity() {
+        viewModelScope.launch {
+            connectivityMonitor.isOnline.collect { online ->
+                _state.value = _state.value.copy(isOffline = !online)
             }
         }
     }

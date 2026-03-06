@@ -7,10 +7,14 @@ import com.thecityandthebike.data.model.dto.CursorPaginatedSubmissions
 import com.thecityandthebike.data.model.dto.SubmissionResponse
 import com.thecityandthebike.data.repository.SubmissionRepository
 import com.thecityandthebike.ui.viewmodel.MainViewModel
+import com.thecityandthebike.upload.PendingUpload
 import com.thecityandthebike.upload.UploadManager
+import com.thecityandthebike.util.ConnectivityMonitor
 import io.mockk.coEvery
 import io.mockk.every
 import io.mockk.mockk
+import io.mockk.mockkStatic
+import io.mockk.unmockkStatic
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -23,6 +27,7 @@ import org.junit.After
 import org.junit.Assert.*
 import org.junit.Before
 import org.junit.Test
+import java.io.File
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class MainViewModelTest {
@@ -30,7 +35,10 @@ class MainViewModelTest {
     private val testDispatcher = StandardTestDispatcher()
     private lateinit var submissionRepository: SubmissionRepository
     private lateinit var uploadManager: UploadManager
+    private lateinit var connectivityMonitor: ConnectivityMonitor
     private val uploadStateFlow = MutableStateFlow<UploadState>(UploadState.Idle)
+    private val pendingUploadsFlow = MutableStateFlow<List<PendingUpload>>(emptyList())
+    private val isOnlineFlow = MutableStateFlow(true)
     private lateinit var viewModel: MainViewModel
 
     @Before
@@ -38,17 +46,23 @@ class MainViewModelTest {
         Dispatchers.setMain(testDispatcher)
         submissionRepository = mockk()
         uploadManager = mockk()
+        connectivityMonitor = mockk()
         every { uploadManager.state } returns uploadStateFlow
+        every { uploadManager.pendingUploads } returns pendingUploadsFlow
         every { uploadManager.clearSuccess() } returns Unit
+        every { connectivityMonitor.isOnline } returns isOnlineFlow
+        mockkStatic(Uri::class)
+        every { Uri.fromFile(any()) } returns mockk()
     }
 
     @After
     fun tearDown() {
         Dispatchers.resetMain()
+        unmockkStatic(Uri::class)
     }
 
     private fun createViewModel(): MainViewModel {
-        return MainViewModel(submissionRepository, uploadManager)
+        return MainViewModel(submissionRepository, uploadManager, connectivityMonitor)
     }
 
     @Test
@@ -467,6 +481,63 @@ class MainViewModelTest {
         assertFalse(viewModel.state.value.uploadFailed)
         assertNull(viewModel.state.value.error)
         io.mockk.verify { uploadManager.clearError() }
+    }
+
+    @Test
+    fun `pendingUploads flow updates pendingUploadCount and queuedUploadUris`() = runTest {
+        val paginated = CursorPaginatedSubmissions(items = emptyList(), nextCursor = null, hasMore = false)
+        coEvery { submissionRepository.getSubmissions(any(), any()) } returns ApiResult.Success(paginated)
+
+        val fakeUri = mockk<Uri>()
+        every { Uri.fromFile(any()) } returns fakeUri
+        every { uploadManager.getImageFile("q1") } returns File("/fake/q1/image.jpg")
+
+        viewModel = createViewModel()
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        assertEquals(0, viewModel.state.value.pendingUploadCount)
+        assertTrue(viewModel.state.value.queuedUploadUris.isEmpty())
+
+        val upload = PendingUpload(
+            id = "q1",
+            imageFileName = "image.jpg",
+            bikeQrId = "bike1",
+            capturedDate = "2026-03-06",
+            createdAt = 1000L
+        )
+        pendingUploadsFlow.value = listOf(upload)
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        assertEquals(1, viewModel.state.value.pendingUploadCount)
+        assertEquals(1, viewModel.state.value.queuedUploadUris.size)
+        assertEquals(fakeUri, viewModel.state.value.queuedUploadUris[0])
+
+        pendingUploadsFlow.value = emptyList()
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        assertEquals(0, viewModel.state.value.pendingUploadCount)
+        assertTrue(viewModel.state.value.queuedUploadUris.isEmpty())
+    }
+
+    @Test
+    fun `connectivity flow updates isOffline`() = runTest {
+        val paginated = CursorPaginatedSubmissions(items = emptyList(), nextCursor = null, hasMore = false)
+        coEvery { submissionRepository.getSubmissions(any(), any()) } returns ApiResult.Success(paginated)
+
+        viewModel = createViewModel()
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        assertFalse(viewModel.state.value.isOffline)
+
+        isOnlineFlow.value = false
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        assertTrue(viewModel.state.value.isOffline)
+
+        isOnlineFlow.value = true
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        assertFalse(viewModel.state.value.isOffline)
     }
 
     @Test

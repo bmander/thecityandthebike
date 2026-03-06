@@ -1,10 +1,12 @@
 package com.thecityandthebike.ui.screens
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.navigationBars
@@ -19,6 +21,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Snackbar
 import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRow
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
@@ -165,6 +168,22 @@ fun MainScreen(
                 }
             }
 
+            // Offline banner
+            if (mainState.isOffline) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(MaterialTheme.colorScheme.errorContainer)
+                        .padding(horizontal = 16.dp, vertical = 8.dp)
+                ) {
+                    Text(
+                        text = "You're offline \u2014 uploads will resume when connected",
+                        color = MaterialTheme.colorScheme.onErrorContainer,
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                }
+            }
+
             // Swipeable content
             HorizontalPager(
                 state = pagerState,
@@ -296,6 +315,7 @@ private fun FeedContent(
     val imageUris = if (pendingUri != null) listOf(pendingUri) + submissionImageUris else submissionImageUris
     val uploadingUris = if (pendingUri != null && !state.uploadFailed) setOf(pendingUri) else emptySet()
     val failedUris = if (pendingUri != null && state.uploadFailed) setOf(pendingUri) else emptySet()
+    val queuedUriSet = state.queuedUploadUris.toSet() - uploadingUris - failedUris
     val flaggedUris = submissionsWithImages
         .mapIndexedNotNull { index, submission ->
             if ((submission.flagCount ?: 0) > 0) submissionImageUris[index] else null
@@ -313,6 +333,7 @@ private fun FeedContent(
                 uploadingUris = uploadingUris,
                 failedUris = failedUris,
                 flaggedUris = flaggedUris,
+                queuedUris = queuedUriSet,
                 modifier = Modifier.fillMaxSize(),
                 onImageClick = onImageClick?.let { callback ->
                     { index ->
