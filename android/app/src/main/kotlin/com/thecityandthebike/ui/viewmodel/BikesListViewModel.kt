@@ -47,7 +47,7 @@ class BikesListViewModel @Inject constructor(
                 is ApiResult.Error -> {
                     _state.value = _state.value.copy(
                         isLoading = false,
-                        error = result.error.displayMessage
+                        error = result.error.displayMessageOrNull
                     )
                 }
             }
@@ -74,7 +74,7 @@ class BikesListViewModel @Inject constructor(
                 is ApiResult.Error -> {
                     _state.value = _state.value.copy(
                         isLoadingMore = false,
-                        error = result.error.displayMessage
+                        error = result.error.displayMessageOrNull
                     )
                 }
             }

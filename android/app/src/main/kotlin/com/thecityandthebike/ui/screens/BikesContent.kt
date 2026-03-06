@@ -14,7 +14,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
-import com.thecityandthebike.data.network.LocalNetworkBannerShowing
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
@@ -47,7 +46,7 @@ fun BikesContent(
                     modifier = Modifier.align(Alignment.Center)
                 )
             }
-            state.error != null && state.bikes.isEmpty() && !LocalNetworkBannerShowing.current -> {
+            state.error != null && state.bikes.isEmpty() -> {
                 Snackbar(
                     modifier = Modifier
                         .align(Alignment.BottomCenter)
@@ -112,7 +111,7 @@ fun BikesContent(
                 }
 
                 // Error snackbar (when we have bikes but got a pagination error)
-                if (!LocalNetworkBannerShowing.current) state.error?.let { error ->
+                state.error?.let { error ->
                     Snackbar(
                         modifier = Modifier
                             .align(Alignment.BottomCenter)

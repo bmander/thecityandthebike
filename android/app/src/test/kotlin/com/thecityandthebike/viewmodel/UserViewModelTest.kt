@@ -112,7 +112,7 @@ class UserViewModelTest {
         assertFalse(state.isLoading)
         assertNotNull(state.userDetail)
         assertTrue(state.submissions.isEmpty())
-        assertEquals("Network error. Check your connection and try again.", state.error)
+        assertNull(state.error)
     }
 
     @Test
@@ -189,7 +189,7 @@ class UserViewModelTest {
         testDispatcher.scheduler.advanceUntilIdle()
 
         assertEquals(2, viewModel.state.value.submissions.size)
-        assertEquals("Network error. Check your connection and try again.", viewModel.state.value.error)
+        assertNull(viewModel.state.value.error)
         assertFalse(viewModel.state.value.isLoadingMore)
     }
 
@@ -350,7 +350,7 @@ class UserViewModelTest {
 
         val state = viewModel.state.value
         assertFalse(state.isBanning)
-        assertEquals("Network error. Check your connection and try again.", state.error)
+        assertNull(state.error)
     }
 
     // --- unbanUser ---

@@ -106,7 +106,7 @@ class BikeViewModelTest {
         assertFalse(state.isLoading)
         assertNotNull(state.bikeDetail)
         assertTrue(state.submissions.isEmpty())
-        assertEquals("Network error. Check your connection and try again.", state.error)
+        assertNull(state.error)
     }
 
     @Test
@@ -183,7 +183,7 @@ class BikeViewModelTest {
         testDispatcher.scheduler.advanceUntilIdle()
 
         assertEquals(2, viewModel.state.value.submissions.size)
-        assertEquals("Network error. Check your connection and try again.", viewModel.state.value.error)
+        assertNull(viewModel.state.value.error)
         assertFalse(viewModel.state.value.isLoadingMore)
     }
 

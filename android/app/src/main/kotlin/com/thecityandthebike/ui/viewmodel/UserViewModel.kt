@@ -54,7 +54,7 @@ class UserViewModel @Inject constructor(
                 is ApiResult.Error -> {
                     _state.value = _state.value.copy(
                         isLoading = false,
-                        error = detailResult.error.displayMessage
+                        error = detailResult.error.displayMessageOrNull
                     )
                     return@launch
                 }
@@ -72,7 +72,7 @@ class UserViewModel @Inject constructor(
                 is ApiResult.Error -> {
                     _state.value = _state.value.copy(
                         isLoading = false,
-                        error = subsResult.error.displayMessage
+                        error = subsResult.error.displayMessageOrNull
                     )
                 }
             }
@@ -99,7 +99,7 @@ class UserViewModel @Inject constructor(
                 is ApiResult.Error -> {
                     _state.value = _state.value.copy(
                         isLoadingMore = false,
-                        error = result.error.displayMessage
+                        error = result.error.displayMessageOrNull
                     )
                 }
             }
@@ -131,7 +131,7 @@ class UserViewModel @Inject constructor(
                 is ApiResult.Error -> {
                     _state.value = _state.value.copy(
                         isBanning = false,
-                        error = result.error.displayMessage
+                        error = result.error.displayMessageOrNull
                     )
                 }
             }

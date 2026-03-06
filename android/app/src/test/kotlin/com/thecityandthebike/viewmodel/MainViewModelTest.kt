@@ -89,7 +89,7 @@ class MainViewModelTest {
 
         assertTrue(viewModel.state.value.submissions.isEmpty())
         assertFalse(viewModel.state.value.isLoading)
-        assertEquals("Network error. Check your connection and try again.", viewModel.state.value.error)
+        assertNull(viewModel.state.value.error)
     }
 
     @Test
@@ -184,7 +184,7 @@ class MainViewModelTest {
         testDispatcher.scheduler.advanceUntilIdle()
 
         assertEquals(2, viewModel.state.value.submissions.size)
-        assertEquals("Network error. Check your connection and try again.", viewModel.state.value.error)
+        assertNull(viewModel.state.value.error)
         assertFalse(viewModel.state.value.isLoadingMore)
     }
 

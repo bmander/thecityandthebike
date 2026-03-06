@@ -105,7 +105,7 @@ class MainViewModel @Inject constructor(
                     _state.value = _state.value.copy(
                         isLoading = false,
                         isRefreshing = false,
-                        error = result.error.displayMessage
+                        error = result.error.displayMessageOrNull
                     )
                 }
             }
@@ -131,7 +131,7 @@ class MainViewModel @Inject constructor(
                 is ApiResult.Error -> {
                     _state.value = _state.value.copy(
                         isLoadingMore = false,
-                        error = result.error.displayMessage
+                        error = result.error.displayMessageOrNull
                     )
                 }
             }

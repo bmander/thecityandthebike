@@ -12,7 +12,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import com.thecityandthebike.data.network.LocalNetworkBannerShowing
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Snackbar
@@ -58,7 +57,7 @@ fun LeaderboardContent(
                         modifier = Modifier.align(Alignment.Center)
                     )
                 }
-                state.error != null && !LocalNetworkBannerShowing.current -> {
+                state.error != null -> {
                     Snackbar(
                         modifier = Modifier
                             .align(Alignment.BottomCenter)
