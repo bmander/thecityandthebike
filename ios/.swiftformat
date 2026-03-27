@@ -1,0 +1,10 @@
+--indent 4
+--maxwidth 140
+--commas always
+--self init-only
+--allman false
+--wraparguments preserve
+--wrapcollections preserve
+--importgrouping testable-last
+--header ignore
+--swiftversion 5.9

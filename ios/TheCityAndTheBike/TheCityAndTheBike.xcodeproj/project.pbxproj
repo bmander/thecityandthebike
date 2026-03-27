@@ -1,0 +1,467 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		AA1000012F557930001BAB36 /* TCATBModels in Frameworks */ = {isa = PBXBuildFile; productRef = BB1000012F557930001BAB36 /* TCATBModels */; };
+		AA1000022F557930001BAB36 /* TCATBNetworking in Frameworks */ = {isa = PBXBuildFile; productRef = BB1000022F557930001BAB36 /* TCATBNetworking */; };
+		AA1000032F557930001BAB36 /* TCATBAuth in Frameworks */ = {isa = PBXBuildFile; productRef = BB1000032F557930001BAB36 /* TCATBAuth */; };
+		AA1000042F557930001BAB36 /* TCATBFeed in Frameworks */ = {isa = PBXBuildFile; productRef = BB1000042F557930001BAB36 /* TCATBFeed */; };
+		AA1000052F557930001BAB36 /* TCATBCamera in Frameworks */ = {isa = PBXBuildFile; productRef = BB1000052F557930001BAB36 /* TCATBCamera */; };
+		AA1000062F557930001BAB36 /* TCATBBikes in Frameworks */ = {isa = PBXBuildFile; productRef = BB1000062F557930001BAB36 /* TCATBBikes */; };
+		AA1000072F557930001BAB36 /* TCATBProfile in Frameworks */ = {isa = PBXBuildFile; productRef = BB1000072F557930001BAB36 /* TCATBProfile */; };
+		AA1000082F557930001BAB36 /* TCATBSharedUI in Frameworks */ = {isa = PBXBuildFile; productRef = BB1000082F557930001BAB36 /* TCATBSharedUI */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		7AC58FAF2F557923001BAB36 /* TheCityAndTheBike.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = TheCityAndTheBike.app; sourceTree = BUILT_PRODUCTS_DIR; };
+/* End PBXFileReference section */
+
+/* Begin PBXFileSystemSynchronizedRootGroup section */
+		7AC58FB12F557923001BAB36 /* TheCityAndTheBike */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = TheCityAndTheBike;
+			sourceTree = "<group>";
+		};
+/* End PBXFileSystemSynchronizedRootGroup section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		7AC58FAC2F557923001BAB36 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				AA1000012F557930001BAB36 /* TCATBModels in Frameworks */,
+				AA1000022F557930001BAB36 /* TCATBNetworking in Frameworks */,
+				AA1000032F557930001BAB36 /* TCATBAuth in Frameworks */,
+				AA1000042F557930001BAB36 /* TCATBFeed in Frameworks */,
+				AA1000052F557930001BAB36 /* TCATBCamera in Frameworks */,
+				AA1000062F557930001BAB36 /* TCATBBikes in Frameworks */,
+				AA1000072F557930001BAB36 /* TCATBProfile in Frameworks */,
+				AA1000082F557930001BAB36 /* TCATBSharedUI in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		7AC58FA62F557923001BAB36 = {
+			isa = PBXGroup;
+			children = (
+				7AC58FB12F557923001BAB36 /* TheCityAndTheBike */,
+				7AC58FB02F557923001BAB36 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		7AC58FB02F557923001BAB36 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				7AC58FAF2F557923001BAB36 /* TheCityAndTheBike.app */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		7AC58FAE2F557923001BAB36 /* TheCityAndTheBike */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 7AC58FBF2F55792A001BAB36 /* Build configuration list for PBXNativeTarget "TheCityAndTheBike" */;
+			buildPhases = (
+				DD1000012F557930001BAB36 /* SwiftLint */,
+				7AC58FAB2F557923001BAB36 /* Sources */,
+				7AC58FAC2F557923001BAB36 /* Frameworks */,
+				7AC58FAD2F557923001BAB36 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				7AC58FB12F557923001BAB36 /* TheCityAndTheBike */,
+			);
+			name = TheCityAndTheBike;
+			packageProductDependencies = (
+				BB1000012F557930001BAB36 /* TCATBModels */,
+				BB1000022F557930001BAB36 /* TCATBNetworking */,
+				BB1000032F557930001BAB36 /* TCATBAuth */,
+				BB1000042F557930001BAB36 /* TCATBFeed */,
+				BB1000052F557930001BAB36 /* TCATBCamera */,
+				BB1000062F557930001BAB36 /* TCATBBikes */,
+				BB1000072F557930001BAB36 /* TCATBProfile */,
+				BB1000082F557930001BAB36 /* TCATBSharedUI */,
+			);
+			productName = TheCityAndTheBike;
+			productReference = 7AC58FAF2F557923001BAB36 /* TheCityAndTheBike.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		7AC58FA72F557923001BAB36 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = 1;
+				LastSwiftUpdateCheck = 2630;
+				LastUpgradeCheck = 2630;
+				TargetAttributes = {
+					7AC58FAE2F557923001BAB36 = {
+						CreatedOnToolsVersion = 26.3;
+					};
+				};
+			};
+			buildConfigurationList = 7AC58FAA2F557923001BAB36 /* Build configuration list for PBXProject "TheCityAndTheBike" */;
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = 7AC58FA62F557923001BAB36;
+			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				CC1000012F557930001BAB36 /* XCLocalSwiftPackageReference "../Packages/TCATBModels" */,
+				CC1000022F557930001BAB36 /* XCLocalSwiftPackageReference "../Packages/TCATBNetworking" */,
+				CC1000032F557930001BAB36 /* XCLocalSwiftPackageReference "../Packages/TCATBAuth" */,
+				CC1000042F557930001BAB36 /* XCLocalSwiftPackageReference "../Packages/TCATBFeed" */,
+				CC1000052F557930001BAB36 /* XCLocalSwiftPackageReference "../Packages/TCATBCamera" */,
+				CC1000062F557930001BAB36 /* XCLocalSwiftPackageReference "../Packages/TCATBBikes" */,
+				CC1000072F557930001BAB36 /* XCLocalSwiftPackageReference "../Packages/TCATBProfile" */,
+				CC1000082F557930001BAB36 /* XCLocalSwiftPackageReference "../Packages/TCATBSharedUI" */,
+			);
+			preferredProjectObjectVersion = 77;
+			productRefGroup = 7AC58FB02F557923001BAB36 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				7AC58FAE2F557923001BAB36 /* TheCityAndTheBike */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		7AC58FAD2F557923001BAB36 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXShellScriptBuildPhase section */
+		DD1000012F557930001BAB36 /* SwiftLint */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+			);
+			name = SwiftLint;
+			outputFileListPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "if command -v swiftlint >/dev/null 2>&1; then\n    swiftlint lint --config \"${SRCROOT}/../.swiftlint.yml\" || true\nelse\n    echo \"warning: SwiftLint not installed. Run 'brew install swiftlint'.\"\nfi\n";
+		};
+/* End PBXShellScriptBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		7AC58FAB2F557923001BAB36 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		7AC58FBD2F55792A001BAB36 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = iphoneos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+			};
+			name = Debug;
+		};
+		7AC58FBE2F55792A001BAB36 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				SDKROOT = iphoneos;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
+		7AC58FC02F55792A001BAB36 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_NSCameraUsageDescription = "This app needs camera access to photograph bike share vehicles.";
+				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "This app needs photo library access to save photos of bike share vehicles.";
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.thecityandthebike.TheCityAndTheBike;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		7AC58FC12F55792A001BAB36 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_NSCameraUsageDescription = "This app needs camera access to photograph bike share vehicles.";
+				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "This app needs photo library access to save photos of bike share vehicles.";
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.thecityandthebike.TheCityAndTheBike;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		7AC58FAA2F557923001BAB36 /* Build configuration list for PBXProject "TheCityAndTheBike" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				7AC58FBD2F55792A001BAB36 /* Debug */,
+				7AC58FBE2F55792A001BAB36 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		7AC58FBF2F55792A001BAB36 /* Build configuration list for PBXNativeTarget "TheCityAndTheBike" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				7AC58FC02F55792A001BAB36 /* Debug */,
+				7AC58FC12F55792A001BAB36 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+
+/* Begin XCLocalSwiftPackageReference section */
+		CC1000012F557930001BAB36 /* XCLocalSwiftPackageReference "../Packages/TCATBModels" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = ../Packages/TCATBModels;
+		};
+		CC1000022F557930001BAB36 /* XCLocalSwiftPackageReference "../Packages/TCATBNetworking" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = ../Packages/TCATBNetworking;
+		};
+		CC1000032F557930001BAB36 /* XCLocalSwiftPackageReference "../Packages/TCATBAuth" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = ../Packages/TCATBAuth;
+		};
+		CC1000042F557930001BAB36 /* XCLocalSwiftPackageReference "../Packages/TCATBFeed" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = ../Packages/TCATBFeed;
+		};
+		CC1000052F557930001BAB36 /* XCLocalSwiftPackageReference "../Packages/TCATBCamera" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = ../Packages/TCATBCamera;
+		};
+		CC1000062F557930001BAB36 /* XCLocalSwiftPackageReference "../Packages/TCATBBikes" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = ../Packages/TCATBBikes;
+		};
+		CC1000072F557930001BAB36 /* XCLocalSwiftPackageReference "../Packages/TCATBProfile" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = ../Packages/TCATBProfile;
+		};
+		CC1000082F557930001BAB36 /* XCLocalSwiftPackageReference "../Packages/TCATBSharedUI" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = ../Packages/TCATBSharedUI;
+		};
+/* End XCLocalSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		BB1000012F557930001BAB36 /* TCATBModels */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = TCATBModels;
+		};
+		BB1000022F557930001BAB36 /* TCATBNetworking */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = TCATBNetworking;
+		};
+		BB1000032F557930001BAB36 /* TCATBAuth */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = TCATBAuth;
+		};
+		BB1000042F557930001BAB36 /* TCATBFeed */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = TCATBFeed;
+		};
+		BB1000052F557930001BAB36 /* TCATBCamera */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = TCATBCamera;
+		};
+		BB1000062F557930001BAB36 /* TCATBBikes */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = TCATBBikes;
+		};
+		BB1000072F557930001BAB36 /* TCATBProfile */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = TCATBProfile;
+		};
+		BB1000082F557930001BAB36 /* TCATBSharedUI */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = TCATBSharedUI;
+		};
+/* End XCSwiftPackageProductDependency section */
+	};
+	rootObject = 7AC58FA72F557923001BAB36 /* Project object */;
+}

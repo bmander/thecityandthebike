@@ -21,10 +21,15 @@ build/
 .vscode/
 *.swp
 *.swo
+*.xcuserstate
+xcuserdata/
 
 # OS
 .DS_Store
 Thumbs.db
+
+# Claude Code
+.claude/
 
 # Testing
 *.db
