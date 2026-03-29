@@ -60,7 +60,7 @@ jobs:
           GITHUB_RUN_NUMBER: ${{ github.run_number }}
 
       - name: Upload APK artifact
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: staging-apk
           path: android/app/build/outputs/apk/staging/release/app-staging-release.apk
@@ -107,13 +107,13 @@ jobs:
           GITHUB_RUN_NUMBER: ${{ github.run_number }}
 
       - name: Upload AAB artifact
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: production-aab
           path: android/app/build/outputs/bundle/productionRelease/app-production-release.aab
 
       - name: Upload native debug symbols artifact
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: production-native-debug-symbols
           path: android/app/build/outputs/native-debug-symbols/productionRelease/native-debug-symbols.zip
