@@ -3,7 +3,7 @@ uvicorn[standard]>=0.27.0
 sqlalchemy>=2.0.0
 psycopg2-binary
 python-dotenv
-PyJWT>=2.8.0
+PyJWT>=2.12.1
 bcrypt
 pydantic>=2.0.0
 pydantic-settings
